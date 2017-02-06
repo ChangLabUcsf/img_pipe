@@ -988,8 +988,8 @@ class freeCoG:
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
         import mayavi
-        import ctmr_brain_plot
-        import FS_colorLUT
+        import plotting.ctmr_brain_plot as ctmr_brain_plot
+        import SupplementalFiles.FS_colorLUT as FS_colorLUT
         
         subj = self.subj
         hem = self.hem
