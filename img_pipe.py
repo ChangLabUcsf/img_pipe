@@ -318,7 +318,7 @@ class freeCoG:
         of indices to extract downsampled grid.'''
 
         # load in clinical grid indices
-        clingrid = scipy.io.loadmat(self.subj_dir+'/clingrid_inds.mat')
+        clingrid = scipy.io.loadmat(self.subj_dir+'/SupplementalFiles/clingrid_inds.mat')
         clingrid = clingrid.get('inds')
 
         # load in hd grid coordinates
@@ -806,7 +806,7 @@ class freeCoG:
            elec = np.column_stack((elec,intercept));
         else:
            elec = np.concatenate((elec, np.ones(1)), axis=0)
-        
+
         # Convert surface RAS to voxel CRS
         VoxCRS = np.dot(np.linalg.inv(fsVox2RAS), elec.transpose()).transpose()
         os.system('mri_info --vox2ras %s/%s/mri/orig.mgz > %s/%s/mri/affine_subj.txt'%(self.subj_dir,self.subj,self.subj_dir,self.subj));
@@ -922,8 +922,8 @@ class freeCoG:
         marked with a red title.        
         '''
 
-        cmap = matplotlib.colors.ListedColormap(np.load('%s/FreeSurferLUTRGBValues.npy'%(self.subj_dir))[:cvs_dat.max()+1,:])
-        lookup_dict = pickle.load(open('%s/FreeSurferLookupTable'%(self.subj_dir),'r'))
+        cmap = matplotlib.colors.ListedColormap(np.load('%s/SupplementalFiles/FreeSurferLUTRGBValues.npy'%(self.subj_dir))[:cvs_dat.max()+1,:])
+        lookup_dict = pickle.load(open('%s/SupplementalFiles/FreeSurferLookupTable'%(self.subj_dir),'r'))
         fig = plt.figure(figsize=((30,17)))
 
         cvs_vox_CRS = np.array([warped_coords[0],warped_coords[1],warped_coords[2]],dtype='int')
