@@ -318,7 +318,7 @@ class freeCoG:
         of indices to extract downsampled grid.'''
 
         # load in clinical grid indices
-        clingrid = scipy.io.loadmat(self.subj_dir+'/SupplementalFiles/clingrid_inds.mat')
+        clingrid = scipy.io.loadmat(self.img_pipe_dir+'/SupplementalFiles/clingrid_inds.mat')
         clingrid = clingrid.get('inds')
 
         # load in hd grid coordinates
@@ -530,7 +530,7 @@ class freeCoG:
             for elec_num in v:
                 anatomy[elec_num,3] = k
         elecs_all['anatomy'] = anatomy
-        scipy.io.savemat('%s/%s/elecs/%s'%(self.subj_dir,self.subj,elecfile_prefix),elecs_all)
+        scipy.io.savemat('%s/%s/elecs/%s.mat'%(self.subj_dir,self.subj,elecfile_prefix),elecs_all)
 
     def nearest_electrode_vert(self, cortex_verts, elecmatrix):
         ''' Find the vertex on a mesh that is closest to the given electrode
@@ -922,8 +922,8 @@ class freeCoG:
         marked with a red title.        
         '''
 
-        cmap = matplotlib.colors.ListedColormap(np.load('%s/SupplementalFiles/FreeSurferLUTRGBValues.npy'%(self.subj_dir))[:cvs_dat.max()+1,:])
-        lookup_dict = pickle.load(open('%s/SupplementalFiles/FreeSurferLookupTable'%(self.subj_dir),'r'))
+        cmap = matplotlib.colors.ListedColormap(np.load('%s/SupplementalFiles/FreeSurferLUTRGBValues.npy'%(self.img_pipe_dir))[:cvs_dat.max()+1,:])
+        lookup_dict = pickle.load(open('%s/SupplementalFiles/FreeSurferLookupTable'%(self.img_pipe_dir),'r'))
         fig = plt.figure(figsize=((30,17)))
 
         cvs_vox_CRS = np.array([warped_coords[0],warped_coords[1],warped_coords[2]],dtype='int')

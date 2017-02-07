@@ -38,7 +38,7 @@ fprintf(1,'warping labels from %s to %s, labelprefix: %s\n', subj, atlas, lower(
 run_label2label(subj, hem, labelprefix, atlas,fsdir,fsBinDir);
 
 labelprefix2=sprintf('%s.%s.chan', hem, lower(labelprefix));
-proj_direction = 'lh';
+proj_direction = hem;
 [elecmatrix_targ, elecmatrix_targ_chull] = compare_warped_elecs(subj, hem, elecmatrix, cortex_src.cortex, atlas, cortex_targ.cortex, labelprefix2, 0, proj_direction,fsdir);
 
 % Save electrode file (only the convex hull version, but could change this)
