@@ -8,8 +8,8 @@ import numpy as np
 import nibabel as nib
 import scipy.ndimage
 
-img = nib.load('/Applications/freesurfer/subjects/EC121_test/mri/brain.mgz')
-ct = nib.load('/Applications/freesurfer/subjects/EC121_test/CT/rCT.nii')
+img = nib.load('/Applications/freesurfer/subjects/EC141_test/mri/brain.mgz')
+ct = nib.load('/Applications/freesurfer/subjects/EC141_test/CT/rCT.nii')
 #img = nib.load('/Applications/freesurfer/subjects/EC55/mri/brain.mgz')
 #ct = nib.load('/Applications/freesurfer/subjects/EC55/CT/rCT.nii')
 
