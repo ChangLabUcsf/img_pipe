@@ -11,8 +11,6 @@ import sys
 from PyQt4 import QtCore
 import scipy.io
 
-#from plotting.ctmr_brain_plot import ctmr_gauss_plot, el_add
-
 subj_dir = '/Applications/freesurfer/subjects/EC121_test'
 
 class electrode_picker:
@@ -482,23 +480,6 @@ class electrode_picker:
 			self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
 			self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
 			self.elec_im[0].set_data(self.elec_data[:,:,cs[2]].T)
-
-# class input_dialog(QtGui.QWidget):
-    
-#     def __init__(self):
-#         super(input_dialog, self).__init__()
-        
-#         text, ok = QtGui.QInputDialog.getText(self, 'Input Dialog', 
-#             'Enter your name:')
-#         #self.show()
-#         if ok:
-#         	self.text = text
-       
-        
-# def get_input():    
-#     app = QtGui.QApplication(sys.argv)
-#     ex = input_dialog()
-#     return ex.text
 
 if __name__ == '__main__':
     e = electrode_picker()
