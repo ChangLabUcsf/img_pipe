@@ -1,4 +1,4 @@
-#!/usr/env/pytho
+#!/usr/env/python
 import matplotlib
 matplotlib.use('Qt4Agg') 
 from matplotlib import pyplot as plt
@@ -14,10 +14,18 @@ ct = nib.load('/Applications/freesurfer/subjects/EC121_test/CT/rCT.nii')
 #ct = nib.load('/Applications/freesurfer/subjects/EC55/CT/rCT.nii')
 
 class electrode_picker:
+	'''
+	electrode_picker class
+	'''
 	def __init__(self, img=img, ct=ct):
 		self.img = img
 		self.ct = ct
 		self.affine = img.affine
+		self.fsVox2RAS = np.array([[-1., 0., 0., 128.], 
+								   [0., 0., 1., -128.], 
+								   [0., -1., 0., 128.], 
+								   [0., 0., 0., 1.]])
+
 		self.codes = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.affine))
 		img_data = nib.orientations.apply_orientation(img.get_data(), self.codes)
 		self.voxel_sizes = nib.affines.voxel_sizes(self.affine)
@@ -45,6 +53,7 @@ class electrode_picker:
 		self.ct_data = ct_data
 		self.img_data = img_data
 		self.elec_data = np.nan+np.zeros((img_data.shape))
+		self.device_num = 0 # Start with device 0, increment when we add a new electrode name type
 		self.imsz = [256, 256, 256]
 		self.ctsz = [256, 256, 256]
 
@@ -107,11 +116,14 @@ class electrode_picker:
 		self.ax[3].axis([0,self.imsz[1],0,self.imsz[2]])
 
 		self.elec_im.append(plt.imshow(self.elec_data[cs[0],:,:].T, cmap=cm.Set1, aspect='auto', alpha=1, vmin=0, vmax=10))
+		plt.gcf().suptitle("Press 'n' to enter device name, press 'e' to add an electrode at crosshair")
 
 		plt.tight_layout()
+		plt.subplots_adjust(top=0.9)
 		cid2 = self.fig.canvas.mpl_connect('scroll_event',self.on_scroll)
 		cid3 = self.fig.canvas.mpl_connect('button_press_event',self.on_click)
 		cid = self.fig.canvas.mpl_connect('key_press_event', self.on_key)
+		cid4 = self.fig.canvas.mpl_connect('key_release_event', self.on_key)
 
 		plt.show()
 		self.fig.canvas.draw()
@@ -128,6 +140,7 @@ class electrode_picker:
 		print event.x, event.y
 		print self.current_slice
 
+		slice_num = []
 		if bb1.contains(fxy[0],fxy[1]):
 			slice_num = 0
 		if bb2.contains(fxy[0],fxy[1]):
@@ -136,56 +149,63 @@ class electrode_picker:
 			slice_num = 2
 		if bb4.contains(fxy[0],fxy[1]):
 			slice_num = 3
-		this_ax = self.ax[slice_num]
 
-		if event.key == 'n':
-			self.ename = raw_input("Enter name of electrode to be added: ")
+		if slice_num != []:
+			this_ax = self.ax[slice_num]
 
-		if event.key == 'e':
-			print("Adding electrode at (%3.3f, %3.3f, %3.3f)"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
-			self.add_electrode()
+			if event.key == 'escape':
+				plt.close()
+			if event.key == 'n':
+				self.ename = raw_input("Enter name of electrode to be added: ")
+				plt.gcf().suptitle("Click on electrodes for %s"%self.ename)
 
-		# Maximum intensity projection in another dimension
-		if slice_num == 3:
-			ct_slice = dict()
-			ct_slice['s'] = 0
-			ct_slice['c'] = 1
-			ct_slice['a'] = 2
-			if event.key == 's' or event.key == 'c' or event.key == 'a':
-				self.ct_slice = event.key
+			if event.key == 'e':
+				self.add_electrode()
 
-		# Scrolling through slices
-		if event.key == 'pageup' or event.key == 'pagedown':
-			if event.key == 'pagedown':
-				sgn = -1
-			else:
-				sgn = 1
-			if slice_num < 3:
-				self.current_slice[slice_num] = self.current_slice[slice_num] + 1*sgn
+			if event.key == 'u':
+				self.remove_electrode()
+
+			# Maximum intensity projection in another dimension
 			if slice_num == 3:
-				self.current_slice[ct_slice[self.ct_slice]] = self.current_slice[ct_slice[self.ct_slice]] + 1*sgn
+				ct_slice = dict()
+				ct_slice['s'] = 0
+				ct_slice['c'] = 1
+				ct_slice['a'] = 2
+				if event.key == 's' or event.key == 'c' or event.key == 'a':
+					self.ct_slice = event.key
 
-		# Panning left/right/up/down
-		if event.key == 'up' or event.key == 'down' or event.key == 'left' or event.key == 'right':
-			if event.key == 'up' or event.key == 'down':
-				if event.key == 'up':
+			# Scrolling through slices
+			if event.key == 'pageup' or event.key == 'pagedown':
+				if event.key == 'pagedown':
 					sgn = -1
 				else:
 					sgn = 1
-				ylims = this_ax.get_ylim()
-				this_ax.set_ylim([ylims[0]+1*sgn, ylims[1]+1*sgn])
-				
-			elif event.key == 'left' or event.key == 'right':
-				if event.key == 'right':
-					sgn = -1
-				else:
-					sgn = 1
-				xlims = this_ax.get_xlim()
-				this_ax.set_xlim([xlims[0]+1*sgn, xlims[1]+1*sgn])
+				if slice_num < 3:
+					self.current_slice[slice_num] = self.current_slice[slice_num] + 1*sgn
+				if slice_num == 3:
+					self.current_slice[ct_slice[self.ct_slice]] = self.current_slice[ct_slice[self.ct_slice]] + 1*sgn
 
-		# Draw the figure
-		self.update_figure_data()
-		plt.gcf().canvas.draw()
+			# Panning left/right/up/down
+			if event.key == 'up' or event.key == 'down' or event.key == 'left' or event.key == 'right':
+				if event.key == 'up' or event.key == 'down':
+					if event.key == 'up':
+						sgn = -1
+					else:
+						sgn = 1
+					ylims = this_ax.get_ylim()
+					this_ax.set_ylim([ylims[0]+1*sgn, ylims[1]+1*sgn])
+					
+				elif event.key == 'left' or event.key == 'right':
+					if event.key == 'right':
+						sgn = -1
+					else:
+						sgn = 1
+					xlims = this_ax.get_xlim()
+					this_ax.set_xlim([xlims[0]+1*sgn, xlims[1]+1*sgn])
+
+			# Draw the figure
+			self.update_figure_data()
+			plt.gcf().canvas.draw()
 
 	def on_scroll(self, event):
 		# Zoom on scroll
@@ -329,6 +349,9 @@ class electrode_picker:
 		self.cursor2[2][0].set_ydata([self.current_slice[1], self.current_slice[1]])
 
 	def add_electrode(self):
+		'''
+		Add an electrode at the current crosshair point. 
+		'''
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
 		#self.ax[0].plot(self.current_slice[1], self.current_slice[2], '.r', ms=12)
 		#self.ax[1].plot(self.current_slice[0], self.current_slice[2], '.r', ms=12)
@@ -340,12 +363,46 @@ class electrode_picker:
 		dist2 = r2[:,None,None]+r2[:,None]+r2
 		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
 		bin_mat[bin_mat==0] = np.nan
+		bin_mat = bin_mat+self.device_num
 		
 		self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
 
 		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
 		self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
 		self.elec_im[0].set_data(self.elec_data[:,:,cs[2]].T)
+
+		# As displayed, these coordinates are LSP, and we want RAS,
+		# so we do that here
+		elec_CRS = np.hstack((self.imsz[0] - self.current_slice[0],
+							  self.imsz[2] - self.current_slice[2],
+							  self.current_slice[1], 1))
+		
+		# Convert CRS to RAS
+		elec = np.dot(self.fsVox2RAS, elec_CRS.transpose()).transpose()
+
+		plt.gcf().suptitle('surface RAS = [%3.3f, %3.3f, %3.3f]'%(elec[0], elec[1], elec[2]))
+		#print("Voxel CRS: %3.3f, %3.3f, %3.3f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
+		#print("RAS coordinate: %3.3f, %3.3f, %3.3f"%(elec[0], elec[1], elec[2]))
+
+	def remove_electrode(self):
+		'''
+		Remove the electrode at the current crosshair point. 
+		'''
+		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
+
+		# create a sphere centered around the current point
+		radius = 3
+		r2 = np.arange(-radius, radius+1)**2
+		dist2 = r2[:,None,None]+r2[:,None]+r2
+		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
+		bin_mat = bin_mat+np.nan
+		
+		self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
+
+		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
+		self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
+		self.elec_im[0].set_data(self.elec_data[:,:,cs[2]].T)
+
 
 
 	#fig.canvas.setFocus()
