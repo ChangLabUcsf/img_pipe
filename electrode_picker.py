@@ -10,8 +10,8 @@ import scipy.ndimage
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-img = nib.load('/Applications/freesurfer/subjects/EC121_test/mri/brain.mgz')
-ct = nib.load('/Applications/freesurfer/subjects/EC121_test/CT/rCT.nii')
+img = nib.load('/Applications/freesurfer/subjects/EC141_test/mri/brain.mgz')
+ct = nib.load('/Applications/freesurfer/subjects/EC141_test/CT/rCT.nii')
 #img = nib.load('/Applications/freesurfer/subjects/EC55/mri/brain.mgz')
 #ct = nib.load('/Applications/freesurfer/subjects/EC55/CT/rCT.nii')
 
@@ -466,4 +466,9 @@ class electrode_picker:
 
 
 
+<<<<<<< HEAD
 electrode_picker()
+=======
+	#fig.canvas.setFocus()
+electrode_picker()
+>>>>>>> bfd13f025deb33312846191972ac35ca2009a477
