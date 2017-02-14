@@ -123,7 +123,7 @@ class electrode_picker:
 		cid2 = self.fig.canvas.mpl_connect('scroll_event',self.on_scroll)
 		cid3 = self.fig.canvas.mpl_connect('button_press_event',self.on_click)
 		cid = self.fig.canvas.mpl_connect('key_press_event', self.on_key)
-		cid4 = self.fig.canvas.mpl_connect('key_release_event', self.on_key)
+		#cid4 = self.fig.canvas.mpl_connect('key_release_event', self.on_key)
 
 		plt.show()
 		self.fig.canvas.draw()
