@@ -107,6 +107,10 @@ class freeCoG:
             otherwise use gpu_flag='' '''       
         os.system('recon-all -subjid %s -sd %s -all %s %s %s' % (self.subj, self.subj_dir, flag_T3, openmp_flag, gpu_flag))
 
+     def check_pial(self):
+        '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. User should scroll through to check that the pial surface corresponds correctly to the MRI.'''
+        os.system("freeview --volume %s/%s/mri/brain.mgz --surface %s/%s/surf/lh.pial --surface %s/%s/surf/rh.pial --viewport 'coronal'" % (self.subj_dir, self.subj, self.subj_dir, self.subj, self.subj_dir, self.subj))
+
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
         If no argument for mesh_name is given, lh.pial and rh.pial
