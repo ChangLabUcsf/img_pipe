@@ -7,38 +7,40 @@ from matplotlib import cm
 import numpy as np
 import nibabel as nib
 import scipy.ndimage
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import sys
+from PyQt4 import QtCore
+import scipy.io
 
-img = nib.load('/Applications/freesurfer/subjects/EC141_test/mri/brain.mgz')
-ct = nib.load('/Applications/freesurfer/subjects/EC141_test/CT/rCT.nii')
-#img = nib.load('/Applications/freesurfer/subjects/EC55/mri/brain.mgz')
-#ct = nib.load('/Applications/freesurfer/subjects/EC55/CT/rCT.nii')
+#from plotting.ctmr_brain_plot import ctmr_gauss_plot, el_add
+
+subj_dir = '/Applications/freesurfer/subjects/EC121_test'
 
 class electrode_picker:
 	'''
 	electrode_picker class
 	'''
-	def __init__(self, img=img, ct=ct):
+	def __init__(self, subj_dir = subj_dir):
 		'''
 		Initialize the electrode picker with the user-defined MRI and co-registered
-		CT scan.  Images will be displayed using orientation information obtained
-		from the image header. Images will be resampled to dimensions [256,256,256]
-		for display.
+		CT scan in [subj_dir].  Images will be displayed using orientation information 
+		obtained from the image header. Images will be resampled to dimensions 
+		[256,256,256] for display.
 		We will also listen for keyboard and mouse events so the user can interact
 		with each of the subplot panels (zoom/pan) and add/remove electrodes with a 
 		keystroke.
 		'''
-		self.img = img
-		self.ct = ct
-		self.affine = img.affine
+		QtCore.pyqtRemoveInputHook()
+		self.subj_dir = subj_dir
+		self.img = nib.load('%s/mri/brain.mgz'%(subj_dir))
+		self.ct = nib.load('%s/CT/rCT.nii'%(subj_dir))
+		self.affine = self.img.affine
 		self.fsVox2RAS = np.array([[-1., 0., 0., 128.], 
 								   [0., 0., 1., -128.], 
 								   [0., -1., 0., 128.], 
 								   [0., 0., 0., 1.]])
 
 		self.codes = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.affine))
-		img_data = nib.orientations.apply_orientation(img.get_data(), self.codes)
+		img_data = nib.orientations.apply_orientation(self.img.get_data(), self.codes)
 		self.voxel_sizes = nib.affines.voxel_sizes(self.affine)
 		nx,ny,nz = np.array(img_data.shape, dtype='float')
 
@@ -46,27 +48,31 @@ class electrode_picker:
 		self.img_clim = np.percentile(img_data, (1., 99.))
 
 		#ct_data = ct.get_data()
-		self.ct_codes =nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(ct.affine))
-		ct_data = nib.orientations.apply_orientation(ct.get_data(), self.ct_codes)
+		self.ct_codes =nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.ct.affine))
+		ct_data = nib.orientations.apply_orientation(self.ct.get_data(), self.ct_codes)
 		ct_data[ct_data < 1000] = np.nan
-		cx,cy,cz=np.array(ct.shape, dtype='float')
+		cx,cy,cz=np.array(self.ct.shape, dtype='float')
 		
 
 		# Resample both images to the highest resolution
 		voxsz = (256, 256, 256)
-		if ct.shape != voxsz:
+		if self.ct.shape != voxsz:
 			print("Resizing voxels in CT")
 			ct_data = scipy.ndimage.zoom(ct_data, [voxsz[0]/cx, voxsz[1]/cy, voxsz[2]/cz])
-		if img.shape != voxsz:
+		if self.img.shape != voxsz:
 			print("Resizing voxels in MRI")
 			img_data = scipy.ndimage.zoom(img_data, [voxsz[0]/nx, voxsz[1]/ny, voxsz[2]/nz])
 		
 		self.ct_data = ct_data
 		self.img_data = img_data
 		self.elec_data = np.nan+np.zeros((img_data.shape))
+		self.bin_mat = '' # binary mask for electrodes
 		self.device_num = 0 # Start with device 0, increment when we add a new electrode name type
 		self.device_name = ''
 		self.devices = [] # This will be a list of the devices (grids, strips, depths)
+		self.elec_num = dict()
+		self.elecmatrix = dict()# This will be the electrode coordinates 
+
 		self.imsz = [256, 256, 256]
 		self.ctsz = [256, 256, 256]
 
@@ -147,7 +153,7 @@ class electrode_picker:
 		self.ax[3].axis([0,self.imsz[1],0,self.imsz[2]])
 
 		self.elec_im.append(plt.imshow(self.elec_data[cs[0],:,:].T, cmap=cm.Set1, aspect='auto', alpha=1, vmin=0, vmax=10))
-		plt.gcf().suptitle("Press 'n' to enter device name, press 'e' to add an electrode at crosshair")
+		plt.gcf().suptitle("Press 'n' to enter device name in console, press 'e' to add an electrode at crosshair")
 
 		plt.tight_layout()
 		plt.subplots_adjust(top=0.9)
@@ -185,8 +191,8 @@ class electrode_picker:
 
 		# Transform coordinates to figure coordinates
 		fxy = self.fig.transFigure.inverted().transform((event.x, event.y))
-		print event.x, event.y
-		print self.current_slice
+		#print event.x, event.y
+		#print self.current_slice
 
 		slice_num = []
 		if bb1.contains(fxy[0],fxy[1]):
@@ -204,11 +210,11 @@ class electrode_picker:
 			if event.key == 'escape':
 				plt.close()
 			if event.key == 'n':
-				self.device_name = easygui.enterbox(msg="Enter name of electrode to be added: ", 
-													title="Electrode device", 
-													strip=True, 
-													default="lateralgrid")
-				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name)
+				self.device_name = raw_input("Enter electrode name: ")
+				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name, fontsize=12)
+				#plt.gcf().canvas.draw()
+				if self.device_name not in self.elec_num:
+					self.elec_num[self.device_name] = 0
 				if self.device_name not in self.devices:
 					self.devices.append(self.device_name)
 					self.device_num = np.max(self.device_num)+1 # Find the next number 
@@ -216,7 +222,10 @@ class electrode_picker:
 					self.device_num = self.devices.index(self.device_name)
 
 			if event.key == 'e':
-				self.add_electrode()
+				if self.device_name == '':
+					plt.gcf().suptitle("Please name device with 'n' key before selecting electrode with 'e'", fontsize=12, color='r')
+				else:
+					self.add_electrode()
 
 			if event.key == 'u':
 				self.remove_electrode()
@@ -328,7 +337,7 @@ class electrode_picker:
 		bb3=self.ax[2].get_position()
 		bb4=self.ax[3].get_position()
 
-		print event.xdata, event.ydata
+		#print event.xdata, event.ydata
 		# Transform coordinates to figure coordinates
 		fxy = self.fig.transFigure.inverted().transform((event.x, event.y))
 		
@@ -364,7 +373,7 @@ class electrode_picker:
 		
 		self.update_figure_data()
 
-		print("Current slice: %3.2f %3.2f %3.2f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
+		#print("Current slice: %3.2f %3.2f %3.2f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
 		plt.gcf().canvas.draw()
 
 	def update_figure_data(self):
@@ -425,6 +434,7 @@ class electrode_picker:
 		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
 		bin_mat[bin_mat==0] = np.nan
 		bin_mat = bin_mat+self.device_num
+		self.bin_mat = bin_mat
 		
 		self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
 
@@ -440,8 +450,16 @@ class electrode_picker:
 		
 		# Convert CRS to RAS
 		elec = np.dot(self.fsVox2RAS, elec_CRS.transpose()).transpose()
+		if self.device_name not in self.elecmatrix:
+			# Initialize the electrode matrix
+			self.elecmatrix[self.device_name] = []
+		self.elecmatrix[self.device_name].append(elec[:3])
 
-		plt.gcf().suptitle('surface RAS = [%3.3f, %3.3f, %3.3f]'%(elec[0], elec[1], elec[2]))
+		scipy.io.savemat('%s/elecs/%s.mat'%(self.subj_dir, self.device_name), {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
+
+		plt.gcf().suptitle('%s e%d surface RAS = [%3.3f, %3.3f, %3.3f]'%(self.device_name, self.elec_num[self.device_name], elec[0], elec[1], elec[2]))
+		
+		self.elec_num[self.device_name] += 1
 		#print("Voxel CRS: %3.3f, %3.3f, %3.3f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
 		#print("RAS coordinate: %3.3f, %3.3f, %3.3f"%(elec[0], elec[1], elec[2]))
 
@@ -449,26 +467,38 @@ class electrode_picker:
 		'''
 		Remove the electrode at the current crosshair point. 
 		'''
-		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
+		cs = self.current_slice
+		if self.bin_mat != '':
+			bin_mat = self.bin_mat+np.nan
+			self.bin_mat = ''
+			
+			# Remove the electrode from elecmatrix
+			self.elecmatrix[self.device_name].pop()
 
-		# create a sphere centered around the current point
-		radius = 3
-		r2 = np.arange(-radius, radius+1)**2
-		dist2 = r2[:,None,None]+r2[:,None]+r2
-		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
-		bin_mat = bin_mat+np.nan
-		
-		self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
+			scipy.io.savemat('%s/elecs/%s.mat'%(self.subj_dir, self.device_name), {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
 
-		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
-		self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
-		self.elec_im[0].set_data(self.elec_data[:,:,cs[2]].T)
+			self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
 
+			self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
+			self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
+			self.elec_im[0].set_data(self.elec_data[:,:,cs[2]].T)
 
+# class input_dialog(QtGui.QWidget):
+    
+#     def __init__(self):
+#         super(input_dialog, self).__init__()
+        
+#         text, ok = QtGui.QInputDialog.getText(self, 'Input Dialog', 
+#             'Enter your name:')
+#         #self.show()
+#         if ok:
+#         	self.text = text
+       
+        
+# def get_input():    
+#     app = QtGui.QApplication(sys.argv)
+#     ex = input_dialog()
+#     return ex.text
 
-<<<<<<< HEAD
-electrode_picker()
-=======
-	#fig.canvas.setFocus()
-electrode_picker()
->>>>>>> bfd13f025deb33312846191972ac35ca2009a477
+if __name__ == '__main__':
+    e = electrode_picker()
