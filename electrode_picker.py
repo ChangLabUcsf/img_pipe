@@ -126,6 +126,9 @@ class electrode_picker:
 			slice_num = 3
 		this_ax = self.ax[slice_num]
 
+		if event.key == 'e':
+			self.ename = rawinput("Enter name of electrode to be added: ")
+
 		if event.key == 'a':
 			print("Adding electrode at (%3.3f, %3.3f, %3.3f)"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
 			self.add_electrode()
@@ -253,9 +256,9 @@ class electrode_picker:
 		self.cursor2[3][0].set_ydata([self.current_slice[2], self.current_slice[2]])
 
 	def add_electrode(self):
-		self.ax[0].plot(self.current_slice[1], self.current_slice[2], '.r')
-		self.ax[1].plot(self.current_slice[0], self.current_slice[2], '.r')
-		self.ax[2].plot(self.current_slice[0], self.current_slice[1], '.r')
+		self.ax[0].plot(self.current_slice[1], self.current_slice[2], '.r', ms=10)
+		self.ax[1].plot(self.current_slice[0], self.current_slice[2], '.r', ms=10)
+		self.ax[2].plot(self.current_slice[0], self.current_slice[1], '.r', ms=10)
 
 
 	#fig.canvas.setFocus()
