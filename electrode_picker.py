@@ -7,6 +7,8 @@ from matplotlib import cm
 import numpy as np
 import nibabel as nib
 import scipy.ndimage
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 
 img = nib.load('/Applications/freesurfer/subjects/EC121_test/mri/brain.mgz')
 ct = nib.load('/Applications/freesurfer/subjects/EC121_test/CT/rCT.nii')
@@ -18,6 +20,15 @@ class electrode_picker:
 	electrode_picker class
 	'''
 	def __init__(self, img=img, ct=ct):
+		'''
+		Initialize the electrode picker with the user-defined MRI and co-registered
+		CT scan.  Images will be displayed using orientation information obtained
+		from the image header. Images will be resampled to dimensions [256,256,256]
+		for display.
+		We will also listen for keyboard and mouse events so the user can interact
+		with each of the subplot panels (zoom/pan) and add/remove electrodes with a 
+		keystroke.
+		'''
 		self.img = img
 		self.ct = ct
 		self.affine = img.affine
@@ -37,7 +48,7 @@ class electrode_picker:
 		#ct_data = ct.get_data()
 		self.ct_codes =nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(ct.affine))
 		ct_data = nib.orientations.apply_orientation(ct.get_data(), self.ct_codes)
-		ct_data[ct_data<1000] = np.nan
+		ct_data[ct_data < 1000] = np.nan
 		cx,cy,cz=np.array(ct.shape, dtype='float')
 		
 
@@ -54,6 +65,8 @@ class electrode_picker:
 		self.img_data = img_data
 		self.elec_data = np.nan+np.zeros((img_data.shape))
 		self.device_num = 0 # Start with device 0, increment when we add a new electrode name type
+		self.device_name = ''
+		self.devices = [] # This will be a list of the devices (grids, strips, depths)
 		self.imsz = [256, 256, 256]
 		self.ctsz = [256, 256, 256]
 
@@ -75,7 +88,11 @@ class electrode_picker:
 					 ['Posterior','Left']]
 
 		self.ax = []
+		
+		# This is the current slice for indexing (as integers so python doesnt complain)
 		cs = np.round(self.current_slice).astype(np.int)
+
+		# Plot sagittal, coronal, and axial views 
 		for i in np.arange(3):
 			self.ax.append(self.fig.add_subplot(2,2,i+1))
 			self.ax[i].set_axis_bgcolor('k')
@@ -92,18 +109,32 @@ class electrode_picker:
 				ctdat = ct_data[:,:,cs[2]].T
 				edat = self.elec_data[:,:,cs[2]].T
 
+			# Show the MRI data in grayscale
 			self.im.append(plt.imshow(imdata, cmap=cm.gray, aspect='auto'))
+
+			# Overlay the CT on top in "hot" colormap, slightly transparent
 			self.ct_im.append(plt.imshow(ctdat, cmap=cm.hot, aspect='auto',alpha=0.5, vmin=1000, vmax=3000))
+			
+			# Overlay the electrodes image on top (starts as NaNs, is eventually filled in)
 			self.elec_im.append(plt.imshow(edat, cmap=cm.Set1, aspect='auto', alpha=1, vmin=0, vmax=10))
+			
+			# Plot a green cursor
 			self.cursor.append(plt.plot([cs[1], cs[1]], [self.ax[i].get_ylim()[0]+1, self.ax[i].get_ylim()[1]-1], color=[0, 1, 0] ))
 			self.cursor2.append(plt.plot([self.ax[i].get_xlim()[0]+1, self.ax[i].get_xlim()[1]-1], [cs[2], cs[2]], color=[0, 1, 0] ))
+			
+			# Flip the y axis so brains are the correct side up
 			plt.gca().invert_yaxis()
+
+			# Get rid of tick labels
 			self.ax[i].set_xticks([])
 			self.ax[i].set_yticks([])
+
+			# Label the axes
 			self.ax[i].set_xlabel(im_labels[i][0])
 			self.ax[i].set_ylabel(im_labels[i][1])
 			self.ax[i].axis(im_ranges[i])
 
+		# Plot the maximum intensity projection
 		self.ct_slice = 's' # Show sagittal MIP to start
 		self.ax.append(self.fig.add_subplot(2,2,4))
 		self.ax[3].set_axis_bgcolor('k')
@@ -129,6 +160,23 @@ class electrode_picker:
 		self.fig.canvas.draw()
 
 	def on_key(self, event):
+		''' 
+		Executes when the user presses a key.  Potential key inputs are:
+
+		Electrode adding:
+		----
+		n: enter the name of a new device (e.g. 'frontalgrid','hippocampaldepth')
+		e: insert an electrode at the current green crosshair position
+		u: remove electrode at the current crosshair position (can be thought of like "undo")
+
+		Views:
+		----
+		s: sagittal view for maximum intensity projection at bottom right
+		c: coronal view for maximum intensity projection at bottom right
+		a: axial view for maximum intensity projection at bottom right
+		pagedown/pageup: move by one slice in currently selected pane
+		arrow up/arrow down: pan by one voxel in currently selected pane
+		'''
 		#print('You pressed', event.key)
 		bb1=self.ax[0].get_position()
 		bb2=self.ax[1].get_position()
@@ -156,8 +204,16 @@ class electrode_picker:
 			if event.key == 'escape':
 				plt.close()
 			if event.key == 'n':
-				self.ename = raw_input("Enter name of electrode to be added: ")
-				plt.gcf().suptitle("Click on electrodes for %s"%self.ename)
+				self.device_name = easygui.enterbox(msg="Enter name of electrode to be added: ", 
+													title="Electrode device", 
+													strip=True, 
+													default="lateralgrid")
+				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name)
+				if self.device_name not in self.devices:
+					self.devices.append(self.device_name)
+					self.device_num = np.max(self.device_num)+1 # Find the next number 
+				else:
+					self.device_num = self.devices.index(self.device_name)
 
 			if event.key == 'e':
 				self.add_electrode()
@@ -166,13 +222,12 @@ class electrode_picker:
 				self.remove_electrode()
 
 			# Maximum intensity projection in another dimension
-			if slice_num == 3:
-				ct_slice = dict()
-				ct_slice['s'] = 0
-				ct_slice['c'] = 1
-				ct_slice['a'] = 2
-				if event.key == 's' or event.key == 'c' or event.key == 'a':
-					self.ct_slice = event.key
+			ct_slice = dict()
+			ct_slice['s'] = 0
+			ct_slice['c'] = 1
+			ct_slice['a'] = 2
+			if event.key == 's' or event.key == 'c' or event.key == 'a':
+				self.ct_slice = event.key
 
 			# Scrolling through slices
 			if event.key == 'pageup' or event.key == 'pagedown':
@@ -208,7 +263,8 @@ class electrode_picker:
 			plt.gcf().canvas.draw()
 
 	def on_scroll(self, event):
-		# Zoom on scroll
+		''' Use mouse scroll wheel to zoom.  Scroll down zooms in, scroll up zooms out.
+		'''
 		stepsz = 10.
 		bb1=self.ax[0].get_position()
 		bb2=self.ax[1].get_position()
@@ -260,6 +316,11 @@ class electrode_picker:
 		plt.gcf().canvas.draw()
 
 	def on_click(self, event):
+		'''
+		Executes on mouse click events -- moves appropriate subplot axes to (x,y,z)
+		view on MRI and CT views.
+		'''
+
 		#print('You scrolled %d steps at x: %d, y: %d', event.step, event.x, event.y)
 		# Get the bounding box for each of the subplots
 		bb1=self.ax[0].get_position()
@@ -307,6 +368,9 @@ class electrode_picker:
 		plt.gcf().canvas.draw()
 
 	def update_figure_data(self):
+		'''
+		Updates all four subplots based on the crosshair position (self.current_slice)
+		'''
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
 		self.im[0].set_data(self.img_data[cs[0],:,:].T)
 		self.im[1].set_data(self.img_data[:,cs[1],:].T)
@@ -353,9 +417,6 @@ class electrode_picker:
 		Add an electrode at the current crosshair point. 
 		'''
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
-		#self.ax[0].plot(self.current_slice[1], self.current_slice[2], '.r', ms=12)
-		#self.ax[1].plot(self.current_slice[0], self.current_slice[2], '.r', ms=12)
-		#self.ax[2].plot(self.current_slice[0], self.current_slice[1], '.r', ms=12)
 
 		# create a sphere centered around the current point
 		radius = 3
@@ -405,5 +466,4 @@ class electrode_picker:
 
 
 
-	#fig.canvas.setFocus()
 electrode_picker()
