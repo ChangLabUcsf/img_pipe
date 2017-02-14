@@ -109,18 +109,20 @@ def on_key(event):
 	bb4=ax4.get_position()
 
 	# Transform coordinates to figure coordinates
+	fxy = fig.transFigure.inverted().transform((event.x, event.y))
 	print event.x, event.y
-	if event.key == 'pageup':
+	if event.key == 'pageup' or event.key == 'pagedown':
+		if event.key == 'pagedown':
+			sgn = -1
+		else:
+			sgn = 1
 		if bb1.contains(fxy[0],fxy[1]):
-			current_slice[0] = current_slice[0] + 1
+			current_slice[0] = current_slice[0] + 1*sgn
 		elif bb2.contains(fxy[0],fxy[1]):
-			current_slice[1] = current_slice[1] + 1
+			current_slice[1] = current_slice[1] + 1*sgn
 		elif bb3.contains(fxy[0],fxy[1]):
-			current_slice[2] = current_slice[2] + 1
-
-	if event.key == 'pagedown':
-		break;
-
+			current_slice[2] = current_slice[2] + 1*sgn
+		update_figure_data(im, ct_im, cursor, cursor2, current_slice)
 
 	plt.gcf().canvas.draw()
 
@@ -205,48 +207,39 @@ def on_click(event):
 	elif bb2.contains(fxy[0],fxy[1]):
 		current_slice[0] = event.xdata
 		current_slice[2] = event.ydata
-		im[0].set_data(img_data[x,:,:].T)
-		im[2].set_data(img_data[:,:,y].T)
-		ct_im[0].set_data(ct_data[x,:,:].T)
-		ct_im[2].set_data(ct_data[:,:,y].T)
-		cursor[1][0].set_xdata([event.xdata, event.xdata])
-		cursor2[1][0].set_ydata([event.ydata, event.ydata])
-		cursor[2][0].set_xdata([event.xdata, event.xdata])
-		cursor2[0][0].set_ydata([event.ydata, event.ydata])
-		cursor2[3][0].set_ydata([event.ydata, event.ydata])
 
 	# If you clicked the third subplot
 	elif bb3.contains(fxy[0],fxy[1]):
 		current_slice[0] = event.xdata
 		current_slice[1] = event.ydata
-		im[0].set_data(img_data[x,:,:].T)
-		im[1].set_data(img_data[:,y,:].T)
-		ct_im[0].set_data(ct_data[x,:,:].T)
-		ct_im[1].set_data(ct_data[:,y,:].T)
-		cursor[2][0].set_xdata([event.xdata, event.xdata])
-		cursor2[2][0].set_ydata([event.ydata, event.ydata])
-		cursor[0][0].set_xdata([event.ydata, event.ydata])
-		cursor[1][0].set_xdata([event.xdata, event.xdata])
-		cursor[3][0].set_xdata([event.ydata, event.ydata])
 
 	# If you clicked the third subplot
 	elif bb4.contains(fxy[0],fxy[1]):
 		current_slice[1] = event.xdata
 		current_slice[2] = event.ydata
-		im[1].set_data(img_data[:,x,:].T)
-		im[2].set_data(img_data[:,:,y].T)
-		ct_im[1].set_data(ct_data[:,x,:].T)
-		ct_im[2].set_data(ct_data[:,:,y].T)
-
-		cursor[3][0].set_xdata([event.xdata, event.xdata])
-		cursor2[3][0].set_ydata([event.ydata, event.ydata])
-		cursor[0][0].set_xdata([event.xdata, event.xdata])
-		cursor2[0][0].set_ydata([event.ydata, event.ydata])
-		cursor2[1][0].set_ydata([event.ydata, event.ydata])
-		cursor2[2][0].set_ydata([event.xdata, event.xdata])
+	
+	update_figure_data(im, ct_im, cursor, cursor2, current_slice)
 
 	print("Current slice: %3.2f %3.2f %3.2f"%(current_slice[0], current_slice[1], current_slice[2]))
 	plt.gcf().canvas.draw()
+
+def update_figure_data(im, ct_im, cursor, cursor2, current_slice):
+	im[0].set_data(img_data[current_slice[0],:,:].T)
+	im[1].set_data(img_data[:,current_slice[1],:].T)
+	im[2].set_data(img_data[:,:,current_slice[2]].T)
+
+	ct_im[0].set_data(ct_data[current_slice[0],:,:].T)
+	ct_im[1].set_data(ct_data[:,current_slice[1],:].T)
+	ct_im[2].set_data(ct_data[:,:,current_slice[2]].T)
+
+	cursor[0][0].set_xdata([current_slice[1], current_slice[1]]) 
+	cursor2[0][0].set_ydata([current_slice[2], current_slice[2]])
+	cursor[1][0].set_xdata([current_slice[0], current_slice[0]])
+	cursor2[1][0].set_ydata([current_slice[2], current_slice[2]])
+	cursor[2][0].set_xdata([current_slice[0], current_slice[0]])
+	cursor2[2][0].set_ydata([current_slice[1], current_slice[1]])
+	cursor[3][0].set_xdata([current_slice[1], current_slice[1]]) 
+	cursor2[3][0].set_ydata([current_slice[2], current_slice[2]])
 
 cid2 = fig.canvas.mpl_connect('scroll_event',on_scroll)
 cid3 = fig.canvas.mpl_connect('button_press_event',on_click)
