@@ -70,6 +70,7 @@ class electrode_picker:
 		self.devices = [] # This will be a list of the devices (grids, strips, depths)
 		self.elec_num = dict()
 		self.elecmatrix = dict()# This will be the electrode coordinates 
+		self.legend_handles = [] # This will hold legend entries
 
 		self.imsz = [256, 256, 256]
 		self.ctsz = [256, 256, 256]
@@ -214,7 +215,6 @@ class electrode_picker:
 				plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 				self.device_name = raw_input("Enter electrode name: ")
 				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name, fontsize=14)
-				self.update_legend()
 				#plt.gcf().canvas.draw()
 
 				# If the device name is not in the list
@@ -238,6 +238,7 @@ class electrode_picker:
 							self.current_slice = self.surfaceRAS_to_slice(elec[:3])
 							self.add_electrode(add_to_file=False)
 						print("Starting to mark electrode %d"%(self.elec_num[self.device_name]))
+				self.update_legend()
 
 			if event.key == 'h':
 				# Show help 
@@ -537,12 +538,18 @@ class electrode_picker:
 		return coord
 
 	def update_legend(self):
+		self.legend_handles = []
 		for i in self.devices:
-			cmap = matplotlib.cm.get_cmap('Set1')
-			c = cmap(i/10.)
+			cmap = cm.get_cmap('Set1')
+			num = self.devices.index(i)
+			print("%s is number %d"%(i, num))
+			c = cmap((num+1)/10.)
+			#print("Color: ")
+			#print(c)
 			color_patch = mpatches.Patch(color=c, label=i)
-			handles.append(color_patch)
-			plt.legend(handles=handles)
+			self.legend_handles.append(color_patch)
+			plt.legend(handles=self.legend_handles, loc='upper right', fontsize='x-small')
+			#plt.legend(handles = [color_patch])
 			plt.show()
 			
 if __name__ == '__main__':
