@@ -124,7 +124,7 @@ class freeCoG:
         mlab = matlab.MatlabCommand()
 
         hems = ['lh', 'rh']
-        mesh_dir = '%s/%s/Meshes' % (self.subj_dir, self.subj)
+        mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
 
         if not os.path.isdir(mesh_dir):
             print('Making Meshes Directory')
