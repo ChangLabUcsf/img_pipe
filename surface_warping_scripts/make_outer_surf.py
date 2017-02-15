@@ -7,19 +7,26 @@ from scipy.ndimage.morphology import generate_binary_structure
 from mne import write_surface
 from mcubes import marching_cubes
 
-def make_outer_surf(image, radius, outfile):
+def make_outer_surf(orig_pial, image, radius, outfile):
     '''
     Make outer surface based on a pial volume and radius,
     write to surface in outfile.
 
     Args:
+        orig_pial: pial surface (e.g. lh.pial)
         image: filled lh or rh pial image (e.g. lh.pial.filled.mgz)
         radius: radius for smoothing (currently ignored)
         outfile: surface file to write data to
+
+    Original code from ielu
+
     '''
     
     #radius information is currently ignored
     #it is a little tougher to deal with the morphology in python
+
+    pial_surf = nib.freesurfer.read_geometry(orig_pial, read_metadata=True)
+    volume_info = pial_surf[2]
 
     fill = nib.load( image )
     filld = fill.get_data()
@@ -51,7 +58,7 @@ def make_outer_surf(image, radius, outfile):
                           v[:,2] - 128,
                           128 - v[:,1], )))
     
-    write_surface(outfile, v2, f)
+    write_surface(outfile, v2, f, volume_info=volume_info)
 
 if __name__=='__main__':
 

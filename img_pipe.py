@@ -116,17 +116,29 @@ class freeCoG:
         rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
         os.system("freeview --volume %s --surface %s --surface %s --viewport 'coronal'" % (brain_mri, lh_pial, rh_pial))
 
-    def make_dural_surf(self):
+    def make_dural_surf(self, radius=3):
         '''
         Create smoothed dural surface for projecting electrodes to.
         '''
 
         # Create mask of pial surface
         print("Creating mask of pial surface")
-        os.system('mris_fill -c -r 1 %s.pial'%(self.hem))
+        pial_surf = os.path.join(self.subj_dir, self.subj, 'surf', self.hem+'.pial')
+        pial_fill_image = os.path.join(self.subj_dir, self.subj, 'surf', self.hem+'.pial.filled.mgz')
+        if not os.path.isfile(pial_fill_image):
+            os.system('mris_fill -c -r 1 %s %s'%(pial_surf, pial_fill_image))
+        outfile = os.path.join(self.subj_dir, self.subj, 'surf', self.hem+'.pial.outer')
 
-        # Create outer surface of this pial surface
+        if os.path.isfile(pial_fill_image):
+            # Create outer surface of this pial surface
+            print("Creating outer surface for the filled pial surface %s"%(pial_fill_image))
+            make_outer_surf(pial_surf, pial_fill_image, radius, outfile) # this is from ielu
 
+            os.system('mris_extract_main_component %s %s-main'%(outfile, outfile))
+            os.system('mris_smooth -nw -n 30 %s-main %s-main-smoothed'%(outfile, outfile))
+
+        else:
+            print("Failed to create %s, check inputs."%(pial_fill_image))
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
