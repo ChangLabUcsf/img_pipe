@@ -10,14 +10,13 @@ import scipy.ndimage
 import sys
 from PyQt4 import QtCore
 import scipy.io
-
-subj_dir = '/Applications/freesurfer/subjects/EC121_test'
+import os
 
 class electrode_picker:
 	'''
 	electrode_picker class
 	'''
-	def __init__(self, subj_dir = subj_dir):
+	def __init__(self, subj_dir):
 		'''
 		Initialize the electrode picker with the user-defined MRI and co-registered
 		CT scan in [subj_dir].  Images will be displayed using orientation information 
@@ -151,7 +150,7 @@ class electrode_picker:
 		self.ax[3].axis([0,self.imsz[1],0,self.imsz[2]])
 
 		self.elec_im.append(plt.imshow(self.elec_data[cs[0],:,:].T, cmap=cm.Set1, aspect='auto', alpha=1, vmin=0, vmax=10))
-		plt.gcf().suptitle("Press 'n' to enter device name in console, press 'e' to add an electrode at crosshair")
+		plt.gcf().suptitle("Press 'n' to enter device name in console, press 'e' to add an electrode at crosshair, press 'h' for more options", fontsize=14)
 
 		plt.tight_layout()
 		plt.subplots_adjust(top=0.9)
@@ -208,20 +207,40 @@ class electrode_picker:
 			if event.key == 'escape':
 				plt.close()
 			if event.key == 'n':
+				plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 				self.device_name = raw_input("Enter electrode name: ")
-				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name, fontsize=12)
+				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name, fontsize=14)
 				#plt.gcf().canvas.draw()
-				if self.device_name not in self.elec_num:
-					self.elec_num[self.device_name] = 0
+
+				# If the device name is not in the list
 				if self.device_name not in self.devices:
 					self.devices.append(self.device_name)
 					self.device_num = np.max(self.device_num)+1 # Find the next number 
 				else:
 					self.device_num = self.devices.index(self.device_name)
+				
+				# If the device name is not in the list, start with electrode 0, or
+				# load the electrode file if it exists and start with the next number
+				# electrode
+				if self.device_name not in self.elec_num:
+					self.elec_num[self.device_name] = 0
+					elecfile = '%s/elecs/%s.mat'%(self.subj_dir, self.device_name)
+					if os.path.isfile(elecfile):
+						emat = scipy.io.loadmat(elecfile)['elecmatrix']
+						self.elecmatrix[self.device_name] = list(emat)
+						print("Loading %s (if you wish to overwrite, remove this file before running)"%(elecfile))
+						for elec in emat:
+							self.current_slice = self.surfaceRAS_to_slice(elec[:3])
+							self.add_electrode(add_to_file=False)
+						print("Starting to mark electrode %d"%(self.elec_num[self.device_name]))
+
+			if event.key == 'h':
+				# Show help 
+				plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\n\Scroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
 
 			if event.key == 'e':
 				if self.device_name == '':
-					plt.gcf().suptitle("Please name device with 'n' key before selecting electrode with 'e'", fontsize=12, color='r')
+					plt.gcf().suptitle("Please name device with 'n' key before selecting electrode with 'e'", color='r', fontsize=14)
 				else:
 					self.add_electrode()
 
@@ -419,7 +438,7 @@ class electrode_picker:
 		self.cursor[2][0].set_xdata ([self.current_slice[0], self.current_slice[0]])
 		self.cursor2[2][0].set_ydata([self.current_slice[1], self.current_slice[1]])
 
-	def add_electrode(self):
+	def add_electrode(self, add_to_file = True):
 		'''
 		Add an electrode at the current crosshair point. 
 		'''
@@ -442,20 +461,18 @@ class electrode_picker:
 
 		# As displayed, these coordinates are LSP, and we want RAS,
 		# so we do that here
-		elec_CRS = np.hstack((self.imsz[0] - self.current_slice[0],
-							  self.imsz[2] - self.current_slice[2],
-							  self.current_slice[1], 1))
-		
-		# Convert CRS to RAS
-		elec = np.dot(self.fsVox2RAS, elec_CRS.transpose()).transpose()
+
+		elec = self.slice_to_surfaceRAS()
+
 		if self.device_name not in self.elecmatrix:
 			# Initialize the electrode matrix
 			self.elecmatrix[self.device_name] = []
-		self.elecmatrix[self.device_name].append(elec[:3])
+		self.elecmatrix[self.device_name].append(elec)
 
-		scipy.io.savemat('%s/elecs/%s.mat'%(self.subj_dir, self.device_name), {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
+		if add_to_file:
+			scipy.io.savemat('%s/elecs/%s.mat'%(self.subj_dir, self.device_name), {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
 
-		plt.gcf().suptitle('%s e%d surface RAS = [%3.3f, %3.3f, %3.3f]'%(self.device_name, self.elec_num[self.device_name], elec[0], elec[1], elec[2]))
+		plt.gcf().suptitle('%s e%d surface RAS = [%3.3f, %3.3f, %3.3f]'%(self.device_name, self.elec_num[self.device_name], elec[0], elec[1], elec[2]), fontsize=14)
 		
 		self.elec_num[self.device_name] += 1
 		#print("Voxel CRS: %3.3f, %3.3f, %3.3f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
@@ -481,5 +498,38 @@ class electrode_picker:
 			self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
 			self.elec_im[0].set_data(self.elec_data[:,:,cs[2]].T)
 
+	def slice_to_surfaceRAS(self, coord = None):
+		'''
+		Convert slice coordinate from the viewer to surface RAS
+		'''
+		if coord is None:
+			coord = self.current_slice
+
+		elec_CRS = np.hstack((self.imsz[0] - coord[0],
+							  self.imsz[2] - coord[2],
+							  coord[1], 1))
+		
+		# Convert CRS to RAS
+		elec = np.dot(self.fsVox2RAS, elec_CRS.transpose()).transpose()
+		elec = elec[:3]
+
+		return elec
+
+	def surfaceRAS_to_slice(self, elec):
+		'''
+		Convert surface RAS to coordinate to be used in the viewer
+		'''
+		elec = np.hstack((elec, 1))
+
+		# Convert CRS to RAS
+		elec_CRS = np.dot(np.linalg.inv(self.fsVox2RAS), elec.transpose()).transpose()
+
+		print(elec_CRS)
+		coord = np.hstack((elec_CRS[0],
+						   elec_CRS[2],
+						   self.imsz[1] - elec_CRS[1]))
+		
+		return coord
+
 if __name__ == '__main__':
-    e = electrode_picker()
+    e = electrode_picker(subj_dir = '/Applications/freesurfer/subjects/EC121_test')
