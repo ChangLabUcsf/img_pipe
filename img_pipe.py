@@ -351,19 +351,18 @@ class freeCoG:
         of indices to extract downsampled grid.'''
 
         # load in clinical grid indices
-        clingrid = scipy.io.loadmat(self.img_pipe_dir+'/SupplementalFiles/clingrid_inds.mat')
+        clingrid = scipy.io.loadmat(os.path.join(self.img_pipe_dir, 'SupplementalFiles','clingrid_inds.mat'))
         clingrid = clingrid.get('inds')
 
         # load in hd grid coordinates
-        hd = scipy.io.loadmat('%s/hd_grid.mat'%(self.elecs_dir))
-        hd = hd.get('elecmatrix')
+        hd = scipy.io.loadmat(os.path.join(self.elecs_dir,'hd_grid.mat'))['elecmatrix']
 
         # get clinical grid coordinates
         clinicalgrid = hd[clingrid]
         clinicalgrid = clinicalgrid[0,:,:]
 
         # save new coordinates
-        scipy.io.savemat('%s/clinical_grid.mat'%(self.elecs_dir), {'elecmatrix': clinicalgrid})
+        scipy.io.savemat(os.path.join(self.elecs_dir, 'clinical_grid.mat'), {'elecmatrix': clinicalgrid})
 
         return clinicalgrid
 
@@ -528,7 +527,7 @@ class freeCoG:
                 long_name_prefix = raw_input('What is the long name prefix of the device?\n')
                 elec_type = raw_input('What is the type of the device?\n')
                 file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
-                indiv_file = os.path.join(self.subj_dir, self.subj, 'elecs','individual_elecs', file_name)
+                indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
                 elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
                 num_elecs = elecmatrix.shape[0]
                 elecmatrix_all.append(elecmatrix)
@@ -544,7 +543,7 @@ class freeCoG:
         eleclabels[:,0] = short_names
         eleclabels[:,1] = long_names
         eleclabels[:,2] = elec_types
-        label_outfile = os.path.join(self.subj_dir, self.subj, 'elecs', '%s.mat'%(outfile))
+        label_outfile = os.path.join(self.elecs_dir, '%s.mat'%(outfile))
         scipy.io.savemat(label_outfile,{'eleclabels':eleclabels,'elecmatrix':elecmatrix_all})
 
     def edit_elecs_all(self, revision_dict, elecfile_prefix='TDT_elecs_all'):
@@ -552,7 +551,7 @@ class freeCoG:
         In each entry of the revision_dict, the key is the anatomical label you'd like to impose on the value, which is a list of 0-indexed electrode numbers.
         For example, edit_elecs_all({'superiortemporal':[3,4,5],'precentral':[23,25,36]}).
         '''
-        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         elecs_all = scipy.io.loadmat(elecfile)
         anatomy = elecs_all['anatomy']
         for k,v in revision_dict.items():
@@ -606,7 +605,7 @@ class freeCoG:
         # atlas_surf is 'destrieux', in which case the more detailed labels are used
         os.system('mri_annotation2label --subject %s --hemi %s --surface pial %s --outdir %s'%(self.subj, self.hem, surf_atlas_flag, gyri_labels_dir))
         print('Loading electrode matrix')
-        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         elecmatrix = scipy.io.loadmat(elecfile)['elecmatrix']
         
         # Initialize empty variable for indices of grid and strip electrodes
@@ -767,7 +766,7 @@ class freeCoG:
         elec_labels_orig[indices_to_use,3] = elec_labels[:,3] 
         
         print('Saving electrode labels to %s'%(elecfile_prefix))
-        scipy.io.savemat(os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat'), {'elecmatrix': elecmatrix_orig, 'anatomy': elec_labels_orig, 'eleclabels': elecmontage})
+        scipy.io.savemat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'), {'elecmatrix': elecmatrix_orig, 'anatomy': elec_labels_orig, 'eleclabels': elecmontage})
 
         return elec_labels
 
@@ -780,14 +779,14 @@ class freeCoG:
         '''
 
         print "Using %s as the template for warps" %(template)
-        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         orig_elecs = scipy.io.loadmat(elecfile)
 
         if 'depth' in orig_elecs['anatomy'][:,2] and warp_depths:
             self.get_cvsWarp(template)
             self.apply_cvsWarp(elecfile_prefix,template)
-            elecfile_nearest_warped = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_nearest_warped.mat')
-            elecfile_nearest_warped_text = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_nearest_warped.txt')
+            elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
+            elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
             depth_indices = np.where(orig_elecs['anatomy'][:,2]=='depth')[0]
             orig_elecs['elecmatrix'][depth_indices] = depth_warps['elecmatrix']
@@ -795,12 +794,12 @@ class freeCoG:
         
         if warp_surface:
             self.get_surface_warp(elecfile_prefix,template)
-            elecfile_surface_warped = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_surface_warped.mat')
+            elecfile_surface_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_surface_warped.mat')
             surface_warps = scipy.io.loadmat(elecfile_surface_warped)
             surface_indices = np.where(orig_elecs['anatomy'][:,2]!='depth')[0]
             orig_elecs['elecmatrix'][surface_indices] = surface_warps['elecmatrix']
 
-        elecsfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_warped.mat')
+        elecsfile_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_warped.mat')
         scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
         #create pdf for visual inspection of the original elecs vs the warps
@@ -809,9 +808,8 @@ class freeCoG:
                               plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
         out = mlab.run()
 
-        patient_elecs_dir = os.path.join(self.subj_dir, self.subj, 'elecs')
-        preproc_dir = os.path.join(self.subj_dir, self.subj, 'elecs', 'preproc')
-        os.system('mv %s %s/preproc;' %(elecfile_surface_warped, patient_elecs_dir))
+        preproc_dir = os.path.join(self.elecs_dir, 'preproc')
+        os.system('mv %s %s/preproc;' %(elecfile_surface_warped, self.elecs_dir))
         if warp_depths:
             os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
@@ -834,7 +832,7 @@ class freeCoG:
         fsVox2RAS = np.array(
             [[-1., 0., 0., 128.], [0., 0., 1., -128.], [0., -1., 0., 128.], [0., 0., 0., 1.]])
 
-        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         elecs = scipy.io.loadmat(elecfile)
         anatomy = elecs.get('anatomy')
         depth_indices = np.where(anatomy[:,2]=='depth')[0]
