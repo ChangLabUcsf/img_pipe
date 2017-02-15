@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
 
 from nipype.interfaces import matlab as matlab
 
@@ -110,7 +111,22 @@ class freeCoG:
 
     def check_pial(self):
         '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. User should scroll through to check that the pial surface corresponds correctly to the MRI.'''
-        os.system("freeview --volume %s/%s/mri/brain.mgz --surface %s/%s/surf/lh.pial --surface %s/%s/surf/rh.pial --viewport 'coronal'" % (self.subj_dir, self.subj, self.subj_dir, self.subj, self.subj_dir, self.subj))
+        brain_mri = os.path.join(self.subj_dir, self.subj, 'mri', 'brain.mgz')
+        lh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'lh.pial')
+        rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
+        os.system("freeview --volume %s --surface %s --surface %s --viewport 'coronal'" % (brain_mri, lh_pial, rh_pial))
+
+    def make_dural_surf(self):
+        '''
+        Create smoothed dural surface for projecting electrodes to.
+        '''
+
+        # Create mask of pial surface
+        print("Creating mask of pial surface")
+        os.system('mris_fill -c -r 1 %s.pial'%(self.hem))
+
+        # Create outer surface of this pial surface
+
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
