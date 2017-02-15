@@ -459,7 +459,7 @@ class electrode_picker:
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
 
 		# create a sphere centered around the current point as a binary matrix
-		radius = 3
+		radius = 2
 		r2 = np.arange(-radius, radius+1)**2
 		dist2 = r2[:,None,None]+r2[:,None]+r2
 		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
