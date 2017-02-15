@@ -4,6 +4,7 @@ matplotlib.use('Qt4Agg')
 from matplotlib import pyplot as plt
 plt.rcParams['keymap.save'] = '' # Unbind 's' key saving
 from matplotlib import cm
+import matplotlib.colors as mcolors
 import numpy as np
 import nibabel as nib
 import scipy.ndimage
@@ -29,14 +30,16 @@ class electrode_picker:
 		'''
 		QtCore.pyqtRemoveInputHook()
 		self.subj_dir = subj_dir
-		self.img = nib.load('%s/mri/brain.mgz'%(subj_dir))
-		self.ct = nib.load('%s/CT/rCT.nii'%(subj_dir))
+		self.img = nib.load(os.path.join(subj_dir, 'mri', 'brain.mgz'))
+		self.ct = nib.load(os.path.join(subj_dir, 'CT', 'rCT.nii'))
 		self.affine = self.img.affine
 		self.fsVox2RAS = np.array([[-1., 0., 0., 128.], 
 								   [0., 0., 1., -128.], 
 								   [0., -1., 0., 128.], 
 								   [0., 0., 0., 1.]])
 
+		# Apply orientation to the MRI so that the order of the dimensions will be
+		# sagittal, coronal, axial
 		self.codes = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.affine))
 		img_data = nib.orientations.apply_orientation(self.img.get_data(), self.codes)
 		self.voxel_sizes = nib.affines.voxel_sizes(self.affine)
@@ -45,9 +48,12 @@ class electrode_picker:
 		self.inv_affine = np.linalg.inv(self.affine)
 		self.img_clim = np.percentile(img_data, (1., 99.))
 
-		#ct_data = ct.get_data()
+		# Apply orientation to the CT so that the order of the dimensions will be
+		# sagittal, coronal, axial
 		self.ct_codes =nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.ct.affine))
 		ct_data = nib.orientations.apply_orientation(self.ct.get_data(), self.ct_codes)
+
+		# Threshold the CT so only bright objects (electrodes) are visible
 		ct_data[ct_data < 1000] = np.nan
 		cx,cy,cz=np.array(self.ct.shape, dtype='float')
 		
@@ -124,7 +130,8 @@ class electrode_picker:
 			self.ct_im.append(plt.imshow(ctdat, cmap=cm.hot, aspect='auto',alpha=0.5, vmin=1000, vmax=3000))
 			
 			# Overlay the electrodes image on top (starts as NaNs, is eventually filled in)
-			self.elec_im.append(plt.imshow(edat, cmap=cm.Set1, aspect='auto', alpha=1, vmin=0, vmax=10))
+			self.elec_colors = mcolors.LinearSegmentedColormap.from_list('elec_colors', np.vstack (( cm.Set1(np.linspace(0., 1, 9)), cm.Set2(np.linspace(0., 1, 8)) )) )
+			self.elec_im.append(plt.imshow(edat, cmap=self.elec_colors, aspect='auto', alpha=1, vmin=0, vmax=17))
 			
 			# Plot a green cursor
 			self.cursor.append(plt.plot([cs[1], cs[1]], [self.ax[i].get_ylim()[0]+1, self.ax[i].get_ylim()[1]-1], color=[0, 1, 0] ))
@@ -154,7 +161,7 @@ class electrode_picker:
 		plt.gca().invert_yaxis()
 		self.ax[3].axis([0,self.imsz[1],0,self.imsz[2]])
 
-		self.elec_im.append(plt.imshow(self.elec_data[cs[0],:,:].T, cmap=cm.Set1, aspect='auto', alpha=1, vmin=0, vmax=10))
+		self.elec_im.append(plt.imshow(self.elec_data[cs[0],:,:].T, cmap=self.elec_colors, aspect='auto', alpha=1, vmin=0, vmax=17))
 		plt.gcf().suptitle("Press 'n' to enter device name in console, press 'e' to add an electrode at crosshair, press 'h' for more options", fontsize=14)
 
 		plt.tight_layout()
@@ -214,7 +221,6 @@ class electrode_picker:
 			if event.key == 'n':
 				plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 				self.device_name = raw_input("Enter electrode name: ")
-				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name, fontsize=14)
 				#plt.gcf().canvas.draw()
 
 				# If the device name is not in the list
@@ -224,6 +230,8 @@ class electrode_picker:
 				else:
 					self.device_num = self.devices.index(self.device_name)
 				
+				plt.gcf().suptitle("Click on electrodes for device number %d, %s"%(self.device_num, self.device_name), fontsize=14)
+
 				# If the device name is not in the list, start with electrode 0, or
 				# load the electrode file if it exists and start with the next number
 				# electrode
@@ -450,15 +458,21 @@ class electrode_picker:
 		'''
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
 
-		# create a sphere centered around the current point
+		# create a sphere centered around the current point as a binary matrix
 		radius = 3
 		r2 = np.arange(-radius, radius+1)**2
 		dist2 = r2[:,None,None]+r2[:,None]+r2
 		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
 		bin_mat[bin_mat==0] = np.nan
-		bin_mat = bin_mat+self.device_num
+		# The sphere part of the binary matrix will have a value that
+		# increments with device number so that different devices
+		# wil show up in different colors
+		bin_mat = bin_mat+self.device_num-2
 		self.bin_mat = bin_mat
 		
+		# Set the electrode data volume for this bounding box (add the
+		# sphere to the electrode "volume" so it shows up in the brain
+		# plots)
 		self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
 
 		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
@@ -540,19 +554,21 @@ class electrode_picker:
 	def update_legend(self):
 		self.legend_handles = []
 		for i in self.devices:
-			cmap = cm.get_cmap('Set1')
+			QtCore.pyqtRemoveInputHook()
+			cmap = self.elec_colors
 			num = self.devices.index(i)
 			print("%s is number %d"%(i, num))
-			c = cmap((num+1)/10.)
+			c = cmap(num/17.)
 			#print("Color: ")
 			#print(c)
 			color_patch = mpatches.Patch(color=c, label=i)
 			self.legend_handles.append(color_patch)
 			plt.legend(handles=self.legend_handles, loc='upper right', fontsize='x-small')
 			#plt.legend(handles = [color_patch])
-			plt.show()
+			#plt.show()
 			
 if __name__ == '__main__':
 	app = QtGui.QApplication([])
-	app.setWindowIcon(QtGui.QIcon('icons/leftbrain.png'))
-	e = electrode_picker(subj_dir = '/Applications/freesurfer/subjects/EC121_test')
+	app.setWindowIcon(QtGui.QIcon(os.path.join('icons','leftbrain.png')))
+	subj_dir = sys.argv[1]
+	e = electrode_picker(subj_dir = subj_dir)
