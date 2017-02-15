@@ -456,17 +456,20 @@ class electrode_picker:
 		'''
 		Add an electrode at the current crosshair point. 
 		'''
-		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
 
-		# create a sphere centered around the current point as a binary matrix
+		# Make the current slice into an integer for indexing the volume
+		cs = np.round(self.current_slice).astype(np.int) 
+
+		# Create a sphere centered around the current point as a binary matrix
 		radius = 2
 		r2 = np.arange(-radius, radius+1)**2
 		dist2 = r2[:,None,None]+r2[:,None]+r2
 		bin_mat = np.array(dist2<=radius**2, dtype=np.float)
 		bin_mat[bin_mat==0] = np.nan
+		
 		# The sphere part of the binary matrix will have a value that
 		# increments with device number so that different devices
-		# wil show up in different colors
+		# will show up in different colors
 		bin_mat = bin_mat+self.device_num-2
 		self.bin_mat = bin_mat
 		
@@ -481,14 +484,17 @@ class electrode_picker:
 
 		# As displayed, these coordinates are LSP, and we want RAS,
 		# so we do that here
-
 		elec = self.slice_to_surfaceRAS()
 
+		# Find whether this device already exists and append to it if it does, or
+		# initialize a new one
 		if self.device_name not in self.elecmatrix:
 			# Initialize the electrode matrix
 			self.elecmatrix[self.device_name] = []
 		self.elecmatrix[self.device_name].append(elec)
 
+		# Add the electrode to the file (we wouldn't want to 
+		# do this if we are displaying previously clicked electrodes)
 		if add_to_file:
 			elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
 			scipy.io.savemat(elecfile, {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
@@ -554,21 +560,20 @@ class electrode_picker:
 		
 		return coord
 
-	def update_legend(self):
+	def update_legend(self, vmax=17.):
+		''' 
+		Update the legend with the electrode devices.
+		'''
 		self.legend_handles = []
 		for i in self.devices:
 			QtCore.pyqtRemoveInputHook()
 			cmap = self.elec_colors
 			num = self.devices.index(i)
-			print("%s is number %d"%(i, num))
-			c = cmap(num/17.)
-			#print("Color: ")
-			#print(c)
+			c = cmap(num/vmax)
 			color_patch = mpatches.Patch(color=c, label=i)
 			self.legend_handles.append(color_patch)
 			plt.legend(handles=self.legend_handles, loc='upper right', fontsize='x-small')
-			#plt.legend(handles = [color_patch])
-			#plt.show()
+
 			
 if __name__ == '__main__':
 	app = QtGui.QApplication([])
