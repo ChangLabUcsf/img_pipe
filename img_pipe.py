@@ -120,25 +120,29 @@ class freeCoG:
         '''
         Create smoothed dural surface for projecting electrodes to.
         '''
-
         # Create mask of pial surface
-        print("Creating mask of pial surface")
-        pial_surf = os.path.join(self.subj_dir, self.subj, 'surf', self.hem+'.pial')
-        pial_fill_image = os.path.join(self.subj_dir, self.subj, 'surf', self.hem+'.pial.filled.mgz')
-        if not os.path.isfile(pial_fill_image):
-            os.system('mris_fill -c -r 1 %s %s'%(pial_surf, pial_fill_image))
-        outfile = os.path.join(self.subj_dir, self.subj, 'surf', self.hem+'.pial.outer')
+        hems = ['lh', 'rh']
+        for hem in hems:
+            print("Creating mask of %s pial surface"%(hem))
+            pial_surf = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.pial')
+            pial_fill_image = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.pial.filled.mgz')
+            if not os.path.isfile(pial_fill_image):
+                os.system('mris_fill -c -r 1 %s %s'%(pial_surf, pial_fill_image))
+            outfile = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.pial.outer')
 
-        if os.path.isfile(pial_fill_image):
-            # Create outer surface of this pial surface
-            print("Creating outer surface for the filled pial surface %s"%(pial_fill_image))
-            make_outer_surf(pial_surf, pial_fill_image, radius, outfile) # this is from ielu
+            if os.path.isfile(pial_fill_image):
+                # Create outer surface of this pial surface
+                print("Creating outer surface for the filled pial surface %s"%(pial_fill_image))
+                make_outer_surf(pial_surf, pial_fill_image, radius, outfile) # this is from ielu
 
-            os.system('mris_extract_main_component %s %s-main'%(outfile, outfile))
-            os.system('mris_smooth -nw -n 30 %s-main %s-main-smoothed'%(outfile, outfile))
+                os.system('mris_extract_main_component %s %s-main'%(outfile, outfile))
+                dura_surf = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.dural')
+                os.system('mris_smooth -nw -n 30 %s-main %s'%(outfile, dura_surf))
 
-        else:
-            print("Failed to create %s, check inputs."%(pial_fill_image))
+            else:
+                print("Failed to create %s, check inputs."%(pial_fill_image))
+
+        self.convert_fsmesh2mlab(mesh_name = 'dural')
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
@@ -170,14 +174,9 @@ class freeCoG:
             out_file_struct = '%s/%s/Meshes/%s_%s_%s.mat' % (
                 self.subj_dir, self.subj, self.subj, h, mesh_name)
             scipy.io.savemat(out_file, {'tri': tri, 'vert': vert})
-            mlab.inputs.script = "load('%s'); \
-                   cortex = struct(); \
-                   cortex.tri = tri + 1; \
-                   cortex.vert = vert; \
-                   save('%s', 'cortex');" % (out_file, out_file_struct)
-            out = mlab.run()
-        return out
 
+            cortex = {'tri': tri+1, 'vert': vert}
+            scipy.io.savemat(out_file_struct, {'cortex': cortex})
   
     def reg_img(self, source, target):
         '''Runs nmi coregistration between two NIFTI images
@@ -403,15 +402,15 @@ class freeCoG:
                     'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
                     'lThirdVent', 'lFourthVent', 'lBrainStem']
 
-        subcort_dir = '%s/%s/Meshes/subcortical'%(self.subj_dir, self.subj)     
+        subcort_dir = os.path.join(self.subj_dir, self.subj, 'Meshes','subcortical')     
         if not os.path.isdir(subcort_dir):      
             print('Creating directory %s'%(subcort_dir))        
             os.mkdir(subcort_dir)
 
         print('::: Converting all ascii segmentations to matlab tri-vert :::')
         for i in range(len(subcort_list)):
-            subcort = subjAscii_dir + '/' + subcort_list[i]
-            nuc = subjcort_dir + '/' + nuc_list[i]
+            subcort = os.path.join(subjAscii_dir, subcort_list[i])
+            nuc = os.path.join(subcort_dir, nuc_list[i])
             self.subcortFs2mlab(subcort, nuc)
 
     def subcortFs2mlab(self, subcort, nuc):
@@ -501,14 +500,10 @@ class freeCoG:
         scipy.io.savemat('%s_subcort_inds.mat' %
                          (nuc), {'inds': subcort_inds})  # save inds
         
-        mlab = matlab.MatlabCommand() 
         out_file_struct = '%s_subcort.mat' % (nuc)
-        mlab.inputs.script = "load('%s'); \
-                   cortex = struct(); \
-                   cortex.tri = tri + 1; \
-                   cortex.vert = vert; \
-                   save('%s', 'cortex');" % (outfile, out_file_struct)
-        out = mlab.run()
+        
+        cortex = {'tri': tri+1, 'vert': vert}
+        scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
     def make_elecs_all(self):
         '''Interactively creates a .mat file with the montage and coordinates of 
@@ -532,7 +527,8 @@ class freeCoG:
                 long_name_prefix = raw_input('What is the long name prefix of the device?\n')
                 elec_type = raw_input('What is the type of the device?\n')
                 file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
-                elecmatrix = scipy.io.loadmat('%s/%s/elecs/individual_elecs/%s'%(self.subj_dir,self.subj,file_name))['elecmatrix']
+                indiv_file = os.path.join(self.subj_dir, self.subj, 'elecs','individual_elecs', file_name)
+                elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
                 num_elecs = elecmatrix.shape[0]
                 elecmatrix_all.append(elecmatrix)
                 short_names.extend([short_name_prefix+str(i) for i in range(1,num_elecs+1)])
@@ -547,15 +543,16 @@ class freeCoG:
         eleclabels[:,0] = short_names
         eleclabels[:,1] = long_names
         eleclabels[:,2] = elec_types
-        scipy.io.savemat('%s/%s/elecs/%s.mat'%(self.subj_dir,self.subj,outfile),{'eleclabels':eleclabels,'elecmatrix':elecmatrix_all})
+        label_outfile = os.path.join(self.subj_dir, self.subj, 'elecs', '%s.mat'%(outfile))
+        scipy.io.savemat(label_outfile,{'eleclabels':eleclabels,'elecmatrix':elecmatrix_all})
 
     def edit_elecs_all(self, revision_dict, elecfile_prefix='TDT_elecs_all'):
         '''Edit the anatomy matrix of the elecfile_prefix. 
         In each entry of the revision_dict, the key is the anatomical label you'd like to impose on the value, which is a list of 0-indexed electrode numbers.
         For example, edit_elecs_all({'superiortemporal':[3,4,5],'precentral':[23,25,36]}).
         '''
-
-        elecs_all = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir,self.subj,elecfile_prefix))
+        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecs_all = scipy.io.loadmat(elecfile)
         anatomy = elecs_all['anatomy']
         for k,v in revision_dict.items():
             if self.zero_indexed_electrodes is False:
@@ -563,7 +560,7 @@ class freeCoG:
             for elec_num in v:
                 anatomy[elec_num,3] = k
         elecs_all['anatomy'] = anatomy
-        scipy.io.savemat('%s/%s/elecs/%s.mat'%(self.subj_dir,self.subj,elecfile_prefix),elecs_all)
+        scipy.io.savemat(elecfile, elecs_all)
 
     def nearest_electrode_vert(self, cortex_verts, elecmatrix):
         ''' Find the vertex on a mesh that is closest to the given electrode
@@ -600,7 +597,7 @@ class freeCoG:
 
         print self.subj_dir
         print('Creating labels from the freesurfer annotation file for use in automated electrode labeling')
-        gyri_labels_dir = self.subj_dir + '/' + self.subj + '/label/gyri'
+        gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
         if not os.path.isdir(gyri_labels_dir):
             os.mkdir(gyri_labels_dir)
          
@@ -608,14 +605,15 @@ class freeCoG:
         # atlas_surf is 'destrieux', in which case the more detailed labels are used
         os.system('mri_annotation2label --subject %s --hemi %s --surface pial %s --outdir %s'%(self.subj, self.hem, surf_atlas_flag, gyri_labels_dir))
         print('Loading electrode matrix')
-        elecmatrix = scipy.io.loadmat('%s/%s/elecs/%s'%(self.subj_dir, self.subj, elecfile_prefix))['elecmatrix']
+        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecmatrix = scipy.io.loadmat(elecfile)['elecmatrix']
         
         # Initialize empty variable for indices of grid and strip electrodes
         isnotdepth = []
         
         # Choose only the surface or grid electrodes (if not using hd_grid.mat)
         if elecfile_prefix == 'TDT_elecs_all' or elecfile_prefix == 'clinical_elecs_all':
-            elecmontage = scipy.io.loadmat('%s/%s/elecs/%s'%(self.subj_dir, self.subj, elecfile_prefix))['eleclabels']
+            elecmontage = scipy.io.loadmat(elecfile)['eleclabels']
             # Make the cell array into something more usable by python
             short_label = []
             long_label = []
@@ -655,7 +653,7 @@ class freeCoG:
             isnotdepth = np.array([r!='depth' for r in grid_or_depth])
             
         # Use the surface label files to get which label goes with each surface vertex
-        label_files = glob.glob('%s/%s.*.label'%(gyri_labels_dir, self.hem))
+        label_files = glob.glob(os.path.join(gyri_labels_dir, '%s.*.label'%(self.hem)))
         vert_label = {}
         for label in label_files:
             label_name = label.split('.')[1]
@@ -668,7 +666,8 @@ class freeCoG:
                 vert_label[np.int(v)] = label_name.strip()
             fid.close()
 
-        cortex_verts = scipy.io.loadmat('%s/%s/Meshes/%s_pial_trivert.mat'%(self.subj_dir, self.subj, self.hem))['vert']
+        trivert_file = os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_pial_trivert.mat'%(self.hem))
+        cortex_verts = scipy.io.loadmat(trivert_file)['vert']
 
         # Only use electrodes that are grid or strips
         if len(isnotdepth)>0:
@@ -714,7 +713,8 @@ class freeCoG:
             else:
                 depth_atlas_nm = '.a2009s'
 
-            dat = nib.freesurfer.load('%s/%s/mri/aparc%s+aseg.mgz'%(self.subj_dir, self.subj, depth_atlas_nm))
+            aseg_file = os.path.join(self.subj_dir, self.subj, 'mri', 'aparc%s+aseg.mgz'%(depth_atlas_nm))
+            dat = nib.freesurfer.load(aseg_file)
             aparc_dat = dat.get_data()
              
             # Define the affine transform to go from surface coordinates to volume coordinates (as CRS, which is
@@ -738,7 +738,7 @@ class freeCoG:
 
             # Get the names of these labels using Freesurfer's lookup table (LUT)
             print("Loading lookup table for freesurfer labels")
-            fid = open('%s/FreeSurferColorLUT.txt'%(self.fs_dir))
+            fid = open(os.path.join(self.fs_dir,'FreeSurferColorLUT.txt'))
             LUT = fid.readlines()
             fid.close()
 
