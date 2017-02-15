@@ -200,8 +200,6 @@ class electrode_picker:
 
 		# Transform coordinates to figure coordinates
 		fxy = self.fig.transFigure.inverted().transform((event.x, event.y))
-		#print event.x, event.y
-		#print self.current_slice
 
 		slice_num = []
 		if bb1.contains(fxy[0],fxy[1]):
@@ -338,6 +336,8 @@ class electrode_picker:
 		xstep = event.step*stepsz
 		ystep = event.step*stepsz
 
+		# This was some stuff to try and zoom to the crosshair point as the
+		# center... but it doesn't work
 		if x > xlims[0] and x < xlims[1]:
 			xratio = np.abs(xlims[1]-x)/np.abs(xlims[0]-x)
 		else:
@@ -347,6 +347,8 @@ class electrode_picker:
 		else:
 			yratio = 0.5
 
+		# For now I'm just setting the center as the middle of the plot since
+		# the above code block doesn't work
 		xratio = 0.5
 		yratio = 0.5
 
@@ -410,32 +412,43 @@ class electrode_picker:
 	def update_figure_data(self):
 		'''
 		Updates all four subplots based on the crosshair position (self.current_slice)
+		The subplots (in order) are the sagittal view, coronal view, and axial view,
+		followed by the maximum intensity projection of the CT scan (in the user
+		specified view, which is sagittal by default)
 		'''
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
 		self.im[0].set_data(self.img_data[cs[0],:,:].T)
 		self.im[1].set_data(self.img_data[:,cs[1],:].T)
 		self.im[2].set_data(self.img_data[:,:,cs[2]].T)
 
+		# Show the maximum intensity projection for +/- 15 slices
+		# Sagittal view
 		if self.ct_slice == 's':
 			self.im[3].set_data(np.nanmax(self.ct_data[cs[0]-15:cs[0]+15,:,:], axis=0).T)
+		# Coronal view
 		elif self.ct_slice == 'c':
 			self.im[3].set_data(np.nanmax(self.ct_data[:,cs[1]-15:cs[1]+15,:], axis=1).T)
+		# Axial view
 		elif self.ct_slice == 'a':
 			self.im[3].set_data(np.nanmax(self.ct_data[:,:,cs[2]-15:cs[2]+15], axis=2).T)
 
-
+		# Show the CT data in the sagittal, coronal, and axial views
 		self.ct_im[0].set_data(self.ct_data[cs[0],:,:].T)
 		self.ct_im[1].set_data(self.ct_data[:,cs[1],:].T)
 		self.ct_im[2].set_data(self.ct_data[:,:,cs[2]].T)
 
+		# Show the electrode volume data in the sagittal, coronal, and axial views
 		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
 		self.elec_im[1].set_data(self.elec_data[:,cs[1],:].T)
 		self.elec_im[2].set_data(self.elec_data[:,:,cs[2]].T)
+
+		# Slow the electrodes on the maximum intensity projection, 
+		# make sure the correct slices are shown based on which orientation
+		# we're using
 		if self.ct_slice == 's':
 			self.elec_im[3].set_data(self.elec_data[cs[0],:,:].T)
 			self.cursor[3][0].set_xdata ([self.current_slice[1], self.current_slice[1]]) 
 			self.cursor2[3][0].set_ydata([self.current_slice[2], self.current_slice[2]])
-
 		elif self.ct_slice == 'c':
 			self.elec_im[3].set_data(self.elec_data[:,cs[1],:].T)
 			self.cursor[3][0].set_xdata ([self.current_slice[0], self.current_slice[0]]) 
@@ -445,6 +458,7 @@ class electrode_picker:
 			self.cursor[3][0].set_xdata ([self.current_slice[0], self.current_slice[0]]) 
 			self.cursor2[3][0].set_ydata([self.current_slice[1], self.current_slice[1]])
 
+		# Set the crosshairs for the sagittal (0), coronal (1), and axial (2) views
 		self.cursor[0][0].set_xdata ([self.current_slice[1], self.current_slice[1]]) 
 		self.cursor2[0][0].set_ydata([self.current_slice[2], self.current_slice[2]])
 		self.cursor[1][0].set_xdata ([self.current_slice[0], self.current_slice[0]])
