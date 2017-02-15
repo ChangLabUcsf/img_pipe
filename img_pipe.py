@@ -101,7 +101,7 @@ class freeCoG:
         T1_mgz = os.path.join(orig_dir, '001.mgz')
         os.system('mri_convert %s %s'%(T1_file2, T1_mgz))
 
-    def get_recon(self, flag_T3 = '-3T', openmp_flag='-openmp 12', gpu_flag='-use-gpu'):        
+    def get_recon(self, flag_T3 = '-3T', openmp_flag='-openmp 12', gpu_flag=''):        
         '''Runs freesurfer recon-all for surface reconstruction.                
         Use flag_T3 = '-3T' if using scans from a 3T scanner, otherwise set flag_T3=''             
         openmp_flag = '-openmp 12' uses 12 cores and multithreading         
