@@ -8,7 +8,8 @@ import numpy as np
 import nibabel as nib
 import scipy.ndimage
 import sys
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
+import matplotlib.patches as mpatches
 import scipy.io
 import os
 
@@ -76,6 +77,9 @@ class electrode_picker:
 		self.current_slice = np.array([self.imsz[0]/2, self.imsz[1]/2, self.imsz[2]/2], dtype=np.float)
 		
 		self.fig=plt.figure(figsize=(12,10))
+		#thismanager = plt.get_current_fig_manager()
+		#thismanager.window.setWindowIcon(QtGui.QIcon('/Users/liberty/Downloads/leftbrain_DyBkFr.ico'))
+		
 		self.im = []
 		self.ct_im = []
 		self.elec_im = []
@@ -210,6 +214,7 @@ class electrode_picker:
 				plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 				self.device_name = raw_input("Enter electrode name: ")
 				plt.gcf().suptitle("Click on electrodes for %s"%self.device_name, fontsize=14)
+				self.update_legend()
 				#plt.gcf().canvas.draw()
 
 				# If the device name is not in the list
@@ -531,5 +536,16 @@ class electrode_picker:
 		
 		return coord
 
+	def update_legend(self):
+		for i in self.devices:
+			cmap = matplotlib.cm.get_cmap('Set1')
+			c = cmap(i/10.)
+			color_patch = mpatches.Patch(color=c, label=i)
+			handles.append(color_patch)
+			plt.legend(handles=handles)
+			plt.show()
+			
 if __name__ == '__main__':
-    e = electrode_picker(subj_dir = '/Applications/freesurfer/subjects/EC121_test')
+	app = QtGui.QApplication([])
+	app.setWindowIcon(QtGui.QIcon('icons/leftbrain.png'))
+	e = electrode_picker(subj_dir = '/Applications/freesurfer/subjects/EC121_test')
