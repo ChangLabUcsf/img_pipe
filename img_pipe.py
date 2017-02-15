@@ -74,11 +74,10 @@ class freeCoG:
 
         # navigate to directory with subject freesurfer folders           
         # and make a new folder for the patient
-        os.chdir(self.subj_dir)
+
         if not os.path.isdir(os.path.join(self.subj_dir, self.subj)):
             print("Making subject directory")
             os.mkdir(self.subj)
-        os.chdir(self.subj)
 
         # create elecs folders
         if not os.path.isdir(self.elecs_dir):
@@ -86,19 +85,21 @@ class freeCoG:
             os.mkdir(self.elecs_dir)
 
         # create mri and orig folders
-        if not os.path.isdir(self.subj_dir + '/' + self.subj + '/mri'):
-            os.mkdir('mri')
-        os.chdir('mri')
+        mri_dir = os.path.join(self.subj_dir, self.subj, 'mri')
+        if not os.path.isdir(mri_dir):
+            os.mkdir(mri_dir)
 
-        if not os.path.isdir(self.subj_dir + '/' + self.subj + '/mri/orig'):
-            os.mkdir('orig')
-        os.chdir('orig')
+        orig_dir = os.path.join(self.subj_dir, self.subj, 'mri', 'orig')
+        if not os.path.isdir(orig_dir):
+            os.mkdir(orig_dir)
 
-        # CHANGE FOR WINDOWS COMPATABILITY
-        os.system('cp %s/%s/acpc/T1.nii .' % (self.subj_dir, self.subj))
+        T1_file = os.path.join(self.subj_dir, self.subj, 'acpc', 'T1.nii')
+        os.system('cp %s %s' %(T1_file, orig_dir))
 
         # convert T1 to freesurfer 001.mgz format
-        os.system('mri_convert T1.nii 001.mgz')
+        T1_file2 = os.path.join(orig_dir, 'T1.nii')
+        T1_mgz = os.path.join(orig_dir, '001.mgz')
+        os.system('mri_convert %s %s'%(T1_file2, T1_mgz))
 
     def get_recon(self, flag_T3 = '-3T', openmp_flag='-openmp 12', gpu_flag='-use-gpu'):        
         '''Runs freesurfer recon-all for surface reconstruction.                
@@ -766,7 +767,7 @@ class freeCoG:
         elec_labels_orig[indices_to_use,3] = elec_labels[:,3] 
         
         print('Saving electrode labels to %s'%(elecfile_prefix))
-        scipy.io.savemat('%s/%s/elecs/%s'%(self.subj_dir, self.subj, elecfile_prefix), {'elecmatrix': elecmatrix_orig, 'anatomy': elec_labels_orig, 'eleclabels': elecmontage})
+        scipy.io.savemat(os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat'), {'elecmatrix': elecmatrix_orig, 'anatomy': elec_labels_orig, 'eleclabels': elecmontage})
 
         return elec_labels
 
@@ -779,22 +780,28 @@ class freeCoG:
         '''
 
         print "Using %s as the template for warps" %(template)
-        orig_elecs = scipy.io.loadmat(self.subj_dir+'/'+self.subj+'/elecs/'+elecfile_prefix+'.mat')
+        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        orig_elecs = scipy.io.loadmat(elecfile)
 
         if 'depth' in orig_elecs['anatomy'][:,2] and warp_depths:
             self.get_cvsWarp(template)
             self.apply_cvsWarp(elecfile_prefix,template)
-            depth_warps = scipy.io.loadmat(self.subj_dir+'/'+self.subj+'/elecs/'+elecfile_prefix+'_nearest_warped.mat')
+            elecfile_nearest_warped = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_nearest_warped.mat')
+            elecfile_nearest_warped_text = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_nearest_warped.txt')
+            depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
             depth_indices = np.where(orig_elecs['anatomy'][:,2]=='depth')[0]
             orig_elecs['elecmatrix'][depth_indices] = depth_warps['elecmatrix']
             self.check_depth_warps(elecfile_prefix,template)
+        
         if warp_surface:
             self.get_surface_warp(elecfile_prefix,template)
-            surface_warps = scipy.io.loadmat(self.subj_dir+'/'+self.subj+'/elecs/'+elecfile_prefix+'_surface_warped.mat')
+            elecfile_surface_warped = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_surface_warped.mat')
+            surface_warps = scipy.io.loadmat(elecfile_surface_warped)
             surface_indices = np.where(orig_elecs['anatomy'][:,2]!='depth')[0]
             orig_elecs['elecmatrix'][surface_indices] = surface_warps['elecmatrix']
 
-        scipy.io.savemat(self.subj_dir+'/'+self.subj+'/'+'elecs/'+elecfile_prefix+'_warped.mat',{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
+        elecsfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'_warped.mat')
+        scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
         #create pdf for visual inspection of the original elecs vs the warps
         mlab = matlab.MatlabCommand()
@@ -802,11 +809,12 @@ class freeCoG:
                               plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
         out = mlab.run()
 
-        patient_elecs_dir = self.subj_dir+'/'+self.subj+'/elecs/'
-        os.system('mv %s/%s_surface_warped.mat %s/preproc;' %(patient_elecs_dir,elecfile_prefix,patient_elecs_dir))
+        patient_elecs_dir = os.path.join(self.subj_dir, self.subj, 'elecs')
+        preproc_dir = os.path.join(self.subj_dir, self.subj, 'elecs', 'preproc')
+        os.system('mv %s %s/preproc;' %(elecfile_surface_warped, patient_elecs_dir))
         if warp_depths:
-            os.system('mv %s/%s_nearest_warped.mat %s/preproc; mv %s/%s_nearest_warped.txt %s/preproc;'\
-                %(patient_elecs_dir,elecfile_prefix,patient_elecs_dir,patient_elecs_dir,elecfile_prefix,patient_elecs_dir,patient_elecs_dir,elecfile_prefix,patient_elecs_dir))
+            os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
+            os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
 
     def get_cvsWarp(self,template='cvs_avg35_inMNI152'):
         '''Method for obtaining freesurfer mni coords using mri_cvs_normalize'''
@@ -826,8 +834,8 @@ class freeCoG:
         fsVox2RAS = np.array(
             [[-1., 0., 0., 128.], [0., 0., 1., -128.], [0., -1., 0., 128.], [0., 0., 0., 1.]])
 
-        elecs = scipy.io.loadmat(
-            self.subj_dir + '/' + self.subj + '/elecs/' + elecfile_prefix + '.mat')
+        elecfile = os.path.join(self.subj_dir, self.subj, 'elecs', elecfile_prefix+'.mat')
+        elecs = scipy.io.loadmat(elecfile)
         anatomy = elecs.get('anatomy')
         depth_indices = np.where(anatomy[:,2]=='depth')[0]
         elec = elecs.get('elecmatrix')[depth_indices,:]
