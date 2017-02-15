@@ -237,7 +237,7 @@ class electrode_picker:
 				# electrode
 				if self.device_name not in self.elec_num:
 					self.elec_num[self.device_name] = 0
-					elecfile = '%s/elecs/%s.mat'%(self.subj_dir, self.device_name)
+					elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
 					if os.path.isfile(elecfile):
 						emat = scipy.io.loadmat(elecfile)['elecmatrix']
 						self.elecmatrix[self.device_name] = list(emat)
@@ -490,7 +490,8 @@ class electrode_picker:
 		self.elecmatrix[self.device_name].append(elec)
 
 		if add_to_file:
-			scipy.io.savemat('%s/elecs/%s.mat'%(self.subj_dir, self.device_name), {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
+			elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
+			scipy.io.savemat(elecfile, {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
 
 		plt.gcf().suptitle('%s e%d surface RAS = [%3.3f, %3.3f, %3.3f]'%(self.device_name, self.elec_num[self.device_name], elec[0], elec[1], elec[2]), fontsize=14)
 		
@@ -504,15 +505,17 @@ class electrode_picker:
 		'''
 		cs = self.current_slice
 		if self.bin_mat != '':
-			bin_mat = self.bin_mat+np.nan
 			self.bin_mat = ''
 			
 			# Remove the electrode from elecmatrix
 			self.elecmatrix[self.device_name].pop()
 
-			scipy.io.savemat('%s/elecs/%s.mat'%(self.subj_dir, self.device_name), {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
+			# Save the electrode matrix
+			elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
+			scipy.io.savemat(elecfile, {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
 
-			self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = bin_mat
+			# Remove the electrode from the volume display
+			self.elec_data[cs[0]-radius:cs[0]+radius+1, cs[1]-radius:cs[1]+radius+1, cs[2]-radius:cs[2]+radius+1] = np.nan
 
 			self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
 			self.elec_im[0].set_data(self.elec_data[:,cs[1],:].T)
