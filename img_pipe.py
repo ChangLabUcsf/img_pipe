@@ -62,10 +62,10 @@ class freeCoG:
         matlab.MatlabCommand.set_default_paths(spm_path) 
 
         # CT_dir: dir for CT img data
-        self.CT_dir = self.subj_dir + '/' + self.subj + '/CT/'
+        self.CT_dir = os.path.join(self.subj_dir, self.subj, 'CT')
 
         # elecs_dir: dir for elecs coordinates
-        self.elecs_dir = subj_dir + '/' + self.subj + '/elecs/'
+        self.elecs_dir = os.path.join(self.subj_dir, self.subj, 'elecs')
 
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
@@ -74,7 +74,7 @@ class freeCoG:
         # navigate to directory with subject freesurfer folders           
         # and make a new folder for the patient
         os.chdir(self.subj_dir)
-        if not os.path.isdir(self.subj_dir + '/' + self.subj):
+        if not os.path.isdir(os.path.join(self.subj_dir, self.subj)):
             print("Making subject directory")
             os.mkdir(self.subj)
         os.chdir(self.subj)
@@ -93,6 +93,7 @@ class freeCoG:
             os.mkdir('orig')
         os.chdir('orig')
 
+        # CHANGE FOR WINDOWS COMPATABILITY
         os.system('cp %s/%s/acpc/T1.nii .' % (self.subj_dir, self.subj))
 
         # convert T1 to freesurfer 001.mgz format
