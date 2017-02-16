@@ -294,10 +294,10 @@ class electrode_picker:
 					else:
 						sgn = 1
 					xlims = this_ax.get_xlim()
-					this_ax.set_xlim([xlims[0]+1*sgn, xlims[1]+1*sgn])
+					this_ax.set_xlim(xlims[0]+1*sgn, xlims[1]+1*sgn)
 
 			# Draw the figure
-			self.update_figure_data()
+			self.update_figure_data(ax_clicked=slice_num)
 			plt.gcf().canvas.draw()
 
 	def on_scroll(self, event):
@@ -381,16 +381,19 @@ class electrode_picker:
 		if bb1.contains(fxy[0],fxy[1]):
 			self.current_slice[1] = event.xdata
 			self.current_slice[2] = event.ydata
+			ax_num = 0
 			
 		# If you clicked the second subplot
 		elif bb2.contains(fxy[0],fxy[1]):
 			self.current_slice[0] = event.xdata
 			self.current_slice[2] = event.ydata
+			ax_num = 1
 
 		# If you clicked the third subplot
 		elif bb3.contains(fxy[0],fxy[1]):
 			self.current_slice[0] = event.xdata
 			self.current_slice[1] = event.ydata
+			ax_num = 2
 
 		# If you clicked the third subplot
 		elif bb4.contains(fxy[0],fxy[1]):
@@ -403,13 +406,14 @@ class electrode_picker:
 			elif self.ct_slice == 'a':
 				self.current_slice[0] = event.xdata
 				self.current_slice[1] = event.ydata
-		
-		self.update_figure_data()
+			ax_num = 3
+
+		self.update_figure_data(ax_clicked=ax_num)
 
 		#print("Current slice: %3.2f %3.2f %3.2f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
 		plt.gcf().canvas.draw()
 
-	def update_figure_data(self):
+	def update_figure_data(self, ax_clicked=None):
 		'''
 		Updates all four subplots based on the crosshair position (self.current_slice)
 		The subplots (in order) are the sagittal view, coronal view, and axial view,
@@ -465,6 +469,20 @@ class electrode_picker:
 		self.cursor2[1][0].set_ydata([self.current_slice[2], self.current_slice[2]])
 		self.cursor[2][0].set_xdata ([self.current_slice[0], self.current_slice[0]])
 		self.cursor2[2][0].set_ydata([self.current_slice[1], self.current_slice[1]])
+
+		# Re-center the plots at the crosshair location
+		for a in np.arange(4):
+			if a!=ax_clicked:
+				xlims = self.ax[a].get_xlim()
+				xax_range = xlims[1]-xlims[0]
+				ylims = self.ax[a].get_ylim()
+				yax_range = ylims[1]-ylims[0]
+				center_pt_x = self.cursor[a][0].get_xdata()[0]
+				center_pt_y = self.cursor2[a][0].get_ydata()[0]
+				self.ax[a].set_xlim(center_pt_x - xax_range/2., center_pt_x + xax_range/2.)
+				self.ax[a].set_ylim(center_pt_y - yax_range/2., center_pt_y + yax_range/2.)
+				self.cursor[a][0].set_ydata ([self.ax[a].get_ylim()]) 
+				self.cursor2[a][0].set_xdata([self.ax[a].get_xlim()])
 
 	def add_electrode(self, add_to_file = True):
 		'''
