@@ -12,7 +12,7 @@ This assumes that you have processed your data using freesurfer's pipeline
 and that you have a coregistered MRI and CT in subj_dir (e.g. '/usr/local/freesurfer/subjects/S1')
 as [subj_dir]/mri/brain.mgz and [subj_dir]/CT/rCT.nii
 
-Written by Liberty Hamilton, 2016
+Written by Liberty Hamilton, 2017
 
 '''
 import matplotlib
