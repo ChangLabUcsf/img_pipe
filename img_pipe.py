@@ -53,10 +53,13 @@ class freeCoG:
     '''
 
     def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_path = os.environ['SPM_PATH'],):
-        '''subj: patient name (i.e. 'SUBJ_25')
+        '''
+        subj: patient name (i.e. 'SUBJ_25')
         hem: patient hem of implantation ('lh' or 'rh')
         subj_dir: freesurfer subjects dir where you run img_pipe i.e. '/data_store2/imaging/subjects/'              
-        fs_dir: the freesurfer executable directory (default: '/Applications/freesurfer')'''
+        fs_dir: the freesurfer executable directory (default: '/Applications/freesurfer')
+        '''
+        
         self.subj = subj
         self.subj_dir = subj_dir
         self.hem = hem
