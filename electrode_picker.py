@@ -488,6 +488,8 @@ class electrode_picker:
 
 		# Re-center the plots at the crosshair location
 		for a in np.arange(4):
+			# Only re-center plots that you didn't click on (since it's annoying
+			# when the plot that you just clicked moves...)
 			if a!=ax_clicked:
 				xlims = self.ax[a].get_xlim()
 				xax_range = xlims[1]-xlims[0]
