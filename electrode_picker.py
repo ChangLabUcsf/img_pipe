@@ -508,12 +508,18 @@ class electrode_picker:
 			self.cursor2[3][0].set_ydata([self.current_slice[1], self.current_slice[1]])
 
 		# Set the crosshairs for the sagittal (0), coronal (1), and axial (2) views
-		self.cursor[0][0].set_xdata ([self.current_slice[1], self.current_slice[1]]) 
+		self.cursor[0][0].set_xdata ([self.current_slice[1], self.current_slice[1]])
+		self.cursor[0][0].set_ydata ([self.ax[0].get_ylim()])
 		self.cursor2[0][0].set_ydata([self.current_slice[2], self.current_slice[2]])
+		self.cursor2[0][0].set_xdata ([self.ax[0].get_xlim()])
 		self.cursor[1][0].set_xdata ([self.current_slice[0], self.current_slice[0]])
+		self.cursor[1][0].set_ydata ([self.ax[1].get_ylim()])
 		self.cursor2[1][0].set_ydata([self.current_slice[2], self.current_slice[2]])
+		self.cursor2[1][0].set_xdata ([self.ax[1].get_xlim()])
 		self.cursor[2][0].set_xdata ([self.current_slice[0], self.current_slice[0]])
+		self.cursor[2][0].set_ydata ([self.ax[2].get_ylim()])
 		self.cursor2[2][0].set_ydata([self.current_slice[1], self.current_slice[1]])
+		self.cursor2[2][0].set_xdata ([self.ax[2].get_xlim()])
 
 		# Re-center the plots at the crosshair location
 		for a in np.arange(4):
