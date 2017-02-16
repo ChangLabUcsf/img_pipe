@@ -117,8 +117,9 @@ class electrode_picker:
 		self.current_slice = np.array([self.imsz[0]/2, self.imsz[1]/2, self.imsz[2]/2], dtype=np.float)
 		
 		self.fig=plt.figure(figsize=(12,10))
-		#thismanager = plt.get_current_fig_manager()
-		#thismanager.window.setWindowIcon(QtGui.QIcon('/Users/liberty/Downloads/leftbrain_DyBkFr.ico'))
+		self.fig.canvas.set_window_title('Electrode Picker')
+		thismanager = plt.get_current_fig_manager()
+		thismanager.window.setWindowIcon(QtGui.QIcon((os.path.join('icons','leftbrain_blackbg.png'))))
 		
 		self.im = []
 		self.ct_im = []
@@ -265,6 +266,7 @@ class electrode_picker:
 		if event.key == 'n':
 			plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 			self.device_name = raw_input("Enter electrode name: ")
+			plt.get_current_fig_manager().window.raise_()
 			#plt.gcf().canvas.draw()
 
 			# If the device name is not in the list
