@@ -41,7 +41,7 @@ cc = jet(size(elecmatrix_src,1));
 
 % Plot the electrodes before projecting atlas electrodes to the convex hull
 % and before averaging across multiple voxels in the same electrode label
-figure(1,'visible','off');
+figure('visible','off');
 subplot(1,2,1);
 ctmr_gauss_plot(cortex_src, [0 0 0], 0, hem);
 title('Native space');
@@ -80,7 +80,7 @@ debug_plot=0;
 
 [elecmatrix_targ_chull] = project_electrodes_anydirection(cortex_targ, elecmatrix_targ_mean, proj_direction, debug_plot);
 
-figure(2,'visible','off');
+figure('visible','off');
 subplot(1,2,1);
 ctmr_gauss_plot(cortex_src, [0 0 0], 0, hem);
 title('Native space');
