@@ -19,6 +19,9 @@ import matplotlib
 matplotlib.use('Qt4Agg') 
 from matplotlib import pyplot as plt
 plt.rcParams['keymap.save'] = '' # Unbind 's' key saving
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['Helvetica','Verdana','Bitstream Vera Sans','sans-serif']
+
 from matplotlib import cm
 import matplotlib.colors as mcolors
 import numpy as np
@@ -348,7 +351,7 @@ class electrode_picker:
 	def on_scroll(self, event):
 		''' Use mouse scroll wheel to zoom.  Scroll down zooms in, scroll up zooms out.
 		'''
-		stepsz = 10.
+		stepsz = 5.
 
 		xstep = event.step*stepsz
 		ystep = event.step*stepsz
