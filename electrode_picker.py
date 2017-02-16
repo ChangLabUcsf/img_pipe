@@ -32,6 +32,11 @@ from PyQt4 import QtCore, QtGui
 import matplotlib.patches as mpatches
 import scipy.io
 import os
+import warnings
+
+warnings.filterwarnings('ignore')
+#with warnings.catch_warnings():
+#    warnings.filterwarnings('ignore', r'All-NaN slice encountered')
 
 class electrode_picker:
 	'''
@@ -265,9 +270,10 @@ class electrode_picker:
 
 		if event.key == 'n':
 			plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
+			plt.gcf().canvas.draw()
+
 			self.device_name = raw_input("Enter electrode name: ")
 			plt.get_current_fig_manager().window.raise_()
-			#plt.gcf().canvas.draw()
 
 			# If the device name is not in the list
 			if self.device_name not in self.devices:
@@ -277,6 +283,7 @@ class electrode_picker:
 				self.device_num = self.devices.index(self.device_name)
 			
 			plt.gcf().suptitle("Click on electrodes for device number %d, %s"%(self.device_num, self.device_name), fontsize=14)
+			plt.gcf().canvas.draw()
 
 			# If the device name is not in the list, start with electrode 0, or
 			# load the electrode file if it exists and start with the next number
