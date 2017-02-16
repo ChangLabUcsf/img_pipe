@@ -349,56 +349,18 @@ class electrode_picker:
 		''' Use mouse scroll wheel to zoom.  Scroll down zooms in, scroll up zooms out.
 		'''
 		stepsz = 10.
-		bb1=self.ax[0].get_position()
-		bb2=self.ax[1].get_position()
-		bb3=self.ax[2].get_position()
-		bb4=self.ax[3].get_position()
-
-		# Transform coordinates to figure coordinates
-		fxy = self.fig.transFigure.inverted().transform((event.x, event.y))
-		
-		# Find which subplot had the mouse focus
-		if bb1.contains(fxy[0],fxy[1]):
-			this_ax = self.ax[0]
-			x = self.current_slice[1]
-			y = self.current_slice[2]
-		if bb2.contains(fxy[0],fxy[1]):
-			this_ax = self.ax[1]
-			x = self.current_slice[0]
-			y = self.current_slice[2]
-		if bb3.contains(fxy[0],fxy[1]):
-			this_ax = self.ax[2]
-			x = self.current_slice[0]
-			y = self.current_slice[1]
-		if bb4.contains(fxy[0],fxy[1]):
-			this_ax = self.ax[3]
-			x = self.current_slice[1]
-			y = self.current_slice[2]
-
-		xlims = this_ax.get_xlim()
-		ylims = this_ax.get_ylim()
 
 		xstep = event.step*stepsz
 		ystep = event.step*stepsz
 
-		# This was some stuff to try and zoom to the crosshair point as the
-		# center... but it doesn't work
-		if x > xlims[0] and x < xlims[1]:
-			xratio = np.abs(xlims[1]-x)/np.abs(xlims[0]-x)
-		else:
-			xratio = 0.5
-		if y > ylims[0] and y < ylims[1]:
-			yratio = np.abs(ylims[1]-y)/np.abs(ylims[0]-y)
-		else:
-			yratio = 0.5
-
-		# For now I'm just setting the center as the middle of the plot since
-		# the above code block doesn't work
-		xratio = 0.5
-		yratio = 0.5
-
-		this_ax.set_xlim(xlims[0]+xstep*2*(1-xratio), xlims[1] - xstep*2*(xratio))
-		this_ax.set_ylim(ylims[0]+ystep*2*(1-yratio), ylims[1] - ystep*2*(yratio))
+		for a in np.arange(4):
+			this_ax = self.ax[a]
+			xlims = this_ax.get_xlim()
+			ylims = this_ax.get_ylim()
+			this_ax.set_xlim(xlims[0]+xstep, xlims[1] - xstep)
+			this_ax.set_ylim(ylims[0]+ystep, ylims[1] - ystep)
+			self.cursor[a][0].set_ydata ([self.ax[a].get_ylim()]) 
+			self.cursor2[a][0].set_xdata([self.ax[a].get_xlim()])
 
 		plt.gcf().canvas.draw()
 
