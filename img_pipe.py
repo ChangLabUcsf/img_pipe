@@ -192,11 +192,12 @@ class freeCoG:
         from nipype.interfaces import spm
 
         # Convert the orig.mgz to nii
-        if not os.path.isfile("{0}/{1}/mri/orig.nii".format(self.subj_dir, self.subj)):
-            os.system("mri_convert -i {0}/{1}/mri/orig.mgz -o {2}/{3}/mri/orig.nii".format(
-                self.subj_dir, self.subj, self.subj_dir, self.subj))
+        orig_file = os.path.join(self.mri_dir, 'orig.nii')
+        orig_file_mgz = os.path.join(self.mri_dir, 'orig.mgz')
+        if not os.path.isfile(orig_file):
+            os.system("mri_convert -i %s -o %s"%(orig_file_mgz, orig_file))
         else:
-            print('%s/%s/mri/orig.nii already exists. Not converting'%(self.subj_dir, self.subj))
+            print('%s already exists. Not converting'%(orig_file))
 
         # create instance of spm.Coregister to run mutual information
         # registration between source and target img
@@ -272,7 +273,8 @@ class freeCoG:
         Projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT.'''
 
-        elec_corners = scipy.io.loadmat('%s/%s/elecs/%s_corners.mat'%(self.subj_dir,self.subj,grid_basename))['elecmatrix']
+        corners_file = os.path.join(self.elecs_dir, grid_basename+'_corners.mat')
+        elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
 
         if use_mean_normal:
             #the corners draw out a 'rectangle', each side is a grid vector
@@ -311,7 +313,7 @@ class freeCoG:
         #if the grid is placed on the OFC, should create an ROI mesh with only frontal areas 
         roi = ''
         if grid_basename == 'OFC_grid':
-            gyri_labels_dir = self.subj_dir + '/' + self.subj + '/label/gyri'
+            gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
             if not os.path.isdir(gyri_labels_dir):
                 os.mkdir(gyri_labels_dir)
                 # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
@@ -866,20 +868,20 @@ class freeCoG:
         nan_elecs = np.isnan(elec)
         elec = np.nan_to_num(elec)
 
-        np.savetxt(self.subj_dir + '/' + self.subj + '/elecs/' + elecfile_prefix + '_RAS.txt',
-                   elec,
-                   fmt='%1.2f\t%1.2f\t%1.2f',
-                   delimiter='\t')
+        RAS_text_file = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
+        np.savetxt(RAS_text_file, elec, fmt='%1.2f\t%1.2f\t%1.2f', delimiter='\t')
 
         print(':::: Applying Non-linear warping ::::')
-        os.system('applyMorph --template %s --transform %s tract_point_list %s %s nearest' % (self.subj_dir + '/' + template_brain + '/mri/brain.mgz',
-                                                                                                 self.subj_dir + '/' + self.subj + '/cvs/combined_to' +  template_brain + '_elreg_afteraseg-norm.tm3d',
-                                                                                                 self.subj_dir + '/' + self.subj + '/elecs/' + elecfile_prefix + '_RAS.txt',
-                                                                                                 self.subj_dir + '/' + self.subj + '/elecs/' + elecfile_prefix + '_nearest_warped.txt'))
+        template_brain_file = os.path.join(self.subj_dir, template_brain, 'mri', 'brain.mgz')
+        morph_file = os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template_brain+'_elreg_afteraseg-norm.tm3d')
+        nearest_warped_file = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
+        os.system('applyMorph --template %s --transform %s tract_point_list %s %s nearest' % (template_brain_file,
+                                                                                              morph_file,
+                                                                                              RAS_text_file,
+                                                                                              nearest_warped_file))
 
         print(':::: Computing Vox2RAS and saving %s_warped mat file ::::'% (elecfile_prefix))
-        elec = np.loadtxt('%s' % (self.subj_dir + '/' +
-                                  self.subj + '/elecs/' + elecfile_prefix + '_nearest_warped.txt'))
+        elec = np.loadtxt(nearest_warped_file)
 
         elec = np.concatenate((elec, np.ones((elec.shape[0], 1))), axis = 1)
 
@@ -893,8 +895,8 @@ class freeCoG:
          # This is for deleting the duplicate row that applyMorph produces for some reason
         if (elecmatrix[-1,:] == elecmatrix[-2,:]).all():
             elecmatrix = elecmatrix[:-1,:]
-        scipy.io.savemat(self.subj_dir + '/' + self.subj +
-                         '/elecs/' + elecfile_prefix + '_nearest_warped.mat', {'elecmatrix': elecmatrix, 'anatomy': anatomy})
+        nearest_warped_matfile = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
+        scipy.io.savemat(nearest_warped_matfile, {'elecmatrix': elecmatrix, 'anatomy': anatomy})
 
     #method to perform surface warps
     def get_surface_warp(self,basename='TDT_elecs_all',template='cvs_avg35_inMNI152'):
