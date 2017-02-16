@@ -30,16 +30,20 @@ class freeCoG:
     ''' This defines the class freeCoG, which creates a patient object      
     for use in creating brain surface reconstructions, electrode placement,     
     and warping.        
+    
     To initialize a patient, you must provide the subject ID, hemisphere,       
     freesurfer subjects directory, and (optionally) the freesurfer      
     executable directory and path to your copy of SPM.      
+    
     For example:        
-    >> subj = 'EC1'     
-    >> subj_dir = '/usr/local/freesurfer/subjects'      
-    >> hem = 'rh'       
-    >> fs_dir = '/usr/local/freesurfer'     
-    >> spm_dir = '/usr/local/spm12'     
-    >> patient = img_pipe.freeCoG(subj = subj, subj_dir = subj_dir, hem = hem, fs_dir = fs_dir, spm_dir = spm_dir)      
+    
+    >>> subj = 'EC1'     
+    >>> subj_dir = '/usr/local/freesurfer/subjects'      
+    >>> hem = 'rh'       
+    >>> fs_dir = '/usr/local/freesurfer'     
+    >>> spm_dir = '/usr/local/spm12'     
+    >>> patient = img_pipe.freeCoG(subj = subj, subj_dir = subj_dir, hem = hem, fs_dir = fs_dir, spm_dir = spm_dir)
+
     Attributes:         
         subj [str]: the subject ID      
         subj_dir [str]: the freesurfer subjects directory (e.g. /usr/local/freesurfer/subjects)     
