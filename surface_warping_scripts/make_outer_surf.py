@@ -63,8 +63,7 @@ def make_outer_surf(orig_pial, image, radius, outfile):
 if __name__=='__main__':
 
     if not len(sys.argv) == 4:
-        raise ValueError("Usage error: please provide the following arguments:\n"
-            "(1) filled volume, (2) diameter integral, (3) output file ")
+        raise ValueError("Usage error: please provide the following arguments:\n(1) original pial surface (used for metadata), (2) filled volume,\n(3) diameter integral, (4) output file ")
 
     make_outer_surf( sys.argv[1], None, sys.argv[3] )
 
