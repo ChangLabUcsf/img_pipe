@@ -68,6 +68,15 @@ class freeCoG:
         # elecs_dir: dir for elecs coordinates
         self.elecs_dir = os.path.join(self.subj_dir, self.subj, 'elecs')
 
+        # Meshes directory for matlab/python meshes
+        self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
+
+        # surf directory
+        self.surf_dir = os.path.join(self.subj_dir, self.subj, 'surf')
+
+        # mri directory
+        self.mri_dir = os.path.join(self.subj_dir, self.subj, 'mri')
+
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
         T1.nii to the 'orig' directory and converts to mgz format.'''       
@@ -85,9 +94,8 @@ class freeCoG:
             os.mkdir(self.elecs_dir)
 
         # create mri and orig folders
-        mri_dir = os.path.join(self.subj_dir, self.subj, 'mri')
-        if not os.path.isdir(mri_dir):
-            os.mkdir(mri_dir)
+        if not os.path.isdir(self.mri_dir):
+            os.mkdir(self.mri_dir)
 
         orig_dir = os.path.join(self.subj_dir, self.subj, 'mri', 'orig')
         if not os.path.isdir(orig_dir):
@@ -157,23 +165,19 @@ class freeCoG:
         mlab = matlab.MatlabCommand()
 
         hems = ['lh', 'rh']
-        mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
 
-        if not os.path.isdir(mesh_dir):
+        if not os.path.isdir(self.mesh_dir):
             print('Making Meshes Directory')
             # Make the Meshes directory in subj_dir if it does not yet exist
-            os.mkdir(mesh_dir)
+            os.mkdir(self.mesh_dir)
 
         # Loop through hemispheres for this mesh, create one .mat file for each
         for h in hems:
             print("Making %s mesh"%(h))
-            mesh_surf = '%s/%s/surf/%s.%s' % (self.subj_dir,
-                                              self.subj, h, mesh_name)
+            mesh_surf = os.path.join(self.surf_dir, h+'.'+mesh_name)
             vert, tri = nib.freesurfer.read_geometry(mesh_surf)
-            out_file = '%s/%s/Meshes/%s_%s_trivert.mat' % (
-                self.subj_dir, self.subj, h, mesh_name)
-            out_file_struct = '%s/%s/Meshes/%s_%s_%s.mat' % (
-                self.subj_dir, self.subj, self.subj, h, mesh_name)
+            out_file = os.path.join(self.mesh_dir, '%s_%s_trivert.mat'%(h, mesh_name))
+            out_file_struct = os.path.join(self.mesh_dir, '%s_%s_%s.mat'%(self.subj, h, mesh_name))
             scipy.io.savemat(out_file, {'tri': tri, 'vert': vert})
 
             cortex = {'tri': tri+1, 'vert': vert}
@@ -199,8 +203,8 @@ class freeCoG:
         coreg = spm.Coregister()
 
         # set source and target inputs to coregister
-        coreg.inputs.source = self.subj_dir + '/' + self.subj + '/CT/' + source
-        coreg.inputs.target = self.subj_dir + '/' + self.subj + '/mri/' + target
+        coreg.inputs.source = os.path.join(self.CT_dir, source)
+        coreg.inputs.target = os.path.join(self.mri_dir, target)
 
         # set algorithm to normalized mutual information
         coreg.inputs.cost_function = 'nmi'
@@ -214,7 +218,8 @@ class freeCoG:
         given the four corners (in order, 1, 16, 241, 256), or for
         32 channel grid, 1, 8, 25, 32.'''
 
-        corners = scipy.io.loadmat('%s/%s/elecs/%s_corners.mat'%(self.subj_dir, self.subj, grid_basename))['elecmatrix']
+        corner_file = os.path.join(self.elecs_dir, grid_basename+'_corners.mat')
+        corners = scipy.io.loadmat(corner_file)['elecmatrix']
         elecmatrix = np.zeros((nchans, 3))
         #you can add your own grid dimensions and corner indices here, if needed
         if nchans == 256:
@@ -259,7 +264,8 @@ class freeCoG:
             for i in np.arange(3):
                 elecmatrix[grid[row,:],i] = np.linspace(elecmatrix[row,i], elecmatrix[row+(grid[0,-1]-grid[0,0]),i], ncols)
 
-        scipy.io.savemat('%s/%s/elecs//%s_orig.mat'%(self.subj_dir, self.subj, grid_basename), {'elecmatrix': elecmatrix} )
+        orig_file = os.path.join(self.elecs_dir, '%s_orig.mat'%(grid_basename))
+        scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
     def project_electrodes(self,grid_basename='hd_grid',use_mean_normal=True):
         '''grid_basename: prefix of the .mat file with the electrode coordinates matrix 
@@ -338,9 +344,9 @@ class freeCoG:
         print('::: Done :::')
 
         #move files to preproc subfolder
-        if not os.path.isdir('%s/preproc'%(self.elecs_dir)):
+        if not os.path.isdir(os.path.join(self.elecs_dir, 'preproc')):
             print('Making preproc directory')
-            os.mkdir('%s/preproc'%(self.elecs_dir))
+            os.mkdir(os.path.join(self.elecs_dir, 'preproc'))
         print('Moving ' + grid_basename + '_orig.mat and ' + grid_basename + '_corners.mat to %s/preproc'%(self.elecs_dir))
         os.system('mv %s/'%(self.elecs_dir) + grid_basename + '_orig.mat %s/preproc'%(self.elecs_dir))
         os.system('mv %s/'%(self.elecs_dir) + grid_basename + '_corners.mat %s/preproc'%(self.elecs_dir))
@@ -372,7 +378,7 @@ class freeCoG:
            coords of all subcortical freesurfer segmented meshes'''
 
         # set ascii dir name
-        subjAscii_dir = ('%s/%s/ascii/' % (self.subj_dir, self.subj))
+        subjAscii_dir = os.path.join(self.subj_dir, self.subj, 'ascii')
         if not os.path.isdir(subjAscii_dir):
             os.mkdir(subjAscii_dir)
 
@@ -402,7 +408,7 @@ class freeCoG:
                     'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
                     'lThirdVent', 'lFourthVent', 'lBrainStem']
 
-        subcort_dir = os.path.join(self.subj_dir, self.subj, 'Meshes','subcortical')     
+        subcort_dir = os.path.join(self.mesh_dir,'subcortical')     
         if not os.path.isdir(subcort_dir):      
             print('Creating directory %s'%(subcort_dir))        
             os.mkdir(subcort_dir)
@@ -666,7 +672,7 @@ class freeCoG:
                 vert_label[np.int(v)] = label_name.strip()
             fid.close()
 
-        trivert_file = os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_pial_trivert.mat'%(self.hem))
+        trivert_file = os.path.join(self.mesh_dir, '%s_pial_trivert.mat'%(self.hem))
         cortex_verts = scipy.io.loadmat(trivert_file)['vert']
 
         # Only use electrodes that are grid or strips
@@ -848,10 +854,12 @@ class freeCoG:
 
         # Convert surface RAS to voxel CRS
         VoxCRS = np.dot(np.linalg.inv(fsVox2RAS), elec.transpose()).transpose()
-        os.system('mri_info --vox2ras %s/%s/mri/orig.mgz > %s/%s/mri/affine_subj.txt'%(self.subj_dir,self.subj,self.subj_dir,self.subj));
-        affine_subj = np.loadtxt('%s/%s/mri/affine_subj.txt'%(self.subj_dir,self.subj));
+        orig_file = os.path.join(self.mri_dir, 'orig.mgz')
+        affine_file = os.path.join(self.mri_dir, 'affine_subj.txt')
+        os.system('mri_info --vox2ras %s > %s'%(orig_file, affine_file))
+        affine_subj = np.loadtxt(affine_file)
 
-        affine_template = np.loadtxt('%s/%s_affine_subj.txt'%(self.subj_dir,template_brain))
+        affine_template = np.loadtxt(os.path.join(self.subj_dir, '%s_affine_subj.txt'%(template_brain)))
 
         elec = VoxCRS
         elec = elec[:,0:3]
