@@ -196,7 +196,7 @@ class electrode_picker:
 		self.ct_slice = 's' # Show sagittal MIP to start
 		self.ax.append(self.fig.add_subplot(2,2,4))
 		self.ax[3].set_axis_bgcolor('k')
-		self.im.append(plt.imshow(np.nanmax(ct_data[cs[0]-50:cs[0]-20,:,:], axis=0).T, cmap=cm.gray, aspect='auto'))
+		self.im.append(plt.imshow(np.nanmax(ct_data[cs[0]-15:cs[0]+15,:,:], axis=0).T, cmap=cm.gray, aspect='auto'))
 		self.cursor.append(plt.plot([cs[1], cs[1]], [self.ax[3].get_ylim()[0]+1, self.ax[3].get_ylim()[1]-1], color=[0, 1, 0] ))
 		self.cursor2.append(plt.plot([self.ax[3].get_xlim()[0]+1, self.ax[3].get_xlim()[1]-1], [cs[2], cs[2]], color=[0, 1, 0] ))
 		self.ax[3].set_xticks([])
@@ -254,66 +254,67 @@ class electrode_picker:
 		if bb4.contains(fxy[0],fxy[1]):
 			slice_num = 3
 
+
+		if event.key == 'escape':
+			plt.close()
+
+		if event.key == 't':
+			# Toggle pial surface outline on and off
+			self.pial_surf_on = not self.pial_surf_on
+
+		if event.key == 'n':
+			plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
+			self.device_name = raw_input("Enter electrode name: ")
+			#plt.gcf().canvas.draw()
+
+			# If the device name is not in the list
+			if self.device_name not in self.devices:
+				self.devices.append(self.device_name)
+				self.device_num = np.max(self.device_num)+1 # Find the next number 
+			else:
+				self.device_num = self.devices.index(self.device_name)
+			
+			plt.gcf().suptitle("Click on electrodes for device number %d, %s"%(self.device_num, self.device_name), fontsize=14)
+
+			# If the device name is not in the list, start with electrode 0, or
+			# load the electrode file if it exists and start with the next number
+			# electrode
+			if self.device_name not in self.elec_num:
+				self.elec_num[self.device_name] = 0
+				elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
+				if os.path.isfile(elecfile):
+					emat = scipy.io.loadmat(elecfile)['elecmatrix']
+					self.elecmatrix[self.device_name] = list(emat)
+					print("Loading %s (if you wish to overwrite, remove this file before running)"%(elecfile))
+					for elec in emat:
+						self.current_slice = self.surfaceRAS_to_slice(elec[:3])
+						self.add_electrode(add_to_file=False)
+					print("Starting to mark electrode %d"%(self.elec_num[self.device_name]))
+			self.update_legend()
+
+		if event.key == 'h':
+			# Show help 
+			plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
+
+		if event.key == 'e':
+			if self.device_name == '':
+				plt.gcf().suptitle("Please name device with 'n' key before selecting electrode with 'e'", color='r', fontsize=14)
+			else:
+				self.add_electrode()
+
+		if event.key == 'u':
+			self.remove_electrode()
+		
+		# Maximum intensity projection in another dimension
+		ct_slice = dict()
+		ct_slice['s'] = 0
+		ct_slice['c'] = 1
+		ct_slice['a'] = 2
+		if event.key == 's' or event.key == 'c' or event.key == 'a':
+			self.ct_slice = event.key
+
 		if slice_num != []:
 			this_ax = self.ax[slice_num]
-
-			if event.key == 'escape':
-				plt.close()
-
-			if event.key == 't':
-				# Toggle pial surface outline on and off
-				self.pial_surf_on = not self.pial_surf_on
-
-			if event.key == 'n':
-				plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
-				self.device_name = raw_input("Enter electrode name: ")
-				#plt.gcf().canvas.draw()
-
-				# If the device name is not in the list
-				if self.device_name not in self.devices:
-					self.devices.append(self.device_name)
-					self.device_num = np.max(self.device_num)+1 # Find the next number 
-				else:
-					self.device_num = self.devices.index(self.device_name)
-				
-				plt.gcf().suptitle("Click on electrodes for device number %d, %s"%(self.device_num, self.device_name), fontsize=14)
-
-				# If the device name is not in the list, start with electrode 0, or
-				# load the electrode file if it exists and start with the next number
-				# electrode
-				if self.device_name not in self.elec_num:
-					self.elec_num[self.device_name] = 0
-					elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
-					if os.path.isfile(elecfile):
-						emat = scipy.io.loadmat(elecfile)['elecmatrix']
-						self.elecmatrix[self.device_name] = list(emat)
-						print("Loading %s (if you wish to overwrite, remove this file before running)"%(elecfile))
-						for elec in emat:
-							self.current_slice = self.surfaceRAS_to_slice(elec[:3])
-							self.add_electrode(add_to_file=False)
-						print("Starting to mark electrode %d"%(self.elec_num[self.device_name]))
-				self.update_legend()
-
-			if event.key == 'h':
-				# Show help 
-				plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
-
-			if event.key == 'e':
-				if self.device_name == '':
-					plt.gcf().suptitle("Please name device with 'n' key before selecting electrode with 'e'", color='r', fontsize=14)
-				else:
-					self.add_electrode()
-
-			if event.key == 'u':
-				self.remove_electrode()
-
-			# Maximum intensity projection in another dimension
-			ct_slice = dict()
-			ct_slice['s'] = 0
-			ct_slice['c'] = 1
-			ct_slice['a'] = 2
-			if event.key == 's' or event.key == 'c' or event.key == 'a':
-				self.ct_slice = event.key
 
 			# Scrolling through slices
 			if event.key == 'pageup' or event.key == 'pagedown':
@@ -344,9 +345,9 @@ class electrode_picker:
 					xlims = this_ax.get_xlim()
 					this_ax.set_xlim(xlims[0]+1*sgn, xlims[1]+1*sgn)
 
-			# Draw the figure
-			self.update_figure_data(ax_clicked=slice_num)
-			plt.gcf().canvas.draw()
+		# Draw the figure
+		self.update_figure_data(ax_clicked=slice_num)
+		plt.gcf().canvas.draw()
 
 	def on_scroll(self, event):
 		''' Use mouse scroll wheel to zoom.  Scroll down zooms in, scroll up zooms out.
