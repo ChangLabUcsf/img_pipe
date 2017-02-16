@@ -34,7 +34,7 @@ class electrode_picker:
 	'''
 	electrode_picker class
 	'''
-	def __init__(self, subj_dir):
+	def __init__(self, subj_dir, hem):
 		'''
 		Initialize the electrode picker with the user-defined MRI and co-registered
 		CT scan in [subj_dir].  Images will be displayed using orientation information 
@@ -46,14 +46,22 @@ class electrode_picker:
 		'''
 		QtCore.pyqtRemoveInputHook()
 		self.subj_dir = subj_dir
+		self.hem = hem
 		self.img = nib.load(os.path.join(subj_dir, 'mri', 'brain.mgz'))
 		self.ct = nib.load(os.path.join(subj_dir, 'CT', 'rCT.nii'))
+		pial_fill = os.path.join(subj_dir, 'surf', '%s.pial.filled.mgz'%(self.hem))
+		if not os.path.isfile(pial_fill):
+			pial_surf = os.path.join(subj_dir, 'surf', '%s.pial'%(self.hem))
+			os.system('mris_fill -c -r 1 %s %s'%(pial_surf, pial_fill))
+		self.pial_img = nib.load(pial_fill)
+		
+		# Get affine transform 
 		self.affine = self.img.affine
 		self.fsVox2RAS = np.array([[-1., 0., 0., 128.], 
 								   [0., 0., 1., -128.], 
 								   [0., -1., 0., 128.], 
 								   [0., 0., 0., 1.]])
-
+		
 		# Apply orientation to the MRI so that the order of the dimensions will be
 		# sagittal, coronal, axial
 		self.codes = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.affine))
@@ -63,6 +71,11 @@ class electrode_picker:
 
 		self.inv_affine = np.linalg.inv(self.affine)
 		self.img_clim = np.percentile(img_data, (1., 99.))
+
+		# Apply orientation to pial surface fill
+		self.pial_codes = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.pial_img.affine))
+		pial_data = nib.orientations.apply_orientation(self.pial_img.get_data(), self.pial_codes)
+		pial_data = scipy.ndimage.binary_closing(pial_data)
 
 		# Apply orientation to the CT so that the order of the dimensions will be
 		# sagittal, coronal, axial
@@ -85,6 +98,7 @@ class electrode_picker:
 		
 		self.ct_data = ct_data
 		self.img_data = img_data
+		self.pial_data = pial_data
 		self.elec_data = np.nan+np.zeros((img_data.shape))
 		self.bin_mat = '' # binary mask for electrodes
 		self.device_num = 0 # Start with device 0, increment when we add a new electrode name type
@@ -106,6 +120,7 @@ class electrode_picker:
 		self.im = []
 		self.ct_im = []
 		self.elec_im = []
+		self.pial_im = []
 
 		self.cursor = []
 		self.cursor2 = []
@@ -118,6 +133,8 @@ class electrode_picker:
 					 ['Posterior','Left']]
 
 		self.ax = []
+		self.contour = [False, False, False]
+		self.pial_surf_on = True # Whether pial surface is visible or not
 		
 		# This is the current slice for indexing (as integers so python doesnt complain)
 		cs = np.round(self.current_slice).astype(np.int)
@@ -128,16 +145,19 @@ class electrode_picker:
 			self.ax[i].set_axis_bgcolor('k')
 			if i==0:
 				imdata = img_data[cs[0],:,:].T
-				ctdat = ct_data[cs[0],:,:].T
-				edat = self.elec_data[cs[0],:,:].T
+				ctdat  = ct_data[cs[0],:,:].T
+				edat   = self.elec_data[cs[0],:,:].T
+				pdat   = self.pial_data[cs[0],:,:].T
 			elif i==1:
 				imdata = img_data[:,cs[1],:].T
-				ctdat = ct_data[:,cs[1],:].T
-				edat = self.elec_data[:,cs[1],:].T
+				ctdat  = ct_data[:,cs[1],:].T
+				edat   = self.elec_data[:,cs[1],:].T
+				pdat   = self.pial_data[:,cs[1],:].T
 			elif i==2:
 				imdata = img_data[:,:,cs[2]].T
-				ctdat = ct_data[:,:,cs[2]].T
-				edat = self.elec_data[:,:,cs[2]].T
+				ctdat  = ct_data[:,:,cs[2]].T
+				edat   = self.elec_data[:,:,cs[2]].T
+				pdat   = self.pial_data[:,:,cs[2]].T
 
 			# Show the MRI data in grayscale
 			self.im.append(plt.imshow(imdata, cmap=cm.gray, aspect='auto'))
@@ -149,6 +169,10 @@ class electrode_picker:
 			self.elec_colors = mcolors.LinearSegmentedColormap.from_list('elec_colors', np.vstack (( cm.Set1(np.linspace(0., 1, 9)), cm.Set2(np.linspace(0., 1, 8)) )) )
 			self.elec_im.append(plt.imshow(edat, cmap=self.elec_colors, aspect='auto', alpha=1, vmin=0, vmax=17))
 			
+			# Overlay the pial surface
+			self.pial_im.append(self.ax[i].contour(pdat, linewidths=0.5, colors = 'y'))
+			self.contour[i] = True
+
 			# Plot a green cursor
 			self.cursor.append(plt.plot([cs[1], cs[1]], [self.ax[i].get_ylim()[0]+1, self.ax[i].get_ylim()[1]-1], color=[0, 1, 0] ))
 			self.cursor2.append(plt.plot([self.ax[i].get_xlim()[0]+1, self.ax[i].get_xlim()[1]-1], [cs[2], cs[2]], color=[0, 1, 0] ))
@@ -232,6 +256,11 @@ class electrode_picker:
 
 			if event.key == 'escape':
 				plt.close()
+
+			if event.key == 't':
+				# Toggle pial surface outline on and off
+				self.pial_surf_on = not self.pial_surf_on
+
 			if event.key == 'n':
 				plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 				self.device_name = raw_input("Enter electrode name: ")
@@ -457,6 +486,32 @@ class electrode_picker:
 		self.ct_im[1].set_data(self.ct_data[:,cs[1],:].T)
 		self.ct_im[2].set_data(self.ct_data[:,:,cs[2]].T)
 
+		# Show the pial surface data in the sagittal, coronal, and axial views
+		for a in np.arange(3):
+			if self.contour[a]:
+				try:
+					for coll in self.pial_im[a].collections:
+						coll.remove()
+				except:
+					pass
+		
+		if self.pial_surf_on:
+			if np.any(self.pial_data[cs[0],:,:]):
+				self.pial_im[0] = self.ax[0].contour(self.pial_data[cs[0],:,:].T, linewidths=0.5, colors = 'y')
+				self.contour[0] = True
+			else:
+				self.contour[0] = False
+			if np.any(self.pial_data[:,cs[1],:]):
+				self.pial_im[1] = self.ax[1].contour(self.pial_data[:,cs[1],:].T, linewidths=0.5, colors = 'y')
+				self.contour[1] = True
+			else:
+				self.contour[1] = False
+			if np.any(self.pial_data[:,:,cs[2]]):
+				self.pial_im[2] = self.ax[2].contour(self.pial_data[:,:,cs[2]].T, linewidths=0.5, colors = 'y')
+				self.contour[2] = True
+			else:
+				self.contour[2] = False
+		
 		# Show the electrode volume data in the sagittal, coronal, and axial views
 		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
 		self.elec_im[1].set_data(self.elec_data[:,cs[1],:].T)
@@ -629,4 +684,5 @@ if __name__ == '__main__':
 	app = QtGui.QApplication([])
 	app.setWindowIcon(QtGui.QIcon(os.path.join('icons','leftbrain.png')))
 	subj_dir = sys.argv[1]
-	e = electrode_picker(subj_dir = subj_dir)
+	hem = sys.argv[2]
+	e = electrode_picker(subj_dir = subj_dir, hem = hem)
