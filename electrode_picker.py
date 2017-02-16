@@ -1,4 +1,20 @@
 #!/usr/env/python
+'''
+electrode_picker.py defines a class [electrode_picker] that allows the 
+user to take a co-registered CT and MRI scan and identify electrodes
+based on sagittal, coronal, and axial views of the scans as well as
+a maximum intensity projection of the CT scan. 
+
+Usage: 
+	python electrode_picker.py '/usr/local/freesurfer/subjects/S1'
+
+This assumes that you have processed your data using freesurfer's pipeline
+and that you have a coregistered MRI and CT in subj_dir (e.g. '/usr/local/freesurfer/subjects/S1')
+as [subj_dir]/mri/brain.mgz and [subj_dir]/CT/rCT.nii
+
+Written by Liberty Hamilton, 2016
+
+'''
 import matplotlib
 matplotlib.use('Qt4Agg') 
 from matplotlib import pyplot as plt
