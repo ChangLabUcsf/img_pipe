@@ -154,6 +154,12 @@ class freeCoG:
 
         self.convert_fsmesh2mlab(mesh_name = 'dural')
 
+    def mark_electrodes(self):
+        ''' Launch the electrode picker for this subject '''
+
+        print("Launching electrode picker")
+        os.system('python electrode_picker.py %s %s'%(os.path.join(self.subj_dir, self.subj), self.hem))
+
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
         If no argument for mesh_name is given, lh.pial and rh.pial
