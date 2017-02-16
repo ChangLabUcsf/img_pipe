@@ -296,7 +296,7 @@ class electrode_picker:
 
 			if event.key == 'h':
 				# Show help 
-				plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\n\Scroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
+				plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
 
 			if event.key == 'e':
 				if self.device_name == '':
@@ -360,8 +360,14 @@ class electrode_picker:
 			this_ax = self.ax[a]
 			xlims = this_ax.get_xlim()
 			ylims = this_ax.get_ylim()
-			this_ax.set_xlim(xlims[0]+xstep, xlims[1] - xstep)
-			this_ax.set_ylim(ylims[0]+ystep, ylims[1] - ystep)
+			if xlims[0] + xstep > xlims[1] - xstep:
+				this_ax.set_xlim(xlims[0], xlims[1])
+			else:
+				this_ax.set_xlim(xlims[0]+xstep, xlims[1] - xstep)
+			if ylims[0] + ystep > ylims[1] - ystep:
+				this_ax.set_ylim(ylims[0], ylims[1])
+			else:
+				this_ax.set_ylim(ylims[0]+ystep, ylims[1] - ystep)
 			self.cursor[a][0].set_ydata ([self.ax[a].get_ylim()]) 
 			self.cursor2[a][0].set_xdata([self.ax[a].get_xlim()])
 
