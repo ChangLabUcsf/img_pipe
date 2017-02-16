@@ -633,7 +633,7 @@ class electrode_picker:
 		elec_CRS = np.dot(np.linalg.inv(self.fsVox2RAS), elec.transpose()).transpose()
 
 		print(elec_CRS)
-		coord = np.hstack((elec_CRS[0],
+		coord = np.hstack((self.imsz[0] - elec_CRS[0],
 						   elec_CRS[2],
 						   self.imsz[1] - elec_CRS[1]))
 		
