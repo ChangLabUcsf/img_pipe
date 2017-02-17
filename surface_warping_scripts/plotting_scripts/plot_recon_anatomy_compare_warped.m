@@ -8,7 +8,7 @@ subj_dir = sprintf('%s/%s/', subjects_dir, subj);
 load(sprintf('%s/Meshes/%s_%s_pial.mat', subj_dir, subj, hem));
 load(sprintf('%s/elecs/%s.mat', subj_dir,elecfile_prefix));
 
-subj_fig = figure('units','normalized','outerposition',[0 0.5 0.5 0.5],'visible',showfig)
+subj_fig = figure('units','normalized','outerposition',[0 0.5 0.5 0.5],'visible','off')
 c_h = ctmr_gauss_plot(cortex, [0 0 0], 0); 
 
 if strcmp(hem, 'rh') %commented out b/c segfaulting...?
@@ -53,7 +53,7 @@ title(sprintf('Subject: %s',subj))
 saveas(subj_fig,sprintf('%s/elecs/%s_recon_anatomy.pdf',subj_dir,elecfile_prefix),'pdf');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% WARPED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-warp_fig = figure('units','normalized','outerposition',[0 0 0.5 0.5],'visible',showfig)
+warp_fig = figure('units','normalized','outerposition',[0 0 0.5 0.5],'visible','off')
 template_dir = sprintf('%s/%s/', subjects_dir, template);
 load(sprintf('%s/Meshes/%s_%s_pial.mat', template_dir, template, hem));
 load(sprintf('%s/elecs/%s_warped.mat', subj_dir,elecfile_prefix));

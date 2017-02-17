@@ -796,7 +796,7 @@ class freeCoG:
         template: which atlas brain to use 
         '''
 
-        print "Using %s as the template for warps" %(template)
+        print "Using %s as the template for warps"%(template)
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         orig_elecs = scipy.io.loadmat(elecfile)
 
@@ -984,8 +984,12 @@ class freeCoG:
         cmap = matplotlib.colors.ListedColormap(np.load('%s/SupplementalFiles/FreeSurferLUTRGBValues.npy'%(self.img_pipe_dir))[:cvs_dat.max()+1,:])
         lookup_dict = pickle.load(open('%s/SupplementalFiles/FreeSurferLookupTable'%(self.img_pipe_dir),'r'))
         fig = plt.figure(figsize=((30,17)))
+        nonzero_indices = np.where(cvs_dat>0)
+        offset = 35 #this is how much you want to trim the mri by, there is a lot of empty space
 
-        cvs_vox_CRS = np.array([warped_coords[0],warped_coords[1],warped_coords[2]],dtype='int')
+        cvs_dat = cvs_dat[offset:-offset,offset:-offset,offset:-offset]
+        cvs_vox_CRS = np.array([warped_coords[0]-offset,warped_coords[1]-offset,warped_coords[2]-offset],dtype='int')
+
         plt.subplot(2,3,1)
         plt.imshow(cvs_dat[cvs_vox_CRS[0],:,:], cmap=cmap)
         plt.plot(cvs_vox_CRS[2],cvs_vox_CRS[1],'r*',markersize=14,color='#FFFFFF')
@@ -995,15 +999,16 @@ class freeCoG:
         plt.imshow(cvs_dat[:,cvs_vox_CRS[1],:].T, cmap=cmap)
         plt.plot(cvs_vox_CRS[0],cvs_vox_CRS[2],'r*',markersize=14,color='#FFFFFF')
         plt.axis('tight'); ax = plt.gca(); ax.set_axis_off()
-        t=plt.text(10,25,lookup_dict[cvs_dat[cvs_vox_CRS[0],cvs_vox_CRS[1],cvs_vox_CRS[2]]],color='white',size=25)
-        plt.title('CVS brain',size=20)
+        #t=plt.text(10,25,lookup_dict[cvs_dat[cvs_vox_CRS[0],cvs_vox_CRS[1],cvs_vox_CRS[2]]],color='white',size=25)
+        plt.title('CVS brain ' + lookup_dict[cvs_dat[cvs_vox_CRS[0],cvs_vox_CRS[1],cvs_vox_CRS[2]]],size=20)
 
         plt.subplot(2,3,3)
         plt.imshow(cvs_dat[:,:,cvs_vox_CRS[2]].T, cmap=cmap)   
         plt.plot(cvs_vox_CRS[0],cvs_vox_CRS[1],'r*',markersize=14,color='#FFFFFF')
         plt.axis('tight'); ax = plt.gca(); ax.set_axis_off()
 
-        subj_vox_CRS = np.array([orig_coords[0],orig_coords[1],orig_coords[2]],dtype='int')
+        subj_dat = subj_dat[offset:-offset,offset:-offset,offset:-offset]
+        subj_vox_CRS = np.array([orig_coords[0]-offset,orig_coords[1]-offset,orig_coords[2]-offset],dtype='int')
 
         ax1=plt.subplot(2,3,4).axes
         plt.imshow(subj_dat[subj_vox_CRS[0],:,:], cmap=cmap)
@@ -1014,8 +1019,8 @@ class freeCoG:
         plt.imshow(subj_dat[:,subj_vox_CRS[1],:].T, cmap=cmap)
         plt.plot(subj_vox_CRS[0],subj_vox_CRS[2],'r*',markersize=14,color='#FFFFFF')
         plt.axis('tight'); ax = plt.gca(); ax.set_axis_off()
-        t=plt.text(10,25,lookup_dict[subj_dat[subj_vox_CRS[0],subj_vox_CRS[1],subj_vox_CRS[2]]],color='white',size=25)
-        plt.title(self.subj,size=20)
+        #t=plt.text(10,25,lookup_dict[subj_dat[subj_vox_CRS[0],subj_vox_CRS[1],subj_vox_CRS[2]]],color='white',size=25)
+        plt.title(self.subj + ' ' +lookup_dict[subj_dat[subj_vox_CRS[0],subj_vox_CRS[1],subj_vox_CRS[2]]],size=20)
 
         ax3=plt.subplot(2,3,6).axes
         plt.imshow(subj_dat[:,:,subj_vox_CRS[2]].T, cmap=cmap)   
