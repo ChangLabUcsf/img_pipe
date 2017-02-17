@@ -1,22 +1,5 @@
 #!/usr/env/python
-'''
-electrode_picker.py defines a class [electrode_picker] that allows the 
-user to take a co-registered CT and MRI scan and identify electrodes
-based on sagittal, coronal, and axial views of the scans as well as
-a maximum intensity projection of the CT scan. Inputs are the 
-subject directory and the hemisphere of implantation.  If stereo-EEG,
-choose 'stereo' as the hemisphere
 
-Usage: 
-	python electrode_picker.py '/usr/local/freesurfer/subjects/S1' 'rh'
-
-This assumes that you have processed your data using freesurfer's pipeline
-and that you have a coregistered MRI and CT in subj_dir (e.g. '/usr/local/freesurfer/subjects/S1')
-as [subj_dir]/mri/brain.mgz and [subj_dir]/CT/rCT.nii
-
-Written by Liberty Hamilton, 2017
-
-'''
 import matplotlib
 matplotlib.use('Qt4Agg') 
 from matplotlib import pyplot as plt
@@ -37,12 +20,25 @@ import os
 import warnings
 
 warnings.filterwarnings('ignore')
-#with warnings.catch_warnings():
-#    warnings.filterwarnings('ignore', r'All-NaN slice encountered')
 
 class electrode_picker:
 	'''
-	electrode_picker class
+	electrode_picker.py defines a class [electrode_picker] that allows the 
+	user to take a co-registered CT and MRI scan and identify electrodes
+	based on sagittal, coronal, and axial views of the scans as well as
+	a maximum intensity projection of the CT scan. Inputs are the 
+	subject directory and the hemisphere of implantation.  If stereo-EEG,
+	choose 'stereo' as the hemisphere
+
+	Usage: 
+		python electrode_picker.py '/usr/local/freesurfer/subjects/S1' 'rh'
+
+	This assumes that you have processed your data using freesurfer's pipeline
+	and that you have a coregistered MRI and CT in subj_dir (e.g. '/usr/local/freesurfer/subjects/S1')
+	as [subj_dir]/mri/brain.mgz and [subj_dir]/CT/rCT.nii
+
+	Written by Liberty Hamilton, 2017
+
 	'''
 	def __init__(self, subj_dir, hem):
 		'''
