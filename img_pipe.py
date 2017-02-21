@@ -133,7 +133,7 @@ class freeCoG:
         rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
         os.system("freeview --volume %s --surface %s --surface %s --viewport 'coronal'" % (brain_mri, lh_pial, rh_pial))
 
-    def make_dural_surf(self, radius=3):
+    def make_dural_surf(self, radius=3, num_iter=30):
         '''
         Create smoothed dural surface for projecting electrodes to.
         '''
@@ -154,7 +154,7 @@ class freeCoG:
 
                 os.system('mris_extract_main_component %s %s-main'%(outfile, outfile))
                 dura_surf = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.dural')
-                os.system('mris_smooth -nw -n 30 %s-main %s'%(outfile, dura_surf))
+                os.system('mris_smooth -nw -n %d %s-main %s'%(num_iter, outfile, dura_surf))
 
             else:
                 print("Failed to create %s, check inputs."%(pial_fill_image))
@@ -282,13 +282,24 @@ class freeCoG:
         orig_file = os.path.join(self.elecs_dir, '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
-    def project_electrodes(self,grid_basename='hd_grid',use_mean_normal=True):
+    def project_electrodes(self,grid_basename='hd_grid',use_mean_normal=True,surf_type='dural',projection_method='convex_hull',num_iter=30):
         '''grid_basename: prefix of the .mat file with the electrode coordinates matrix 
+        use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's corner electrodes) as the projection direction
+        surf_type: 'dural' or 'pial'
+        projection_method: 'convex_hull','none','alphavol'
+        num_iter: how many smoothing iterations when creating the dural surface
+
         Projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT.'''
 
+        print 'Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
+                %(grid_basename,use_mean_normal,surf_type,projection_method,num_iter)
+
         corners_file = os.path.join(self.elecs_dir, grid_basename+'_corners.mat')
         elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
+        if surf_type=='dural':
+            print 'Creating dural surface mesh, using %d smoothing iterations'%(num_iter)
+            self.make_dural_surf(num_iter=num_iter)
 
         if use_mean_normal:
             #the corners draw out a 'rectangle', each side is a grid vector
@@ -320,7 +331,7 @@ class freeCoG:
                 direction = '[%f %f %f]'%(-1.0*mean_normal[0],-1.0*mean_normal[1],-1.0*mean_normal[2])
 
             # project the electrodes to the convex hull of the pial surface
-            print direction
+            print 'Projection direction vector: ', direction
         else:
             direction = self.hem
 
@@ -349,13 +360,13 @@ class freeCoG:
 
         print self.subj_dir,self.subj,grid_basename
         mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                             load('%s/%s/elecs/%s_orig.mat'); load('%s/%s/Meshes/%s_%s_%spial.mat');\
+                             load('%s/%s/elecs/%s_orig.mat'); load('%s/%s/Meshes/%s_%s_%s%s.mat');\
                              hem = '%s';debug_plots = 0; [elecs_proj] = project_electrodes_anydirection(cortex, \
-                             elecmatrix, %s, debug_plots,'convex_hull');\
+                             elecmatrix, %s, debug_plots,'%s');\
                              elecmatrix = elecs_proj;\
                              save('%s/%s/elecs/%s.mat', 'elecmatrix');\
                              "% (self.subj_dir, self.subj_dir, self.subj, grid_basename, self.subj_dir, \
-                                self.subj, self.subj, self.hem, roi, self.hem,direction,self.subj_dir, self.subj, grid_basename)
+                                self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, grid_basename)
 
         print('::: Loading Mesh data :::')
         print('::: Projecting electrodes to mesh :::')
