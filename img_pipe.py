@@ -52,7 +52,7 @@ class freeCoG:
         elecs_dir [str]: the directory (usually [subj_dir]/[subj]/elecs)        
     '''
 
-    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_path = os.environ['SPM_PATH'],):
+    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_path = os.environ['SPM_PATH']):
         '''
         subj: patient name (i.e. 'SUBJ_25')
         hem: patient hem of implantation ('lh' or 'rh')
@@ -84,6 +84,11 @@ class freeCoG:
 
         # mri directory
         self.mri_dir = os.path.join(self.subj_dir, self.subj, 'mri')
+
+        #if paths are not the default paths in the shell environment:
+        os.environ['FREESURFER_HOME'] = fs_dir
+        os.environ['SUBJECTS_DIR'] = subj_dir
+        os.environ['SPM_PATH'] = spm_path
 
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
@@ -667,7 +672,7 @@ class freeCoG:
             indices.extend(np.where(np.isnan(elecmatrix)==True)[0]) 
             indices = list(set(indices))
             indices_to_use = list(set(range(len(long_label))) - set(indices))
-            
+
             # Initialize the cell array that we'll store electrode labels in later
             elec_labels_orig = np.empty((len(long_label),4),dtype=np.object)
             elec_labels_orig[:,0] = short_label
