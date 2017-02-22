@@ -26,7 +26,8 @@ cortex_targ = load(sprintf('%s/%s/Meshes/%s_%s_pial.mat', fsdir, atlas, atlas, h
 %labelprefix = 'hd_grid'; % for mat file and for naming label files
 load(sprintf('%s/%s/elecs/%s.mat', fsdir, subj, labelprefix));
 
-indices = find(~strcmp(anatomy(:,3),'depth')); 
+indices = find(~strcmp(anatomy(:,3),'depth'));
+%indices = intersect(find(~strcmp(anatomy(:,3),'depth')),intersect(find(~strcmp(anatomy(:,3),'EKG')),find(~strcmp(anatomy(:,3),'NaN'))));
 elecmatrix = elecmatrix(indices,:); 
 
 % make label files from the electrode matrix

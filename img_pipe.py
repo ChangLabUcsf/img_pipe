@@ -819,7 +819,9 @@ class freeCoG:
         orig_elecs = scipy.io.loadmat(elecfile)
 
         if 'depth' in orig_elecs['anatomy'][:,2] and warp_depths:
-            self.get_cvsWarp(template)
+            #if mri_cvs_register already run, don't run again
+            if not os.path.isfile(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')):
+                self.get_cvsWarp(template)
             self.apply_cvsWarp(elecfile_prefix,template)
             elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
@@ -829,24 +831,27 @@ class freeCoG:
             self.check_depth_warps(elecfile_prefix,template)
         
         if warp_surface:
-            self.get_surface_warp(elecfile_prefix,template)
+            #if surface warp already run, don't run again
+            if not os.path.isfile(os.path.join(self.subj_dir,self.subj,'elecs', elecfile_prefix + '_surface_warped.mat')):
+                self.get_surface_warp(elecfile_prefix,template)
             elecfile_surface_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_surface_warped.mat')
             surface_warps = scipy.io.loadmat(elecfile_surface_warped)
             surface_indices = np.where(orig_elecs['anatomy'][:,2]!='depth')[0]
             orig_elecs['elecmatrix'][surface_indices] = surface_warps['elecmatrix']
 
-        elecsfile_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_warped.mat')
-        scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
+        #if both depth and surface warping have been done, create the combined warp .mat file
+        if warp_depths and warp_surface:
+            elecsfile_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_warped.mat')
+            scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
-        #create pdf for visual inspection of the original elecs vs the warps
-        mlab = matlab.MatlabCommand()
-        mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                              plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
-        out = mlab.run()
+            #create pdf for visual inspection of the original elecs vs the warps
+            mlab = matlab.MatlabCommand()
+            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
+                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
+            out = mlab.run()
 
-        preproc_dir = os.path.join(self.elecs_dir, 'preproc')
-        os.system('mv %s %s/preproc;' %(elecfile_surface_warped, self.elecs_dir))
-        if warp_depths:
+            preproc_dir = os.path.join(self.elecs_dir, 'preproc')
+            os.system('mv %s %s/preproc;' %(elecfile_surface_warped, self.elecs_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
 
