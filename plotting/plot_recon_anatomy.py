@@ -6,10 +6,11 @@
 import mayavi
 import scipy.io
 import ctmr_brain_plot
-import FS_colorLUT
+from SupplementalFiles import FS_colorLUT
 import numpy as np
+import os
 
-fs_dir = '/Applications/freesurfer/subjects'
+fs_dir = os.environ['SUBJECTS_DIR']
 
 def plot_recon_anatomy(patient):
 	subj = patient.subj
@@ -44,5 +45,5 @@ def plot_recon_anatomy(patient):
 	        el_color = np.array(cmap[this_label])/255.
 	        ctmr_brain_plot.el_add(np.atleast_2d(e['elecmatrix'][e['anatomy'][:,3]==b,:]), 
 	        					   color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b])
-
+	mlab.show()        
 	return mesh, mlab

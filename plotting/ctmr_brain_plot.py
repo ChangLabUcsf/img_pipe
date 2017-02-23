@@ -86,7 +86,6 @@ def ctmr_gauss_plot(tri, vert, color = (0.6, 0.6, 0.6), elecs = [], weights = []
     mesh.actor.property.diffuse = 0.6995
     mesh.actor.property.interpolation = 'phong'
     mesh.scene.light_manager.light_mode = 'vtk'
-    
     return mesh, mlab
 
 
