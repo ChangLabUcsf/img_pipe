@@ -290,7 +290,7 @@ class electrode_picker:
 			# electrode
 			if self.device_name not in self.elec_num:
 				self.elec_num[self.device_name] = 0
-				elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
+				elecfile = os.path.join(self.subj_dir, 'elecs', 'individual_elecs', self.device_name+'.mat')
 				if os.path.isfile(elecfile):
 					emat = scipy.io.loadmat(elecfile)['elecmatrix']
 					self.elecmatrix[self.device_name] = list(emat)
@@ -588,7 +588,7 @@ class electrode_picker:
 		# Add the electrode to the file (we wouldn't want to 
 		# do this if we are displaying previously clicked electrodes)
 		if add_to_file:
-			elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
+			elecfile = os.path.join(self.subj_dir, 'elecs', 'individual_elecs', self.device_name+'.mat')
 			scipy.io.savemat(elecfile, {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
 
 		plt.gcf().suptitle('%s e%d surface RAS = [%3.3f, %3.3f, %3.3f]'%(self.device_name, self.elec_num[self.device_name], elec[0], elec[1], elec[2]), fontsize=14)
@@ -609,7 +609,7 @@ class electrode_picker:
 			self.elecmatrix[self.device_name].pop()
 
 			# Save the electrode matrix
-			elecfile = os.path.join(self.subj_dir, 'elecs', self.device_name+'.mat')
+			elecfile = os.path.join(self.subj_dir, 'elecs', 'individual_elecs', self.device_name+'.mat')
 			scipy.io.savemat(elecfile, {'elecmatrix': np.array(self.elecmatrix[self.device_name])})
 
 			# Remove the electrode from the volume display

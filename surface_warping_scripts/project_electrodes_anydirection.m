@@ -51,11 +51,11 @@ elseif strcmp(proj_direction, 'lh')
 elseif strcmp(proj_direction, 'rh')
     direction = [-1000 0 0];
 elseif strcmp(proj_direction, 'top')
-    direction = [0 0 -1000];
+    direction = [0 0 1000];
 elseif strcmp(proj_direction, 'top_right')
     direction = [-1000 0 -800];
 elseif strcmp(proj_direction, 'bottom')
-    direction = [0 0 1000];
+    direction = [0 0 -1000];
 elseif strcmp(proj_direction, 'front')
     direction = [0 1000 0];
 elseif strcmp(proj_direction, 'back')

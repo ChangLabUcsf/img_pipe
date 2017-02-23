@@ -168,9 +168,12 @@ class freeCoG:
 
     def mark_electrodes(self):
         ''' Launch the electrode picker for this subject '''
-
+        individual_elecs_dir = os.path.join(self.subj_dir,self.subj,'elecs','individual_elecs')
+        if not os.path.isdir(individual_elecs_dir):
+            print("Creating directory individual_elecs/")
+            os.mkdir(individual_elecs_dir)
         print("Launching electrode picker")
-        os.system('python electrode_picker.py %s %s'%(os.path.join(self.subj_dir, self.subj), self.hem))
+        os.system('python %s/electrode_picker.py %s %s'%(self.img_pipe_dir, os.path.join(self.subj_dir, self.subj), self.hem))
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
@@ -238,7 +241,7 @@ class freeCoG:
         given the four corners (in order, 1, 16, 241, 256), or for
         32 channel grid, 1, 8, 25, 32.'''
 
-        corner_file = os.path.join(self.elecs_dir, grid_basename+'_corners.mat')
+        corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
         corners = scipy.io.loadmat(corner_file)['elecmatrix']
         elecmatrix = np.zeros((nchans, 3))
         #you can add your own grid dimensions and corner indices here, if needed
@@ -284,11 +287,11 @@ class freeCoG:
             for i in np.arange(3):
                 elecmatrix[grid[row,:],i] = np.linspace(elecmatrix[row,i], elecmatrix[row+(grid[0,-1]-grid[0,0]),i], ncols)
 
-        orig_file = os.path.join(self.elecs_dir, '%s_orig.mat'%(grid_basename))
+        orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
-    def project_electrodes(self,grid_basename='hd_grid',use_mean_normal=True,surf_type='dural',projection_method='convex_hull',num_iter=30):
-        '''grid_basename: prefix of the .mat file with the electrode coordinates matrix 
+    def project_electrodes(self,elecfile_prefix='hd_grid',use_mean_normal=True,surf_type='dural',projection_method='convex_hull',num_iter=30,grid=True):
+        '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
         use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's corner electrodes) as the projection direction
         surf_type: 'dural' or 'pial'
         projection_method: 'convex_hull','none','alphavol'
@@ -298,15 +301,19 @@ class freeCoG:
         corner electrodes that were manually localized from the registered CT.'''
 
         print 'Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
-                %(grid_basename,use_mean_normal,surf_type,projection_method,num_iter)
+                %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter)
+        if grid: 
+            corners_file = os.path.join(self.elecs_dir, 'individual_elecs/' + elecfile_prefix+'_corners.mat')
+            elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
+            elecfile_name = elecfile_prefix +'_orig'
+        else:
+            elecfile_name = elecfile_prefix
 
-        corners_file = os.path.join(self.elecs_dir, grid_basename+'_corners.mat')
-        elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
-        if surf_type=='dural':
+        if surf_type=='dural' and not os.path.isfile('%s/%s/Meshes/%s_%s_%s.mat'%(self.subj_dir,self.subj,self.subj,self.hem,'dural')):
             print 'Creating dural surface mesh, using %d smoothing iterations'%(num_iter)
             self.make_dural_surf(num_iter=num_iter)
 
-        if use_mean_normal:
+        if use_mean_normal and grid:
             #the corners draw out a 'rectangle', each side is a grid vector
             grid_vectors = elec_corners[1]-elec_corners[0],elec_corners[3]-elec_corners[2],elec_corners[3]-elec_corners[1],elec_corners[2]-elec_corners[0]
             #we can get 4 normal vectors from the 4 grid vectors 
@@ -338,14 +345,23 @@ class freeCoG:
             # project the electrodes to the convex hull of the pial surface
             print 'Projection direction vector: ', direction
         else:
-            direction = self.hem
+            proj_direction = raw_input('Enter a custom projection direction as a string (lh,rh,top,bottom,front,back,or custom): If none provided, will default to hemisphere: \n')
+            if proj_direction == 'custom':
+                x = raw_input('Enter projection vector\'s x-component: \n')
+                y = raw_input('Enter projection vector\'s y-component: \n')
+                z = raw_input('Enter projection vector\'s z-component: \n')
+                direction ='[%s %s %s]'%(x,y,z)
+            elif len(proj_direction)>0:
+                direction = "'" + proj_direction + "'"
+            else:
+                direction = "'" + self.hem + "'"
 
         #if the grid is placed on the OFC, should create an ROI mesh with only frontal areas 
         roi = ''
-        pial_file = os.path.join(self.mesh_dir, self.subj+'_'+self.hem+'_pial.mat')
-        orig_elec_file = os.path.join(self.elecs_dir, grid_basename+'_orig.mat')
-        surface_warp_scripts_dir = os.path.join(self.img_pipe_dir, 'surface_warping_scripts')
-        if grid_basename == 'OFC_grid':
+        if elecfile_prefix == 'OFC_grid':
+            pial_file = os.path.join(self.mesh_dir, self.subj+'_'+self.hem+'_pial.mat')
+            orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs/', elecfile_prefix+'_orig.mat')
+            surface_warp_scripts_dir = os.path.join(self.img_pipe_dir, 'surface_warping_scripts')
             gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
             if not os.path.isdir(gyri_labels_dir):
                 os.mkdir(gyri_labels_dir)
@@ -362,16 +378,16 @@ class freeCoG:
             roi = 'ofc_'
 
         mlab = matlab.MatlabCommand()
-
-        print self.subj_dir,self.subj,grid_basename
         mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                             load('%s/%s/elecs/%s_orig.mat'); load('%s/%s/Meshes/%s_%s_%s%s.mat');\
+                             load('%s/%s/elecs/individual_elecs/%s.mat'); \
+                             save('%s/%s/elecs/individual_elecs/preproc/%s_orig.mat','elecmatrix');\
+                             load('%s/%s/Meshes/%s_%s_%s%s.mat');\
                              hem = '%s';debug_plots = 0; [elecs_proj] = project_electrodes_anydirection(cortex, \
                              elecmatrix, %s, debug_plots,'%s');\
                              elecmatrix = elecs_proj;\
-                             save('%s/%s/elecs/%s.mat', 'elecmatrix');\
-                             "% (self.subj_dir, self.subj_dir, self.subj, grid_basename, self.subj_dir, \
-                                self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, grid_basename)
+                             save('%s/%s/elecs/individual_elecs/%s.mat', 'elecmatrix');\
+                             "% (self.subj_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
+                                self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, elecfile_prefix)
 
         print('::: Loading Mesh data :::')
         print('::: Projecting electrodes to mesh :::')
@@ -379,12 +395,13 @@ class freeCoG:
         print('::: Done :::')
 
         #move files to preproc subfolder
-        if not os.path.isdir(os.path.join(self.elecs_dir, 'preproc')):
-            print('Making preproc directory')
-            os.mkdir(os.path.join(self.elecs_dir, 'preproc'))
-        print('Moving ' + grid_basename + '_orig.mat and ' + grid_basename + '_corners.mat to %s/preproc'%(self.elecs_dir))
-        os.system('mv %s/'%(self.elecs_dir) + grid_basename + '_orig.mat %s/preproc'%(self.elecs_dir))
-        os.system('mv %s/'%(self.elecs_dir) + grid_basename + '_corners.mat %s/preproc'%(self.elecs_dir))
+        if grid:
+            if not os.path.isdir(os.path.join(self.elecs_dir, 'individual_elecs', 'preproc')):
+                print('Making preproc directory')
+                os.mkdir(os.path.join(self.elecs_dir, 'individual_elecs','preproc'))
+            print('Moving ' + elecfile_prefix + '_orig.mat and ' + elecfile_prefix + '_corners.mat to %s/individual_elecs/preproc'%(self.elecs_dir))
+            os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_orig.mat %s/individual_elecs/preproc'%(self.elecs_dir))
+            os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_corners.mat %s/individual_elecs/preproc'%(self.elecs_dir))            
         return out
 
     def get_clinical_grid(self):
