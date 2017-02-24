@@ -173,7 +173,7 @@ class freeCoG:
             print("Creating directory individual_elecs/")
             os.mkdir(individual_elecs_dir)
         print("Launching electrode picker")
-        os.system('python %s/electrode_picker.py %s %s'%(self.img_pipe_dir, os.path.join(self.subj_dir, self.subj), self.hem))
+        os.system('python %s/SupplementalScripts/electrode_picker.py %s %s'%(self.img_pipe_dir, os.path.join(self.subj_dir, self.subj), self.hem))
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
