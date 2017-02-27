@@ -844,6 +844,8 @@ class freeCoG:
             #if mri_cvs_register already run, don't run again
             if not os.path.isfile(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')):
                 self.get_cvsWarp(template)
+            else:
+                print('%s registration file already created, proceeding to apply the warp'%(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')))
             self.apply_cvsWarp(elecfile_prefix,template)
             elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
@@ -857,6 +859,8 @@ class freeCoG:
             #if surface warp already run, don't run again
             if not os.path.isfile(os.path.join(self.subj_dir,self.subj,'elecs', elecfile_prefix + '_surface_warped.mat')):
                 self.get_surface_warp(elecfile_prefix,template)
+            else:
+                print('Found %s, not running surface warp again'%(os.path.join(self.subj_dir,self.subj,'elecs', elecfile_prefix + '_surface_warped.mat')))
             elecfile_surface_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_surface_warped.mat')
             surface_warps = scipy.io.loadmat(elecfile_surface_warped)
             surface_indices = np.where(orig_elecs['anatomy'][:,2]!='depth')[0]
