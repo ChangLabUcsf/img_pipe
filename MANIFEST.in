@@ -2,4 +2,8 @@ graft img_pipe/surface_warping_scripts/
 graft img_pipe/SupplementalScripts/
 graft img_pipe/plotting/
 graft img_pipe/SupplementalFiles/
+include img_pipe/dependencies.sh
+include README.md
+include requirements.txt
+
 

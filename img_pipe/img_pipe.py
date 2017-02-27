@@ -163,7 +163,7 @@ class freeCoG:
 
             else:
                 print("Failed to create %s, check inputs."%(pial_fill_image))
-
+        
         self.convert_fsmesh2mlab(mesh_name = 'dural')
 
     def mark_electrodes(self):
@@ -871,9 +871,11 @@ class freeCoG:
             mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
                                   plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
-
-            preproc_dir = os.path.join(self.elecs_dir, 'preproc')
-            os.system('mv %s %s/preproc;' %(elecfile_surface_warped, self.elecs_dir))
+            if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
+                print('Making preproc directory')
+                os.mkdir(os.path.join(self.elecs_dir, 'warps_preproc'))
+            preproc_dir = os.path.join(self.elecs_dir, 'warps_preproc')
+            os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
 

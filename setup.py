@@ -6,11 +6,11 @@ class MyInstall(install):
 
     def run(self):
         install.run(self)
-        subprocess.call("./dependencies.sh", shell=True)
+        os.system("./img_pipe/dependencies.sh")
 
 setup(name = "img_pipe",
 	  description = "Image processing pipeline for localization and identification of electrodes for electrocorticography",
-	  version = "2017.2.23.3",
+	  version = "2017.2.24.4",
 	  url = "https://github.com/ChangLabUcsf/img_pipe",
 	  author = "Liberty Hamilton",
 	  author_email = "libertyhamilton@gmail.com",
