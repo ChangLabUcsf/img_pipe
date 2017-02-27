@@ -847,6 +847,7 @@ class freeCoG:
             self.apply_cvsWarp(elecfile_prefix,template)
             elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
+            elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
             depth_indices = np.where(orig_elecs['anatomy'][:,2]=='depth')[0]
             orig_elecs['elecmatrix'][depth_indices] = depth_warps['elecmatrix']
@@ -878,6 +879,7 @@ class freeCoG:
             os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
+            os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
 
     def get_cvsWarp(self,template='cvs_avg35_inMNI152'):
         '''Method for obtaining freesurfer mni coords using mri_cvs_normalize'''
