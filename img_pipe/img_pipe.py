@@ -132,7 +132,9 @@ class freeCoG:
         os.system('recon-all -subjid %s -sd %s -all %s %s %s' % (self.subj, self.subj_dir, flag_T3, openmp_flag, gpu_flag))
 
     def check_pial(self):
-        '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. User should scroll through to check that the pial surface corresponds correctly to the MRI.'''
+        '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. 
+        User should scroll through to check that the pial surface corresponds correctly
+        to the MRI.'''
         brain_mri = os.path.join(self.subj_dir, self.subj, 'mri', 'brain.mgz')
         lh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'lh.pial')
         rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
@@ -167,7 +169,13 @@ class freeCoG:
         self.convert_fsmesh2mlab(mesh_name = 'dural')
 
     def mark_electrodes(self):
-        ''' Launch the electrode picker for this subject '''
+        ''' Launch the electrode picker for this subject. The electrode
+        picker requires the Qt4Agg backend, so is launched via an external
+        python script. 
+
+        Inputs to the electrode_picker.py script include the subject directory and the hemisphere
+        of implantation.
+        '''
         individual_elecs_dir = os.path.join(self.subj_dir,self.subj,'elecs','individual_elecs')
         if not os.path.isdir(individual_elecs_dir):
             print("Creating directory individual_elecs/")
