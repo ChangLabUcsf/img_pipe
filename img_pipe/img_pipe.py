@@ -996,9 +996,14 @@ class freeCoG:
                               addpath(genpath('%s/surface_warping_scripts'));\
                               warp_elecs('%s','%s','%s','%s','%s','%s');"%(self.subj_dir,self.subj,self.subj,self.hem,self.subj_dir,self.subj,basename,self.img_pipe_dir,self.subj,self.hem,basename,self.subj_dir,self.fs_dir,template)
         out = mlab.run()
-        cortex_src = , fsdir, subj, subj, hem)); 
-        cortex_targ = load(sprintf('%s/%s/Meshes/%s_%s_pial.mat', fsdir, atlas, atlas, hem));
+        cortex_src = scipy.io.loadmat(self.pial_surf_file)
+        atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
+        cortex_targ = scipy.io.loadmat(atlas_file)
 
+        if not os.path.isfile(atlas_file):
+            atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
+            print("Creating mesh %s"%(atlas_file))
+            atlas_patient.convert_fsmesh2mlab()
 
         print "Surface warp for %s complete. Warped coordinates in %s/%s/elecs/%s_surface_warped.mat"%(self.subj,self.subj_dir,self.subj,basename)
 
