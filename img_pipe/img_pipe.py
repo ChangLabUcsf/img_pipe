@@ -178,10 +178,11 @@ class freeCoG:
         '''
         individual_elecs_dir = os.path.join(self.subj_dir,self.subj,'elecs','individual_elecs')
         if not os.path.isdir(individual_elecs_dir):
-            print("Creating directory individual_elecs/")
+            print("Creating directory %s"%(individual_elecs_dir))
             os.mkdir(individual_elecs_dir)
         print("Launching electrode picker")
-        os.system('python %s/SupplementalScripts/electrode_picker.py %s %s'%(self.img_pipe_dir, os.path.join(self.subj_dir, self.subj), self.hem))
+        epicker = os.path.join(self.img_pipe_dir, 'SupplementalScripts', 'electrode_picker.py')
+        os.system('python %s %s %s'%(epicker, os.path.join(self.subj_dir, self.subj), self.hem))
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
@@ -368,7 +369,7 @@ class freeCoG:
         roi = ''
         if elecfile_prefix == 'OFC_grid':
             pial_file = os.path.join(self.mesh_dir, self.subj+'_'+self.hem+'_pial.mat')
-            orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs/', elecfile_prefix+'_orig.mat')
+            orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_orig.mat')
             surface_warp_scripts_dir = os.path.join(self.img_pipe_dir, 'surface_warping_scripts')
             gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
             if not os.path.isdir(gyri_labels_dir):
@@ -404,10 +405,11 @@ class freeCoG:
 
         #move files to preproc subfolder
         if grid:
-            if not os.path.isdir(os.path.join(self.elecs_dir, 'individual_elecs', 'preproc')):
+            preproc_dir = os.path.join(self.elecs_dir, 'individual_elecs','preproc')
+            if not os.path.isdir(preproc_dir):
                 print('Making preproc directory')
-                os.mkdir(os.path.join(self.elecs_dir, 'individual_elecs','preproc'))
-            print('Moving ' + elecfile_prefix + '_orig.mat and ' + elecfile_prefix + '_corners.mat to %s/individual_elecs/preproc'%(self.elecs_dir))
+                os.mkdir(preproc_dir)
+            print('Moving ' + elecfile_prefix + '_orig.mat and ' + elecfile_prefix + '_corners.mat to ' + preproc_dir)
             os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_orig.mat %s/individual_elecs/preproc'%(self.elecs_dir))
             os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_corners.mat %s/individual_elecs/preproc'%(self.elecs_dir))            
         return out
