@@ -324,7 +324,7 @@ class freeCoG:
                Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
                 %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter)
         if grid: 
-            corners_file = os.path.join(self.elecs_dir, 'individual_elecs/' + elecfile_prefix+'_corners.mat')
+            corners_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_corners.mat')
             elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
             elecfile_name = elecfile_prefix +'_orig'
         else:
