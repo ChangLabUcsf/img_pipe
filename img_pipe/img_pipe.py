@@ -340,7 +340,10 @@ class freeCoG:
                            elec_corners[3] - elec_corners[1], \
                            elec_corners[2] - elec_corners[0]
             #we can get 4 normal vectors from the 4 grid vectors 
-            normal_vectors = [np.cross(grid_vectors[0],grid_vectors[2]),np.cross(grid_vectors[0],grid_vectors[3]),np.cross(grid_vectors[1],grid_vectors[2]),np.cross(grid_vectors[1],grid_vectors[3])]
+            normal_vectors = [np.cross(grid_vectors[0],grid_vectors[2]), \
+                              np.cross(grid_vectors[0],grid_vectors[3]), \
+                              np.cross(grid_vectors[1],grid_vectors[2]), \
+                              np.cross(grid_vectors[1],grid_vectors[3])]
             
             #normalize the normal vectors
             for vec in range(4):
