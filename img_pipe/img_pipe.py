@@ -318,7 +318,8 @@ class freeCoG:
         else:
             elecfile_name = elecfile_prefix
 
-        if surf_type=='dural' and not os.path.isfile('%s/%s/Meshes/%s_%s_%s.mat'%(self.subj_dir,self.subj,self.subj,self.hem,'dural')):
+        dural_mesh = os.path.join(self.subj_dir, self.subj, 'Meshes', self.subj + '_' + self.hem + '_dural.mat')
+        if surf_type=='dural' and not os.path.isfile(dural_mesh):
             print 'Creating dural surface mesh, using %d smoothing iterations'%(num_iter)
             self.make_dural_surf(num_iter=num_iter)
 
