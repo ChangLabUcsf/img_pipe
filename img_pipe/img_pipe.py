@@ -309,15 +309,17 @@ class freeCoG:
                                  surf_type='dural', projection_method='convex_hull', 
                                  num_iter=30, dilate=0.0, grid=True):
         '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
-        use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's corner electrodes) as the projection direction
+        use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
+        corner electrodes) as the projection direction
         surf_type: 'dural' or 'pial'
         projection_method: 'convex_hull','none','alphavol'
         num_iter: how many smoothing iterations when creating the dural surface
-
+        
         Projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT.'''
 
-        print 'Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
+        print 'Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
+               Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
                 %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter)
         if grid: 
             corners_file = os.path.join(self.elecs_dir, 'individual_elecs/' + elecfile_prefix+'_corners.mat')
@@ -333,7 +335,10 @@ class freeCoG:
 
         if use_mean_normal and grid:
             #the corners draw out a 'rectangle', each side is a grid vector
-            grid_vectors = elec_corners[1]-elec_corners[0],elec_corners[3]-elec_corners[2],elec_corners[3]-elec_corners[1],elec_corners[2]-elec_corners[0]
+            grid_vectors = elec_corners[1] - elec_corners[0], \
+                           elec_corners[3] - elec_corners[2], \
+                           elec_corners[3] - elec_corners[1], \
+                           elec_corners[2] - elec_corners[0]
             #we can get 4 normal vectors from the 4 grid vectors 
             normal_vectors = [np.cross(grid_vectors[0],grid_vectors[2]),np.cross(grid_vectors[0],grid_vectors[3]),np.cross(grid_vectors[1],grid_vectors[2]),np.cross(grid_vectors[1],grid_vectors[3])]
             
