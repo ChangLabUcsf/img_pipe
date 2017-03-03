@@ -219,6 +219,8 @@ class freeCoG:
 
             cortex = {'tri': tri+1, 'vert': vert}
             scipy.io.savemat(out_file_struct, {'cortex': cortex})
+
+        setattr(self, mesh_name+'_surf_file', out_file)
   
     def reg_img(self, source, target):
         '''Runs nmi coregistration between two NIFTI images
@@ -984,7 +986,7 @@ class freeCoG:
         scipy.io.savemat(nearest_warped_matfile, {'elecmatrix': elecmatrix, 'anatomy': anatomy})
 
     #method to perform surface warps
-    def get_surface_warp(self,basename='TDT_elecs_all',template='cvs_avg35_inMNI152'):
+    def get_surface_warp(self, basename='TDT_elecs_all', template='cvs_avg35_inMNI152'):
         ''' Perform surface warps on [basename].mat file '''               
 
         print "Computing surface warp"
@@ -994,6 +996,9 @@ class freeCoG:
                               addpath(genpath('%s/surface_warping_scripts'));\
                               warp_elecs('%s','%s','%s','%s','%s','%s');"%(self.subj_dir,self.subj,self.subj,self.hem,self.subj_dir,self.subj,basename,self.img_pipe_dir,self.subj,self.hem,basename,self.subj_dir,self.fs_dir,template)
         out = mlab.run()
+        cortex_src = , fsdir, subj, subj, hem)); 
+        cortex_targ = load(sprintf('%s/%s/Meshes/%s_%s_pial.mat', fsdir, atlas, atlas, hem));
+
 
         print "Surface warp for %s complete. Warped coordinates in %s/%s/elecs/%s_surface_warped.mat"%(self.subj,self.subj_dir,self.subj,basename)
 
@@ -1014,14 +1019,14 @@ class freeCoG:
             depth_atlas_nm = '.a2009s'
 
         #template brain (cvs)
-        cvs_img=nib.freesurfer.load('%s/%s/mri/aparc.a2009s+aseg.mgz'%(self.subj_dir,template))
+        cvs_img=nib.freesurfer.load(os.path.join(self.subj_dir, template, 'mri','aparc.a2009s+aseg.mgz'))
         cvs_dat=cvs_img.get_data()
 
         #subj brain 
-        subj_img=nib.freesurfer.load('%s/%s/mri/aparc.a2009s+aseg.mgz'%(self.subj_dir,self.subj))
+        subj_img=nib.freesurfer.load(os.path.join(self.mri_dir,'aparc.a2009s+aseg.mgz'))
         subj_dat=subj_img.get_data()
 
-        pdf = PdfPages('%s/%s/elecs/depthWarpsQC.pdf'%(self.subj_dir,self.subj))
+        pdf = PdfPages(os.path.join(self.elecs_dir, 'depthWarpsQC.pdf'))
         for i in range(len(subj_elecnums)): 
             if subj_elecs[i][0] != 0 and subj_elecs[i][0] != 10000:
                 self.plot_elec(subj_elecs[i],warped_elecs[i],subj_dat,cvs_dat,subj_elecnums[i],pdf)
@@ -1134,9 +1139,10 @@ class freeCoG:
         hem = self.hem
 
         if template == None:
-            a = scipy.io.loadmat('%s/%s/Meshes/%s_pial_trivert.mat'%(self.subj_dir, self.subj, self.hem))
+            a = scipy.io.loadmat(self.pial_surf_file)
         else:
-            a = scipy.io.loadmat('%s/%s/Meshes/%s_pial_trivert.mat'%(self.subj_dir, template, self.hem))
+            template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
+            a = scipy.io.loadmat(template_pial_surf_file)
 
         e = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))
 
