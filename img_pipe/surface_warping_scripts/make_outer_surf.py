@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import nibabel as nib
 from scipy.signal import convolve
-from scipy.ndimage.morphology import grey_closing, generate_binary_structure, dilation
+from scipy.ndimage.morphology import grey_closing, generate_binary_structure
 from mne import write_surface
 from mcubes import marching_cubes
 
@@ -18,7 +18,6 @@ def make_outer_surf(orig_pial, image, radius, outfile):
         outfile: surface file to write data to
 
     Original code from ielu (https://github.com/aestrivex/ielu)
-
     '''
     
     #radius information is currently ignored
