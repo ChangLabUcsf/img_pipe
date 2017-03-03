@@ -305,7 +305,9 @@ class freeCoG:
         orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
-    def project_electrodes(self,elecfile_prefix='hd_grid',use_mean_normal=True,surf_type='dural',projection_method='convex_hull',num_iter=30,grid=True):
+    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, 
+                                 surf_type='dural', projection_method='convex_hull', 
+                                 num_iter=30, dilate=0.0, grid=True):
         '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
         use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's corner electrodes) as the projection direction
         surf_type: 'dural' or 'pial'
@@ -327,7 +329,7 @@ class freeCoG:
         dural_mesh = os.path.join(self.subj_dir, self.subj, 'Meshes', self.subj + '_' + self.hem + '_dural.mat')
         if surf_type=='dural' and not os.path.isfile(dural_mesh):
             print 'Creating dural surface mesh, using %d smoothing iterations'%(num_iter)
-            self.make_dural_surf(num_iter=num_iter)
+            self.make_dural_surf(num_iter=num_iter, dilate=dilate)
 
         if use_mean_normal and grid:
             #the corners draw out a 'rectangle', each side is a grid vector
