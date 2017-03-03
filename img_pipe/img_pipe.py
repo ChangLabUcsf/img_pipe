@@ -140,7 +140,7 @@ class freeCoG:
         rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
         os.system("freeview --volume %s --surface %s --surface %s --viewport 'coronal'" % (brain_mri, lh_pial, rh_pial))
 
-    def make_dural_surf(self, radius=3, num_iter=30):
+    def make_dural_surf(self, radius=3, num_iter=30, dilate=0.0):
         '''
         Create smoothed dural surface for projecting electrodes to.
         '''
@@ -163,6 +163,12 @@ class freeCoG:
                 dura_surf = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.dural')
                 os.system('mris_smooth -nw -n %d %s-main %s'%(num_iter, outfile, dura_surf))
 
+                if dilate != 0:
+                    print("Dilating surface by %d mm"%(dilate))
+                    if dilate > 0:
+                        print("Multiplying dilate value by -1 to get outward dilation")
+                        dilate = -1*dilate
+                    os.system('mris_expand %s %d %s'%(dura_surf, dilate, dura_surf))
             else:
                 print("Failed to create %s, check inputs."%(pial_fill_image))
         
@@ -839,7 +845,7 @@ class freeCoG:
 
         return elec_labels
 
-    def warp_all(self,elecfile_prefix='TDT_elecs_all',warp_depths=True,warp_surface=True,template='cvs_avg35_inMNI152'):
+    def warp_all(self, elecfile_prefix='TDT_elecs_all', warp_depths=True, warp_surface=True, template='cvs_avg35_inMNI152'):
         ''' Warps surface and depth electrodes and runs quality checking functions for them. 
         elecfile_prefix: the name of the .mat file with the electrode coordinates in elecmatrix
         warp_depths: whether to warp depth electrodes
