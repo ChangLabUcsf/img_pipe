@@ -1,4 +1,4 @@
-ipython==5.1.0
+ipython
 numpy==1.11.1
 scipy==0.18.1
 pyvtk
