@@ -1012,13 +1012,6 @@ class freeCoG:
         ''' Perform surface warps on [basename].mat file '''               
 
         print "Computing surface warp"
-        #mlab = matlab.MatlabCommand()
-        #mlab.inputs.script = "load %s/%s/Meshes/%s_%s_pial.mat;\
-        #                      load %s/%s/elecs/%s;\
-        #                      addpath(genpath('%s/surface_warping_scripts'));\
-        #                      warp_elecs('%s','%s','%s','%s','%s','%s');"%(self.subj_dir,self.subj,self.subj,self.hem,self.subj_dir,self.subj,basename,self.img_pipe_dir,self.subj,self.hem,basename,self.subj_dir,self.fs_dir,template)
-        #out = mlab.run()
-
         cortex_src = scipy.io.loadmat(self.pial_surf_file)
         atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
         if not os.path.isfile(atlas_file):
@@ -1029,9 +1022,6 @@ class freeCoG:
         cortex_targ = scipy.io.loadmat(atlas_file)
         elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
         anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
-
-        # Only get the electrodes that are on the surface (not depths)
-        inds = np.where(anatomy[:,2] != 'depth')
 
         print("Finding nearest surface vertex for each electrode")
         vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix)
