@@ -1080,8 +1080,11 @@ class freeCoG:
         Generates a pdf file with one page for each depth electrode, showing that electrode
         in the original surface space as well as in warped CVS space.  '''
         #get all subj elecs
-        subj_elecs,subj_elecnums = self.get_depth_elecs('%s/%s/elecs/%s_RAS.txt'%(self.subj_dir, self.subj, elecfile_prefix),'\n','\t',elecfile_prefix)
-        warped_elecs,warped_elecnums = self.get_depth_elecs('%s/%s/elecs/%s_nearest_warped.txt'%(self.subj_dir,self.subj,elecfile_prefix),'\n',' ',elecfile_prefix)
+        RAS_file = os.path.join(self.elecs_dir, '%s_RAS.txt'%(elecfile_prefix))
+        subj_elecs,subj_elecnums = self.get_depth_elecs(RAS_file,'\n','\t',elecfile_prefix)
+
+        nearest_warped_file = os.path.join(self.elecs_dir, '%s_nearest_warped.txt'%(elecfile_prefix))
+        warped_elecs,warped_elecnums = self.get_depth_elecs(nearest_warped_file,'\n',' ',elecfile_prefix)
 
         #template brain (cvs)
         if atlas_depth == 'desikan-killiany':
@@ -1111,16 +1114,18 @@ class freeCoG:
              patient.apply_transform(elecfile_prefix = 'TDT_elecs_all', reorient_file = 'T1_reorient')
         assumes transform is located in the subject's acpc directory
         '''
-        elecs = scipy.io.loadmat( self.subj_dir + '/' + self.subj + '/elecs/' + elecfile_prefix + '.mat' )
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        elecs = scipy.io.loadmat(elecfile)
         elec = elecs.get('elecmatrix')
         anatomy = elecs.get('anatomy')
         
-        rmat = scipy.io.loadmat( self.subj_dir + '/' + self.subj + '/acpc/' + reorient_file + '.mat')['M']
+        reorient_file =  os.path.join(self.subj_dir, self.subj, 'acpc', reorient_file+'.mat')
+        rmat = scipy.io.loadmat(reorient_file)['M']
         elecs_reoriented = nib.affines.apply_affine(rmat, elec)
         
         print("Saving reoriented electrodes")
-        scipy.io.savemat(self.subj_dir + '/' + self.subj +
-                         '/elecs/' + elecfile_prefix + '_reoriented.mat', {'elecmatrix': elecs_reoriented, 'anatomy': anatomy})
+        reoriented_elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'_reoriented.mat')
+        scipy.io.savemat(reoriented_elecfile, {'elecmatrix': elecs_reoriented, 'anatomy': anatomy})
         print("Done.")
 
      #helper method to check the cvs depth warps:
@@ -1134,8 +1139,11 @@ class freeCoG:
         marked with a red title.        
         '''
 
-        cmap = matplotlib.colors.ListedColormap(np.load('%s/SupplementalFiles/FreeSurferLUTRGBValues.npy'%(self.img_pipe_dir))[:cvs_dat.max()+1,:])
-        lookup_dict = pickle.load(open('%s/SupplementalFiles/FreeSurferLookupTable'%(self.img_pipe_dir),'r'))
+        fs_lut = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLUTRGBValues.npy')
+        cmap = matplotlib.colors.ListedColormap(np.load()[:cvs_dat.max()+1,:])
+
+        lookupTable = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLookupTable')
+        lookup_dict = pickle.load(open(lookupTable,'r'))
         fig = plt.figure(figsize=((30,17)))
         nonzero_indices = np.where(cvs_dat>0)
         offset = 35 #this is how much you want to trim the mri by, there is a lot of empty space
@@ -1197,7 +1205,8 @@ class freeCoG:
         f = open(fpath,'r')
         elecs = (f.read().split(delim1))
         elecs = np.array([e for e in elecs if len(e)>1])
-        tdt_elec_types = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir,self.subj, elecfile_prefix))['anatomy'][:,2][:-1]
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        tdt_elec_types = scipy.io.loadmat(elecfile)['anatomy'][:,2][:-1]
         # depth_elecs = elecs[np.where(tdt_elec_types == 'depth')[0]]
         str_to_float = np.vectorize(lambda x: float(x))
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
@@ -1217,7 +1226,8 @@ class freeCoG:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
 
-        e = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        e = scipy.io.loadmat(elecfile)
 
         # Plot the pial surface
         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
