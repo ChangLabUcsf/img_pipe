@@ -326,9 +326,9 @@ class freeCoG:
         Projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT.'''
 
-        print 'Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
+        print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
                Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
-                %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter)
+                %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter))
         if grid: 
             corners_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_corners.mat')
             elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
@@ -338,7 +338,7 @@ class freeCoG:
 
         dural_mesh = os.path.join(self.subj_dir, self.subj, 'Meshes', self.subj + '_' + self.hem + '_dural.mat')
         if surf_type=='dural' and not os.path.isfile(dural_mesh):
-            print 'Creating dural surface mesh, using %d smoothing iterations'%(num_iter)
+            print('Creating dural surface mesh, using %d smoothing iterations'%(num_iter))
             self.make_dural_surf(num_iter=num_iter, dilate=dilate)
 
         if use_mean_normal and grid:
@@ -364,7 +364,7 @@ class freeCoG:
                 flipped_angle = np.arccos(np.dot((-1.0*normal_vectors[vec]),normal_vectors[vec-1])/(np.linalg.norm(normal_vectors[vec])*np.linalg.norm(normal_vectors[vec-1])))
                 if angle > flipped_angle:
                     normal_vectors[vec] = normal_vectors[vec]*-1.0
-            print 'Normal vectors: ' + str(normal_vectors)
+            print('Normal vectors: ' + str(normal_vectors))
 
             #take the mean of the 4 normal vectors
             mean_normal = np.array(normal_vectors).mean(axis=0)
@@ -377,7 +377,7 @@ class freeCoG:
                 direction = '[%f %f %f]'%(-1.0*mean_normal[0],-1.0*mean_normal[1],-1.0*mean_normal[2])
 
             # project the electrodes to the convex hull of the pial surface
-            print 'Projection direction vector: ', direction
+            print('Projection direction vector: ', direction)
         else:
             proj_direction = raw_input('Enter a custom projection direction as a string (lh,rh,top,bottom,front,back,or custom): If none provided, will default to hemisphere: \n')
             if proj_direction == 'custom':
@@ -688,7 +688,7 @@ class freeCoG:
         else:
             surf_atlas_flag = ''
 
-        print self.subj_dir
+        print(self.subj_dir)
         print('Creating labels from the freesurfer annotation file for use in automated electrode labeling')
         gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
         if not os.path.isdir(gyri_labels_dir):
@@ -872,11 +872,11 @@ class freeCoG:
         template: which atlas brain to use 
         '''
 
-        print "Using %s as the template for warps"%(template)
+        print("Using %s as the template for warps"%(template))
 
         if os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))):
-            print "The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
-                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix)
+            print("The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
+                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix))
             return
 
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
@@ -926,10 +926,14 @@ class freeCoG:
                 print('Making preproc directory')
                 os.mkdir(os.path.join(self.elecs_dir, 'warps_preproc'))
             preproc_dir = os.path.join(self.elecs_dir, 'warps_preproc')
-            os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
-            os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
-            os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
-            os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
+            if os.path.isfile(elecfile_surface_warped):
+                os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
+            if os.path.isfile(elecfile_nearest_warped):
+                os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
+            if os.path.isfile(elecfile_nearest_warped_text):
+                os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
+            if os.path.isfile(elecfile_RAS_text):
+                os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
 
     def get_cvsWarp(self,template='cvs_avg35_inMNI152'):
         '''Method for obtaining freesurfer mni coords using mri_cvs_normalize'''
@@ -1010,62 +1014,66 @@ class freeCoG:
     #method to perform surface warps
     def get_surface_warp(self, basename='TDT_elecs_all', template='cvs_avg35_inMNI152'):
         ''' Perform surface warps on [basename].mat file '''               
-
-        print "Computing surface warp"
-        cortex_src = scipy.io.loadmat(self.pial_surf_file)
-        atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
-        if not os.path.isfile(atlas_file):
-            atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
-            print("Creating mesh %s"%(atlas_file))
-            atlas_patient.convert_fsmesh2mlab()
-
-        cortex_targ = scipy.io.loadmat(atlas_file)
-        elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
-        anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
-
-        print("Finding nearest surface vertex for each electrode")
-        vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix)
-        elecmatrix = nearest_verts
-
-        print('Warping each electrode separately:')
-        elecs_warped = []
-        for chan in np.arange(elecmatrix.shape[0]):
-            # Open label file for writing
-            if anatomy[chan,2] != 'depth':
-                labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
-                labelname = os.path.join(self.subj_dir, self.subj, 'label', labelname_nopath)
-                
-                fid = open(labelname,'w')
-                fid.write('%s\n'%(labelname))
-                
-                # Print header of label file
-                fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
-                fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
-                                                        elecmatrix[chan,1], elecmatrix[chan,2]))
-                fid.close()
-
-                print("Warping ch %d"%(chan))
-                trglabel = os.path.join(self.subj_dir, template, 'label', '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
-                os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
-                          ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
-                          ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
-
-                # Get the electrode coordinate from the label file
-                fid2 = open(trglabel,'r')
-                coord = fid2.readlines()[2].split() # Get the third line
-                fid2.close()
-
-                elecs_warped.append([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
-            else:
-                print("Channel %d is a depth electrode, not warping"%(chan))
-                elecs_warped.append([np.nan, np.nan, np.nan])
-
-            #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
-            
+        
         elecfile = os.path.join(self.elecs_dir,'%s_surface_warped.mat'%(basename))
-        scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
 
-        print("Surface warp for %s complete. Warped coordinates in %s"%(self.subj, elecfile))
+        if os.path.isfile(elecfile):
+            print("Surface warp file exists")
+        else:
+            print("Computing surface warp")
+            cortex_src = scipy.io.loadmat(self.pial_surf_file)
+            atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
+            if not os.path.isfile(atlas_file):
+                atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
+                print("Creating mesh %s"%(atlas_file))
+                atlas_patient.convert_fsmesh2mlab()
+
+            cortex_targ = scipy.io.loadmat(atlas_file)
+            elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
+            anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
+
+            print("Finding nearest surface vertex for each electrode")
+            vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix)
+            elecmatrix = nearest_verts
+
+            print('Warping each electrode separately:')
+            elecs_warped = []
+            for chan in np.arange(elecmatrix.shape[0]):
+                # Open label file for writing
+                if anatomy[chan,2] != 'depth':
+                    labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
+                    labelname = os.path.join(self.subj_dir, self.subj, 'label', labelname_nopath)
+                    
+                    fid = open(labelname,'w')
+                    fid.write('%s\n'%(labelname))
+                    
+                    # Print header of label file
+                    fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
+                    fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
+                                                            elecmatrix[chan,1], elecmatrix[chan,2]))
+                    fid.close()
+
+                    print("Warping ch %d"%(chan))
+                    trglabel = os.path.join(self.subj_dir, template, 'label', '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
+                    os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
+                              ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
+                              ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
+
+                    # Get the electrode coordinate from the label file
+                    fid2 = open(trglabel,'r')
+                    coord = fid2.readlines()[2].split() # Get the third line
+                    fid2.close()
+
+                    elecs_warped.append([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
+                else:
+                    print("Channel %d is a depth electrode, not warping"%(chan))
+                    elecs_warped.append([np.nan, np.nan, np.nan])
+
+                #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
+                
+            scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
+
+            print("Surface warp for %s complete. Warped coordinates in %s"%(self.subj, elecfile))
 
     def check_depth_warps(self, elecfile_prefix='TDT_elecs_all',template='cvs_avg35_inMNI152',atlas_depth='destrieux'):
         ''' Function to check whether warping of depths in mri_cvs_register worked properly. 
