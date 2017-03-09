@@ -204,9 +204,6 @@ class freeCoG:
         and *_rh_pial.mat for use in MATLAB.
         Other potential mesh_name values could be 'white' or 'inflated'.'''
 
-        # open MATLAB interface
-        mlab = matlab.MatlabCommand()
-
         hems = ['lh', 'rh']
 
         if not os.path.isdir(self.mesh_dir):
