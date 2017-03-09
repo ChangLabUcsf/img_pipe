@@ -624,8 +624,8 @@ class freeCoG:
                 elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
                 num_elecs = elecmatrix.shape[0]
                 elecmatrix_all.append(elecmatrix)
-                short_names.extend([short_name_prefix+str(i) for i in range(1,num_elecs+1)])
-                long_names.extend([long_name_prefix+str(i) for i in range(1,num_elecs+1)])
+                short_names.extend([short_name_prefix for i in range(1,num_elecs+1)])
+                long_names.extend([long_name_prefix for i in range(1,num_elecs+1)])
                 elec_types.extend([elec_type for i in range(num_elecs)])
             completed = raw_input('Finished entering devices? Enter \'y\' if finished.')
             if completed=='y':
@@ -873,6 +873,12 @@ class freeCoG:
         '''
 
         print "Using %s as the template for warps"%(template)
+
+        if os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))):
+            print "The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
+                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix)
+            return
+
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         orig_elecs = scipy.io.loadmat(elecfile)
 
@@ -880,9 +886,16 @@ class freeCoG:
             #if mri_cvs_register already run, don't run again
             if not os.path.isfile(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')):
                 self.get_cvsWarp(template)
-            self.apply_cvsWarp(elecfile_prefix,template)
+            else:
+                print('%s registration file already created, proceeding to apply the depth warp'%(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')))
+            if not os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_nearest_warped.mat'%(elecfile_prefix))):
+                self.apply_cvsWarp(elecfile_prefix,template)
+            else:
+                print "Depth warping has already been applied to the depth electrodes of %s/%s/%s.mat and are in %s/%s/%s_nearest_warped.mat"\
+                    %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix)
             elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
+            elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
             depth_indices = np.where(orig_elecs['anatomy'][:,2]=='depth')[0]
             orig_elecs['elecmatrix'][depth_indices] = depth_warps['elecmatrix']
@@ -892,6 +905,8 @@ class freeCoG:
             #if surface warp already run, don't run again
             if not os.path.isfile(os.path.join(self.subj_dir,self.subj,'elecs', elecfile_prefix + '_surface_warped.mat')):
                 self.get_surface_warp(elecfile_prefix,template)
+            else:
+                print('Found %s, not running surface warp again'%(os.path.join(self.subj_dir,self.subj,'elecs', elecfile_prefix + '_surface_warped.mat')))
             elecfile_surface_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_surface_warped.mat')
             surface_warps = scipy.io.loadmat(elecfile_surface_warped)
             surface_indices = np.where(orig_elecs['anatomy'][:,2]!='depth')[0]
@@ -905,6 +920,9 @@ class freeCoG:
             #create pdf for visual inspection of the original elecs vs the warps
             mlab = matlab.MatlabCommand()
             mlab.inputs.script = "addpath(genpath(['%s',filesep,'surface_warping_scripts']));\
+            print("addpath(genpath('%s/surface_warping_scripts'));\
+                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes))
+            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
                                   plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
@@ -914,6 +932,7 @@ class freeCoG:
             os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
             os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
+            os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
 
     def get_cvsWarp(self,template='cvs_avg35_inMNI152'):
         '''Method for obtaining freesurfer mni coords using mri_cvs_normalize'''
