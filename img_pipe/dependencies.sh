@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pip install -qqq conda
+#pip install -qqq conda
 pip install -qqq numpy
 pip install -qqq scipy
 conda install -y vtk
