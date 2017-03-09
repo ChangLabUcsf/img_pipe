@@ -23,6 +23,7 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
+from surface_warping_scripts.TriangleRayIntersection import TriangleRayIntersection
 
 from nipype.interfaces import matlab as matlab
 
@@ -52,7 +53,7 @@ class freeCoG:
         elecs_dir [str]: the directory (usually [subj_dir]/[subj]/elecs)        
     '''
 
-    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_path = os.environ['SPM_PATH']):
+    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_dir = os.environ['SPM_PATH']):
         '''
         subj: patient name (i.e. 'SUBJ_25')
         hem: patient hem of implantation ('lh' or 'rh')
@@ -68,7 +69,7 @@ class freeCoG:
 
         #Freesurfer home directory
         self.fs_dir = fs_dir
-        matlab.MatlabCommand.set_default_paths(spm_path) 
+        matlab.MatlabCommand.set_default_paths(spm_dir) 
 
         # CT_dir: dir for CT img data
         self.CT_dir = os.path.join(self.subj_dir, self.subj, 'CT')
@@ -78,6 +79,9 @@ class freeCoG:
 
         # Meshes directory for matlab/python meshes
         self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
+        surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+        if os.path.isfile(surf_file):
+            self.pial_surf_file = surf_file
 
         # surf directory
         self.surf_dir = os.path.join(self.subj_dir, self.subj, 'surf')
@@ -88,7 +92,7 @@ class freeCoG:
         #if paths are not the default paths in the shell environment:
         os.environ['FREESURFER_HOME'] = fs_dir
         os.environ['SUBJECTS_DIR'] = subj_dir
-        os.environ['SPM_PATH'] = spm_path
+        os.environ['SPM_PATH'] = spm_dir
 
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
@@ -130,6 +134,8 @@ class freeCoG:
         gpu_flag = '-use-gpu' if you want to run code on the GPU (some steps run faster)        
             otherwise use gpu_flag='' '''       
         os.system('recon-all -subjid %s -sd %s -all %s %s %s' % (self.subj, self.subj_dir, flag_T3, openmp_flag, gpu_flag))
+
+        self.pial_surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
 
     def check_pial(self):
         '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. 
@@ -990,22 +996,73 @@ class freeCoG:
         ''' Perform surface warps on [basename].mat file '''               
 
         print "Computing surface warp"
-        mlab = matlab.MatlabCommand()
-        mlab.inputs.script = "load %s/%s/Meshes/%s_%s_pial.mat;\
-                              load %s/%s/elecs/%s;\
-                              addpath(genpath('%s/surface_warping_scripts'));\
-                              warp_elecs('%s','%s','%s','%s','%s','%s');"%(self.subj_dir,self.subj,self.subj,self.hem,self.subj_dir,self.subj,basename,self.img_pipe_dir,self.subj,self.hem,basename,self.subj_dir,self.fs_dir,template)
-        out = mlab.run()
+        #mlab = matlab.MatlabCommand()
+        #mlab.inputs.script = "load %s/%s/Meshes/%s_%s_pial.mat;\
+        #                      load %s/%s/elecs/%s;\
+        #                      addpath(genpath('%s/surface_warping_scripts'));\
+        #                      warp_elecs('%s','%s','%s','%s','%s','%s');"%(self.subj_dir,self.subj,self.subj,self.hem,self.subj_dir,self.subj,basename,self.img_pipe_dir,self.subj,self.hem,basename,self.subj_dir,self.fs_dir,template)
+        #out = mlab.run()
+
         cortex_src = scipy.io.loadmat(self.pial_surf_file)
         atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
-        cortex_targ = scipy.io.loadmat(atlas_file)
-
         if not os.path.isfile(atlas_file):
             atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
             print("Creating mesh %s"%(atlas_file))
             atlas_patient.convert_fsmesh2mlab()
 
-        print "Surface warp for %s complete. Warped coordinates in %s/%s/elecs/%s_surface_warped.mat"%(self.subj,self.subj_dir,self.subj,basename)
+        cortex_targ = scipy.io.loadmat(atlas_file)
+        elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
+        anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
+
+        # Only get the electrodes that are on the surface (not depths)
+        inds = np.where(anatomy[:,2] != 'depth')
+
+        print("Finding nearest surface vertex for each electrode")
+        vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix)
+        elecmatrix = nearest_verts
+
+        print('Warping each electrode separately:')
+        elecs_warped = []
+        for chan in np.arange(elecmatrix.shape[0]):
+            # Open label file for writing
+            if anatomy[chan,2] != 'depth':
+                labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
+                labelname = os.path.join(self.subj_dir, self.subj, 'label', labelname_nopath)
+                
+                fid = open(labelname,'w')
+                fid.write('%s\n'%(labelname))
+                
+                # Print header of label file
+                fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
+                fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
+                                                        elecmatrix[chan,1], elecmatrix[chan,2]))
+                fid.close()
+
+                print("Warping ch %d"%(chan))
+                trglabel = os.path.join(self.subj_dir, template, 'label', '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
+                os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
+                          ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
+                          ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
+
+                # Get the electrode coordinate from the label file
+                fid2 = open(trglabel,'r')
+                coord = fid2.readlines()[2].split() # Get the third line
+                fid2.close()
+
+                elecs_warped.append([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
+            else:
+                print("Channel %d is a depth electrode, not warping"%(chan))
+                elecs_warped.append([np.nan, np.nan, np.nan])
+
+            #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
+            
+        # warp labels to the atlas
+        #fprintf(1,'warping labels from %s to %s, labelprefix: %s\n', subj, atlas, lower(labelprefix))
+        #run_label2label(subj, hem, labelprefix, atlas,fsdir,fsBinDir)
+        elecfile = os.path.join(self.elecs_dir,'%s_surface_warped2.mat'%(basename))
+        scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
+
+        print "Surface warp for %s complete. Warped coordinates in %s/%s/elecs/%s_surface_warped2.mat"%(self.subj,self.subj_dir,self.subj,basename)
 
     def check_depth_warps(self, elecfile_prefix='TDT_elecs_all',template='cvs_avg35_inMNI152',atlas_depth='destrieux'):
         ''' Function to check whether warping of depths in mri_cvs_register worked properly. 
