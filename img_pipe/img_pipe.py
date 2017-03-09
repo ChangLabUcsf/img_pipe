@@ -411,15 +411,15 @@ class freeCoG:
             roi = 'ofc_'
 
         mlab = matlab.MatlabCommand()
-        mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                             addpath(genpath('%s/plotting'));\
-                             load('%s/%s/elecs/individual_elecs/%s.mat'); \
-                             save('%s/%s/elecs/individual_elecs/preproc/%s_orig.mat','elecmatrix');\
-                             load('%s/%s/Meshes/%s_%s_%s%s.mat');\
+        mlab.inputs.script = "addpath(genpath(['%s' filesep 'surface_warping_scripts']));\
+                             addpath(genpath(['%s' filesep 'plotting']));\
+                             load(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep '%s.mat']); \
+                             save(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep 'preproc' filesep '%s_orig.mat'],'elecmatrix');\
+                             load(['%s' filesep '%s' filesep 'Meshes' filesep '%s_%s_%s%s.mat']);\
                              hem = '%s';debug_plots = 0; [elecs_proj] = project_electrodes_anydirection(cortex, \
                              elecmatrix, %s, debug_plots,'%s');\
                              elecmatrix = elecs_proj;\
-                             save('%s/%s/elecs/individual_elecs/%s.mat', 'elecmatrix');\
+                             save(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep '%s.mat'], 'elecmatrix');\
                              "% (self.img_pipe_dir, self.img_pipe_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
                                 self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, elecfile_prefix)
 
