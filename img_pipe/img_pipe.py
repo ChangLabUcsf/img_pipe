@@ -2,7 +2,7 @@
 # Authors: Liberty Hamilton, Morgan Lee, David Chang, Zachary Greenberg
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: Dec 5, 2016
+# Date Last Edited: March 9, 2017
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
@@ -11,7 +11,6 @@
 import os
 import glob
 import pickle
-import inspect
 
 import nibabel as nib
 
@@ -23,8 +22,15 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
+from surface_warping_scripts.TriangleRayIntersection import TriangleRayIntersection
 
 from nipype.interfaces import matlab as matlab
+
+# For CT to MRI registration
+from nipy.core.api import AffineTransform
+import nipy.algorithms
+import nipy.algorithms.resample
+import nipy.algorithms.registration
 
 class freeCoG:
     ''' This defines the class freeCoG, which creates a patient object      
@@ -52,7 +58,7 @@ class freeCoG:
         elecs_dir [str]: the directory (usually [subj_dir]/[subj]/elecs)        
     '''
 
-    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_path = os.environ['SPM_PATH']):
+    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'], subj_dir=os.environ['SUBJECTS_DIR'], spm_dir = os.environ['SPM_PATH']):
         '''
         subj: patient name (i.e. 'SUBJ_25')
         hem: patient hem of implantation ('lh' or 'rh')
@@ -68,7 +74,7 @@ class freeCoG:
 
         #Freesurfer home directory
         self.fs_dir = fs_dir
-        matlab.MatlabCommand.set_default_paths(spm_path) 
+        matlab.MatlabCommand.set_default_paths(spm_dir) 
 
         # CT_dir: dir for CT img data
         self.CT_dir = os.path.join(self.subj_dir, self.subj, 'CT')
@@ -78,6 +84,9 @@ class freeCoG:
 
         # Meshes directory for matlab/python meshes
         self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
+        surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+        if os.path.isfile(surf_file):
+            self.pial_surf_file = surf_file
 
         # surf directory
         self.surf_dir = os.path.join(self.subj_dir, self.subj, 'surf')
@@ -88,7 +97,7 @@ class freeCoG:
         #if paths are not the default paths in the shell environment:
         os.environ['FREESURFER_HOME'] = fs_dir
         os.environ['SUBJECTS_DIR'] = subj_dir
-        os.environ['SPM_PATH'] = spm_path
+        os.environ['SPM_PATH'] = spm_dir
 
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
@@ -131,14 +140,18 @@ class freeCoG:
             otherwise use gpu_flag='' '''       
         os.system('recon-all -subjid %s -sd %s -all %s %s %s' % (self.subj, self.subj_dir, flag_T3, openmp_flag, gpu_flag))
 
+        self.pial_surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+
     def check_pial(self):
-        '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. User should scroll through to check that the pial surface corresponds correctly to the MRI.'''
+        '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. 
+        User should scroll through to check that the pial surface corresponds correctly
+        to the MRI.'''
         brain_mri = os.path.join(self.subj_dir, self.subj, 'mri', 'brain.mgz')
         lh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'lh.pial')
         rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
         os.system("freeview --volume %s --surface %s --surface %s --viewport 'coronal'" % (brain_mri, lh_pial, rh_pial))
 
-    def make_dural_surf(self, radius=3, num_iter=30):
+    def make_dural_surf(self, radius=3, num_iter=30, dilate=0.0):
         '''
         Create smoothed dural surface for projecting electrodes to.
         '''
@@ -161,19 +174,32 @@ class freeCoG:
                 dura_surf = os.path.join(self.subj_dir, self.subj, 'surf', hem+'.dural')
                 os.system('mris_smooth -nw -n %d %s-main %s'%(num_iter, outfile, dura_surf))
 
+                if dilate != 0:
+                    print("Dilating surface by %d mm"%(dilate))
+                    if dilate > 0:
+                        print("Multiplying dilate value by -1 to get outward dilation")
+                        dilate = -1*dilate
+                    os.system('mris_expand %s %d %s'%(dura_surf, dilate, dura_surf))
             else:
                 print("Failed to create %s, check inputs."%(pial_fill_image))
         
         self.convert_fsmesh2mlab(mesh_name = 'dural')
 
     def mark_electrodes(self):
-        ''' Launch the electrode picker for this subject '''
+        ''' Launch the electrode picker for this subject. The electrode
+        picker requires the Qt4Agg backend, so is launched via an external
+        python script. 
+
+        Inputs to the electrode_picker.py script include the subject directory and the hemisphere
+        of implantation.
+        '''
         individual_elecs_dir = os.path.join(self.subj_dir,self.subj,'elecs','individual_elecs')
         if not os.path.isdir(individual_elecs_dir):
-            print("Creating directory individual_elecs/")
+            print("Creating directory %s"%(individual_elecs_dir))
             os.mkdir(individual_elecs_dir)
         print("Launching electrode picker")
-        os.system('python %s/SupplementalScripts/electrode_picker.py %s %s'%(self.img_pipe_dir, os.path.join(self.subj_dir, self.subj), self.hem))
+        epicker = os.path.join(self.img_pipe_dir, 'SupplementalScripts', 'electrode_picker.py')
+        os.system('python %s %s %s'%(epicker, os.path.join(self.subj_dir, self.subj), self.hem))
 
     def convert_fsmesh2mlab(self, mesh_name='pial'):
         '''Creates surface mesh triangle and vertex .mat files
@@ -182,9 +208,6 @@ class freeCoG:
         in the Meshes directory (for use in python) and *_lh_pial.mat
         and *_rh_pial.mat for use in MATLAB.
         Other potential mesh_name values could be 'white' or 'inflated'.'''
-
-        # open MATLAB interface
-        mlab = matlab.MatlabCommand()
 
         hems = ['lh', 'rh']
 
@@ -204,37 +227,33 @@ class freeCoG:
 
             cortex = {'tri': tri+1, 'vert': vert}
             scipy.io.savemat(out_file_struct, {'cortex': cortex})
+
+        setattr(self, mesh_name+'_surf_file', out_file)
   
     def reg_img(self, source, target):
-        '''Runs nmi coregistration between two NIFTI images
-        using SPMs normalizated mutual information algorithm.
-        Usually run as patient.reg_img('CT.nii','orig.nii').
-        If orig.nii does not exist, it is created from orig.mgz'''
+        '''Runs nmi coregistration between two images.
+        Usually run as patient.reg_img('CT.nii','orig.mgz').'''
 
-        from nipype.interfaces import spm
+        source_file = os.path.join(self.CT_dir, source)
+        target_file = os.path.join(self.mri_dir, target)
 
-        # Convert the orig.mgz to nii
-        orig_file = os.path.join(self.mri_dir, 'orig.nii')
-        orig_file_mgz = os.path.join(self.mri_dir, 'orig.mgz')
-        if not os.path.isfile(orig_file):
-            os.system("mri_convert -i %s -o %s"%(orig_file_mgz, orig_file))
-        else:
-            print('%s already exists. Not converting'%(orig_file))
+        print("Computing registration from %s to %s"%(source_file, target_file))
+        ctimg  = nipy.load_image(source_file)
+        mriimg = nipy.load_image(target_file)
 
-        # create instance of spm.Coregister to run mutual information
-        # registration between source and target img
-        coreg = spm.Coregister()
+        ct_cmap = ctimg.coordmap  
+        mri_cmap = mriimg.coordmap
 
-        # set source and target inputs to coregister
-        coreg.inputs.source = os.path.join(self.CT_dir, source)
-        coreg.inputs.target = os.path.join(self.mri_dir, target)
+        # Compute registration
+        ct_to_mri_reg = nipy.algorithms.registration.histogram_registration.HistogramRegistration(ctimg, mriimg, similarity='nmi')
+        aff = ct_to_mri_reg.optimize('affine').as_affine()   
 
-        # set algorithm to normalized mutual information
-        coreg.inputs.cost_function = 'nmi'
+        ct_to_mri = AffineTransform(ct_cmap.function_range, mri_cmap.function_range, aff)  
+        reg_CT = nipy.algorithms.resample.resample(ctimg, mri_cmap, ct_to_mri.inverse(), mriimg.shape)    
 
-        # run coregistration
-        print('::: Computing registration between CT and MRI :::')
-        coreg.run()
+        outfile = os.path.join(self.CT_dir, 'r'+source)
+        print("Saving registered CT image as %s"%(outfile))
+        nipy.save_image(reg_CT, outfile)
 
     def interp_grid(self, nchans = 256, grid_basename='hd_grid'):
         '''Interpolates corners for an electrode grid
@@ -290,20 +309,24 @@ class freeCoG:
         orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
-    def project_electrodes(self,elecfile_prefix='hd_grid',use_mean_normal=True,surf_type='dural',projection_method='convex_hull',num_iter=30,grid=True):
+    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, 
+                                 surf_type='dural', projection_method='convex_hull', 
+                                 num_iter=30, dilate=0.0, grid=True):
         '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
-        use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's corner electrodes) as the projection direction
+        use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
+        corner electrodes) as the projection direction
         surf_type: 'dural' or 'pial'
         projection_method: 'convex_hull','none','alphavol'
         num_iter: how many smoothing iterations when creating the dural surface
-
+        
         Projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT.'''
 
-        print 'Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
-                %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter)
+        print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
+               Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
+                %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter))
         if grid: 
-            corners_file = os.path.join(self.elecs_dir, 'individual_elecs/' + elecfile_prefix+'_corners.mat')
+            corners_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_corners.mat')
             elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
             elecfile_name = elecfile_prefix +'_orig'
             if not os.path.isdir(os.path.join(self.elecs_dir, 'individual_elecs', 'preproc')):
@@ -312,15 +335,22 @@ class freeCoG:
         else:
             elecfile_name = elecfile_prefix
 
-        if surf_type=='dural' and not os.path.isfile('%s/%s/Meshes/%s_%s_%s.mat'%(self.subj_dir,self.subj,self.subj,self.hem,'dural')):
-            print 'Creating dural surface mesh, using %d smoothing iterations'%(num_iter)
-            self.make_dural_surf(num_iter=num_iter)
+        dural_mesh = os.path.join(self.subj_dir, self.subj, 'Meshes', self.subj + '_' + self.hem + '_dural.mat')
+        if surf_type=='dural' and not os.path.isfile(dural_mesh):
+            print('Creating dural surface mesh, using %d smoothing iterations'%(num_iter))
+            self.make_dural_surf(num_iter=num_iter, dilate=dilate)
 
         if use_mean_normal and grid:
             #the corners draw out a 'rectangle', each side is a grid vector
-            grid_vectors = elec_corners[1]-elec_corners[0],elec_corners[3]-elec_corners[2],elec_corners[3]-elec_corners[1],elec_corners[2]-elec_corners[0]
+            grid_vectors = elec_corners[1] - elec_corners[0], \
+                           elec_corners[3] - elec_corners[2], \
+                           elec_corners[3] - elec_corners[1], \
+                           elec_corners[2] - elec_corners[0]
             #we can get 4 normal vectors from the 4 grid vectors 
-            normal_vectors = [np.cross(grid_vectors[0],grid_vectors[2]),np.cross(grid_vectors[0],grid_vectors[3]),np.cross(grid_vectors[1],grid_vectors[2]),np.cross(grid_vectors[1],grid_vectors[3])]
+            normal_vectors = [np.cross(grid_vectors[0],grid_vectors[2]), \
+                              np.cross(grid_vectors[0],grid_vectors[3]), \
+                              np.cross(grid_vectors[1],grid_vectors[2]), \
+                              np.cross(grid_vectors[1],grid_vectors[3])]
             
             #normalize the normal vectors
             for vec in range(4):
@@ -333,7 +363,7 @@ class freeCoG:
                 flipped_angle = np.arccos(np.dot((-1.0*normal_vectors[vec]),normal_vectors[vec-1])/(np.linalg.norm(normal_vectors[vec])*np.linalg.norm(normal_vectors[vec-1])))
                 if angle > flipped_angle:
                     normal_vectors[vec] = normal_vectors[vec]*-1.0
-            print 'Normal vectors: ' + str(normal_vectors)
+            print('Normal vectors: ' + str(normal_vectors))
 
             #take the mean of the 4 normal vectors
             mean_normal = np.array(normal_vectors).mean(axis=0)
@@ -346,7 +376,7 @@ class freeCoG:
                 direction = '[%f %f %f]'%(-1.0*mean_normal[0],-1.0*mean_normal[1],-1.0*mean_normal[2])
 
             # project the electrodes to the convex hull of the pial surface
-            print 'Projection direction vector: ', direction
+            print('Projection direction vector: ', direction)
         else:
             proj_direction = raw_input('Enter a custom projection direction as a string (lh,rh,top,bottom,front,back,or custom): If none provided, will default to hemisphere: \n')
             if proj_direction == 'custom':
@@ -363,7 +393,7 @@ class freeCoG:
         roi = ''
         if elecfile_prefix == 'OFC_grid':
             pial_file = os.path.join(self.mesh_dir, self.subj+'_'+self.hem+'_pial.mat')
-            orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs/', elecfile_prefix+'_orig.mat')
+            orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_orig.mat')
             surface_warp_scripts_dir = os.path.join(self.img_pipe_dir, 'surface_warping_scripts')
             gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
             if not os.path.isdir(gyri_labels_dir):
@@ -382,6 +412,7 @@ class freeCoG:
 
         mlab = matlab.MatlabCommand()
         mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
+                             addpath(genpath('%s/plotting'));\
                              load('%s/%s/elecs/individual_elecs/%s.mat'); \
                              save('%s/%s/elecs/individual_elecs/preproc/%s_orig.mat','elecmatrix');\
                              load('%s/%s/Meshes/%s_%s_%s%s.mat');\
@@ -389,7 +420,7 @@ class freeCoG:
                              elecmatrix, %s, debug_plots,'%s');\
                              elecmatrix = elecs_proj;\
                              save('%s/%s/elecs/individual_elecs/%s.mat', 'elecmatrix');\
-                             "% (self.subj_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
+                             "% (self.img_pipe_dir, self.img_pipe_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
                                 self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, elecfile_prefix)
 
         print('::: Loading Mesh data :::')
@@ -653,7 +684,7 @@ class freeCoG:
         else:
             surf_atlas_flag = ''
 
-        print self.subj_dir
+        print(self.subj_dir)
         print('Creating labels from the freesurfer annotation file for use in automated electrode labeling')
         gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
         if not os.path.isdir(gyri_labels_dir):
@@ -683,6 +714,7 @@ class freeCoG:
                 grid_or_depth.append(r[2][0]) # This is the label for grid, depth, or strip
             
             # These are the indices that won't be used for labeling
+            #dont_label = ['EOG','ECG','ROC','LOC','EEG','EKG','NaN','EMG','scalpEEG']
             indices = [i for i, x in enumerate(long_label) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)]
             indices.extend([i for i, x in enumerate(short_label) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)])
             indices.extend([i for i, x in enumerate(grid_or_depth) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)])
@@ -828,7 +860,7 @@ class freeCoG:
 
         return elec_labels
 
-    def warp_all(self,elecfile_prefix='TDT_elecs_all',warp_depths=True,warp_surface=True,template='cvs_avg35_inMNI152'):
+    def warp_all(self, elecfile_prefix='TDT_elecs_all', warp_depths=True, warp_surface=True, template='cvs_avg35_inMNI152'):
         ''' Warps surface and depth electrodes and runs quality checking functions for them. 
         elecfile_prefix: the name of the .mat file with the electrode coordinates in elecmatrix
         warp_depths: whether to warp depth electrodes
@@ -836,11 +868,11 @@ class freeCoG:
         template: which atlas brain to use 
         '''
 
-        print "Using %s as the template for warps"%(template)
+        print("Using %s as the template for warps"%(template))
 
         if os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))):
-            print "The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
-                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix)
+            print("The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
+                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix))
             return
 
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
@@ -883,19 +915,21 @@ class freeCoG:
 
             #create pdf for visual inspection of the original elecs vs the warps
             mlab = matlab.MatlabCommand()
-            print "addpath(genpath('%s/surface_warping_scripts'));\
-                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
-            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
+            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts')); addpath(genpath('%s/plotting));\
+                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir, self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
                 print('Making preproc directory')
                 os.mkdir(os.path.join(self.elecs_dir, 'warps_preproc'))
             preproc_dir = os.path.join(self.elecs_dir, 'warps_preproc')
-            os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
-            os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
-            os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
-            os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
+            if os.path.isfile(elecfile_surface_warped):
+                os.system('mv %s %s;' %(elecfile_surface_warped, preproc_dir))
+            if os.path.isfile(elecfile_nearest_warped):
+                os.system('mv %s %s'%(elecfile_nearest_warped, preproc_dir))
+            if os.path.isfile(elecfile_nearest_warped_text):
+                os.system('mv %s %s'%(elecfile_nearest_warped_text, preproc_dir))
+            if os.path.isfile(elecfile_RAS_text):
+                os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
 
     def get_cvsWarp(self,template='cvs_avg35_inMNI152'):
         '''Method for obtaining freesurfer mni coords using mri_cvs_normalize'''
@@ -973,19 +1007,69 @@ class freeCoG:
         nearest_warped_matfile = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
         scipy.io.savemat(nearest_warped_matfile, {'elecmatrix': elecmatrix, 'anatomy': anatomy})
 
-    #method to perform surface warps
-    def get_surface_warp(self,basename='TDT_elecs_all',template='cvs_avg35_inMNI152'):
+    # Method to perform surface warps
+    def get_surface_warp(self, basename='TDT_elecs_all', template='cvs_avg35_inMNI152'):
         ''' Perform surface warps on [basename].mat file '''               
+        
+        elecfile = os.path.join(self.elecs_dir,'%s_surface_warped.mat'%(basename))
 
-        print "Computing surface warp"
-        mlab = matlab.MatlabCommand()
-        mlab.inputs.script = "load %s/%s/Meshes/%s_%s_pial.mat;\
-                              load %s/%s/elecs/%s;\
-                              addpath(genpath('%s/surface_warping_scripts'));\
-                              warp_elecs('%s','%s','%s','%s','%s','%s');"%(self.subj_dir,self.subj,self.subj,self.hem,self.subj_dir,self.subj,basename,self.img_pipe_dir,self.subj,self.hem,basename,self.subj_dir,self.fs_dir,template)
-        out = mlab.run()
+        if os.path.isfile(elecfile):
+            print("Surface warp file exists")
+        else:
+            print("Computing surface warp")
+            cortex_src = scipy.io.loadmat(self.pial_surf_file)
+            atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
+            if not os.path.isfile(atlas_file):
+                atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
+                print("Creating mesh %s"%(atlas_file))
+                atlas_patient.convert_fsmesh2mlab()
 
-        print "Surface warp for %s complete. Warped coordinates in %s/%s/elecs/%s_surface_warped.mat"%(self.subj,self.subj_dir,self.subj,basename)
+            cortex_targ = scipy.io.loadmat(atlas_file)
+            elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
+            anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
+
+            print("Finding nearest surface vertex for each electrode")
+            vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix)
+            elecmatrix = nearest_verts
+
+            print('Warping each electrode separately:')
+            elecs_warped = []
+            for chan in np.arange(elecmatrix.shape[0]):
+                # Open label file for writing
+                if anatomy[chan,2] != 'depth':
+                    labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
+                    labelname = os.path.join(self.subj_dir, self.subj, 'label', labelname_nopath)
+                    
+                    fid = open(labelname,'w')
+                    fid.write('%s\n'%(labelname))
+                    
+                    # Print header of label file
+                    fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
+                    fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
+                                                            elecmatrix[chan,1], elecmatrix[chan,2]))
+                    fid.close()
+
+                    print("Warping ch %d"%(chan))
+                    trglabel = os.path.join(self.subj_dir, template, 'label', '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
+                    os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
+                              ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
+                              ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
+
+                    # Get the electrode coordinate from the label file
+                    fid2 = open(trglabel,'r')
+                    coord = fid2.readlines()[2].split() # Get the third line
+                    fid2.close()
+
+                    elecs_warped.append([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
+                else:
+                    print("Channel %d is a depth electrode, not warping"%(chan))
+                    elecs_warped.append([np.nan, np.nan, np.nan])
+
+                #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
+                
+            scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
+
+            print("Surface warp for %s complete. Warped coordinates in %s"%(self.subj, elecfile))
 
     def check_depth_warps(self, elecfile_prefix='TDT_elecs_all',template='cvs_avg35_inMNI152',atlas_depth='destrieux'):
         ''' Function to check whether warping of depths in mri_cvs_register worked properly. 
@@ -1004,14 +1088,14 @@ class freeCoG:
             depth_atlas_nm = '.a2009s'
 
         #template brain (cvs)
-        cvs_img=nib.freesurfer.load('%s/%s/mri/aparc.a2009s+aseg.mgz'%(self.subj_dir,template))
+        cvs_img=nib.freesurfer.load(os.path.join(self.subj_dir, template, 'mri','aparc.a2009s+aseg.mgz'))
         cvs_dat=cvs_img.get_data()
 
         #subj brain 
-        subj_img=nib.freesurfer.load('%s/%s/mri/aparc.a2009s+aseg.mgz'%(self.subj_dir,self.subj))
+        subj_img=nib.freesurfer.load(os.path.join(self.mri_dir,'aparc.a2009s+aseg.mgz'))
         subj_dat=subj_img.get_data()
 
-        pdf = PdfPages('%s/%s/elecs/depthWarpsQC.pdf'%(self.subj_dir,self.subj))
+        pdf = PdfPages(os.path.join(self.elecs_dir, 'depthWarpsQC.pdf'))
         for i in range(len(subj_elecnums)): 
             if subj_elecs[i][0] != 0 and subj_elecs[i][0] != 10000:
                 self.plot_elec(subj_elecs[i],warped_elecs[i],subj_dat,cvs_dat,subj_elecnums[i],pdf)
@@ -1124,9 +1208,10 @@ class freeCoG:
         hem = self.hem
 
         if template == None:
-            a = scipy.io.loadmat('%s/%s/Meshes/%s_pial_trivert.mat'%(self.subj_dir, self.subj, self.hem))
+            a = scipy.io.loadmat(self.pial_surf_file)
         else:
-            a = scipy.io.loadmat('%s/%s/Meshes/%s_pial_trivert.mat'%(self.subj_dir, template, self.hem))
+            template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
+            a = scipy.io.loadmat(template_pial_surf_file)
 
         e = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))
 
