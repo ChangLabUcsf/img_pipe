@@ -11,7 +11,6 @@
 import os
 import glob
 import pickle
-import inspect
 
 import nibabel as nib
 
@@ -1008,7 +1007,7 @@ class freeCoG:
         nearest_warped_matfile = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
         scipy.io.savemat(nearest_warped_matfile, {'elecmatrix': elecmatrix, 'anatomy': anatomy})
 
-    #method to perform surface warps
+    # Method to perform surface warps
     def get_surface_warp(self, basename='TDT_elecs_all', template='cvs_avg35_inMNI152'):
         ''' Perform surface warps on [basename].mat file '''               
         
