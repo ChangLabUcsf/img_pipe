@@ -230,7 +230,7 @@ class freeCoG:
 
         setattr(self, mesh_name+'_surf_file', out_file)
   
-    def reg_img(self, source, target):
+    def reg_img(self, source='CT.nii', target='orig.mgz'):
         '''Runs nmi coregistration between two images.
         Usually run as patient.reg_img('CT.nii','orig.mgz').'''
 
