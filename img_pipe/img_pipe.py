@@ -30,7 +30,7 @@ from nipype.interfaces import matlab as matlab
 from nipy.core.api import AffineTransform
 import nipy.algorithms
 import nipy.algorithms.resample
-import nipy.algorithms.registration
+import nipy.algorithms.registration.histogram_registration
 
 class freeCoG:
     ''' This defines the class freeCoG, which creates a patient object      
