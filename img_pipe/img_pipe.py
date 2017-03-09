@@ -409,6 +409,7 @@ class freeCoG:
 
         mlab = matlab.MatlabCommand()
         mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
+                             addpath(genpath('%s/plotting'));\
                              load('%s/%s/elecs/individual_elecs/%s.mat'); \
                              save('%s/%s/elecs/individual_elecs/preproc/%s_orig.mat','elecmatrix');\
                              load('%s/%s/Meshes/%s_%s_%s%s.mat');\
@@ -416,7 +417,7 @@ class freeCoG:
                              elecmatrix, %s, debug_plots,'%s');\
                              elecmatrix = elecs_proj;\
                              save('%s/%s/elecs/individual_elecs/%s.mat', 'elecmatrix');\
-                             "% (self.subj_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
+                             "% (self.img_pipe_dir, self.img_pipe_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
                                 self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, elecfile_prefix)
 
         print('::: Loading Mesh data :::')
@@ -915,8 +916,8 @@ class freeCoG:
 
             #create pdf for visual inspection of the original elecs vs the warps
             mlab = matlab.MatlabCommand()
-            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
+            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts')); addpath(genpath('%s/plotting));\
+                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir, self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
                 print('Making preproc directory')
