@@ -306,6 +306,9 @@ class freeCoG:
             corners_file = os.path.join(self.elecs_dir, 'individual_elecs/' + elecfile_prefix+'_corners.mat')
             elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
             elecfile_name = elecfile_prefix +'_orig'
+            if not os.path.isdir(os.path.join(self.elecs_dir, 'individual_elecs', 'preproc')):
+                print('Making preproc directory')
+                os.mkdir(os.path.join(self.elecs_dir, 'individual_elecs','preproc'))
         else:
             elecfile_name = elecfile_prefix
 
@@ -396,9 +399,6 @@ class freeCoG:
 
         #move files to preproc subfolder
         if grid:
-            if not os.path.isdir(os.path.join(self.elecs_dir, 'individual_elecs', 'preproc')):
-                print('Making preproc directory')
-                os.mkdir(os.path.join(self.elecs_dir, 'individual_elecs','preproc'))
             print('Moving ' + elecfile_prefix + '_orig.mat and ' + elecfile_prefix + '_corners.mat to %s/individual_elecs/preproc'%(self.elecs_dir))
             os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_orig.mat %s/individual_elecs/preproc'%(self.elecs_dir))
             os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_corners.mat %s/individual_elecs/preproc'%(self.elecs_dir))            

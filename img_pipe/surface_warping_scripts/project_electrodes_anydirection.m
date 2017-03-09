@@ -44,12 +44,12 @@ if isnumeric(proj_direction)
 %     proj_direction(3) = -proj_direction(3);
     direction = proj_direction;
 elseif strcmp(proj_direction, 'lh')
-    direction = [1000 0 0]; % IMPORTANT! This is not a point.
+    direction = [-1000 0 0]; % IMPORTANT! This is not a point.
     % This is the direction to add to the
     % "orig" coordinate to get the line you
     % wish to intersect
 elseif strcmp(proj_direction, 'rh')
-    direction = [-1000 0 0];
+    direction = [1000 0 0];
 elseif strcmp(proj_direction, 'top')
     direction = [0 0 1000];
 elseif strcmp(proj_direction, 'top_right')
@@ -63,6 +63,8 @@ elseif strcmp(proj_direction, 'back')
 else % Assume grid on top
     direction = [0 0 1000];
 end
+
+direction
 
 x = cortex.vert(:,1);
 y = cortex.vert(:,2);
