@@ -26,6 +26,12 @@ from surface_warping_scripts.TriangleRayIntersection import TriangleRayIntersect
 
 from nipype.interfaces import matlab as matlab
 
+# For CT to MRI registration
+from nipy.core.api import AffineTransform
+import nipy.algorithms
+import nipy.algorithms.resample
+import nipy.algorithms.registration
+
 class freeCoG:
     ''' This defines the class freeCoG, which creates a patient object      
     for use in creating brain surface reconstructions, electrode placement,     
@@ -225,35 +231,29 @@ class freeCoG:
         setattr(self, mesh_name+'_surf_file', out_file)
   
     def reg_img(self, source, target):
-        '''Runs nmi coregistration between two NIFTI images
-        using SPMs normalizated mutual information algorithm.
-        Usually run as patient.reg_img('CT.nii','orig.nii').
-        If orig.nii does not exist, it is created from orig.mgz'''
+        '''Runs nmi coregistration between two images.
+        Usually run as patient.reg_img('CT.nii','orig.mgz').'''
 
-        from nipype.interfaces import spm
+        source_file = os.path.join(self.CT_dir, source)
+        target_file = os.path.join(self.mri_dir, target)
 
-        # Convert the orig.mgz to nii
-        orig_file = os.path.join(self.mri_dir, 'orig.nii')
-        orig_file_mgz = os.path.join(self.mri_dir, 'orig.mgz')
-        if not os.path.isfile(orig_file):
-            os.system("mri_convert -i %s -o %s"%(orig_file_mgz, orig_file))
-        else:
-            print('%s already exists. Not converting'%(orig_file))
+        print("Computing registration from %s to %s"%(source_file, target_file))
+        ctimg  = nipy.load_image(source_file)
+        mriimg = nipy.load_image(target_file)
 
-        # create instance of spm.Coregister to run mutual information
-        # registration between source and target img
-        coreg = spm.Coregister()
+        ct_cmap = ctimg.coordmap  
+        mri_cmap = mriimg.coordmap
 
-        # set source and target inputs to coregister
-        coreg.inputs.source = os.path.join(self.CT_dir, source)
-        coreg.inputs.target = os.path.join(self.mri_dir, target)
+        # Compute registration
+        ct_to_mri_reg = nipy.algorithms.registration.histogram_registration.HistogramRegistration(ctimg, mriimg, similarity='nmi')
+        aff = ct_to_mri_reg.optimize('affine').as_affine()   
 
-        # set algorithm to normalized mutual information
-        coreg.inputs.cost_function = 'nmi'
+        ct_to_mri = AffineTransform(ct_cmap.function_range, mri_cmap.function_range, aff)  
+        reg_CT = nipy.algorithms.resample.resample(ctimg, mri_cmap, ct_to_mri.inverse(), mriimg.shape)    
 
-        # run coregistration
-        print('::: Computing registration between CT and MRI :::')
-        coreg.run()
+        outfile = os.path.join(self.CT_dir, 'r'+source)
+        print("Saving registered CT image as %s"%(outfile))
+        nipy.save_image(reg_CT, outfile)
 
     def interp_grid(self, nchans = 256, grid_basename='hd_grid'):
         '''Interpolates corners for an electrode grid
