@@ -1062,13 +1062,10 @@ class freeCoG:
 
             #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
             
-        # warp labels to the atlas
-        #fprintf(1,'warping labels from %s to %s, labelprefix: %s\n', subj, atlas, lower(labelprefix))
-        #run_label2label(subj, hem, labelprefix, atlas,fsdir,fsBinDir)
-        elecfile = os.path.join(self.elecs_dir,'%s_surface_warped2.mat'%(basename))
+        elecfile = os.path.join(self.elecs_dir,'%s_surface_warped.mat'%(basename))
         scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
 
-        print "Surface warp for %s complete. Warped coordinates in %s/%s/elecs/%s_surface_warped2.mat"%(self.subj,self.subj_dir,self.subj,basename)
+        print("Surface warp for %s complete. Warped coordinates in %s"%(self.subj, elecfile))
 
     def check_depth_warps(self, elecfile_prefix='TDT_elecs_all',template='cvs_avg35_inMNI152',atlas_depth='destrieux'):
         ''' Function to check whether warping of depths in mri_cvs_register worked properly. 
