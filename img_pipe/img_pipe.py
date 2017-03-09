@@ -874,10 +874,11 @@ class freeCoG:
         print("Using %s as the template for warps"%(template))
 
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
-        elecsfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))
+        elecfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))
+        elecfile_nearest_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_nearest_warped.mat'%(elecfile_prefix))
         
-        if os.path.isfile(elecsfile_warped):
-            print("The electrodes in %s have already been warped and are in %s"%(elecfile, elecsfile_warped))
+        if os.path.isfile(elecfile_warped):
+            print("The electrodes in %s have already been warped and are in %s"%(elecfile, elecfile_warped))
             return
         
         orig_elecs = scipy.io.loadmat(elecfile)
@@ -888,12 +889,11 @@ class freeCoG:
                 self.get_cvsWarp(template)
             else:
                 print('%s registration file already created, proceeding to apply the depth warp'%(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')))
-            if not os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_nearest_warped.mat'%(elecfile_prefix))):
+            if not os.path.isfile(elecfile_nearest_warped):
                 self.apply_cvsWarp(elecfile_prefix,template)
             else:
-                print "Depth warping has already been applied to the depth electrodes of %s/%s/%s.mat and are in %s/%s/%s_nearest_warped.mat"\
-                    %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix)
-            elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
+                print "Depth warping has already been applied to the depth electrodes of %s and are in %s"\
+                    %(elecfile, elecfile_nearest_warped)
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
             elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
@@ -914,11 +914,12 @@ class freeCoG:
 
         #if both depth and surface warping have been done, create the combined warp .mat file
         if warp_depths and warp_surface:
-            scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
+            scipy.io.savemat(elecfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
             #create pdf for visual inspection of the original elecs vs the warps
             mlab = matlab.MatlabCommand()
-            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts')); addpath(genpath('%s/plotting));\
+            mlab.inputs.script = "addpath(genpath(['%s' filesep 'surface_warping_scripts'])); \
+                                  addpath(genpath(['%s' filesep 'plotting']));\
                                   plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir, self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
