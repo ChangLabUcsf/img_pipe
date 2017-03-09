@@ -873,12 +873,13 @@ class freeCoG:
 
         print("Using %s as the template for warps"%(template))
 
-        if os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))):
-            print("The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
-                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix))
-            return
-
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        elecsfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))
+        
+        if os.path.isfile(elecsfile_warped):
+            print("The electrodes in %s have already been warped and are in %s"%(elecfile, elecsfile_warped))
+            return
+        
         orig_elecs = scipy.io.loadmat(elecfile)
 
         if 'depth' in orig_elecs['anatomy'][:,2] and warp_depths:
@@ -913,7 +914,6 @@ class freeCoG:
 
         #if both depth and surface warping have been done, create the combined warp .mat file
         if warp_depths and warp_surface:
-            elecsfile_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_warped.mat')
             scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
             #create pdf for visual inspection of the original elecs vs the warps
