@@ -52,7 +52,7 @@ class freeCoG:
         elecs_dir [str]: the directory (usually [subj_dir]/[subj]/elecs)        
     '''
 
-    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'],subj_dir=os.environ['SUBJECTS_DIR'],spm_dir = os.environ['SPM_PATH']):
+    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'], subj_dir=os.environ['SUBJECTS_DIR'], spm_dir = os.environ['SPM_PATH']):
         '''
         subj: patient name (i.e. 'SUBJ_25')
         hem: patient hem of implantation ('lh' or 'rh')
