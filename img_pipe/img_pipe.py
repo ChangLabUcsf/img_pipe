@@ -430,9 +430,12 @@ class freeCoG:
 
         #move files to preproc subfolder
         if grid:
-            print('Moving ' + elecfile_prefix + '_orig.mat and ' + elecfile_prefix + '_corners.mat to %s/individual_elecs/preproc'%(self.elecs_dir))
-            os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_orig.mat %s/individual_elecs/preproc'%(self.elecs_dir))
-            os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_corners.mat %s/individual_elecs/preproc'%(self.elecs_dir))            
+            corner_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_corners.mat')
+            orig_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_orig.mat')
+            preproc_dir = os.path.join(self.elecs_dir, 'individual_elecs', 'preproc') 
+            print('Moving %s to %s'%(orig_file, preproc_dir))
+            os.system('mv %s %s'%(corner_file, preproc_dir))
+            os.system('mv %s %s'%(orig_file, preproc_dir))
         return out
 
     def get_clinical_grid(self):
