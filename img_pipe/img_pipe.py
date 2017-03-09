@@ -919,9 +919,6 @@ class freeCoG:
 
             #create pdf for visual inspection of the original elecs vs the warps
             mlab = matlab.MatlabCommand()
-            mlab.inputs.script = "addpath(genpath(['%s',filesep,'surface_warping_scripts']));\
-            print("addpath(genpath('%s/surface_warping_scripts'));\
-                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes))
             mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
                                   plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
