@@ -8,13 +8,13 @@ brain surface reconstruction and electrode localization/labeling.
 
 To download this package, you will need:
 
-<b> anaconda </b> (https://www.continuum.io/downloads)\s
-<b> pip </b> (you can get this by running <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i> or download from https://pip.pypa.io/en/stable/installing/\s
+<b> anaconda </b> (https://www.continuum.io/downloads)<br>
+<b> pip </b> (you can get this by running <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i> or download from https://pip.pypa.io/en/stable/installing/<br>
 <b> MATLAB </b>
 
-Afterwards, run the following two commands:\s
-<i>conda install vtk</i>\s
-<i>conda install pyqt==4.11.4</i>\s
+Afterwards, run the following two commands:<br>
+<i>conda install vtk</i><br>
+<i>conda install pyqt==4.11.4</i><br>
 
 Then, run <b>pip install img_pipe</b> from the terminal. 
 
@@ -22,17 +22,17 @@ You can then download spm (http://www.fil.ion.ucl.ac.uk/spm/software/download/),
 
 After that, edit your ~/.bash_profile or ~/.bashrc and set the following environment variables with these lines:
 
-export FREESURFER_HOME=/path/to/freesurfer/\s
-export SUBJECTS_DIR=/path/to/subjects/directory/\s
-export SPM_PATH=/path/to/spm/\s
+export FREESURFER_HOME=/path/to/freesurfer/<br>
+export SUBJECTS_DIR=/path/to/subjects/directory/<br>
+export SPM_PATH=/path/to/spm/<br>
 
 (matlab environment variable?)
 
 You should now be able to import img_pipe from python. 
 
-\>>> import img_pipe\s
-\>>> patient=img_pipe.freeCoG(subj='subject_name',hem='lh')\s
-\>>> patient.prep_recon()\s
+\>>> import img_pipe<br>
+\>>> patient=img_pipe.freeCoG(subj='subject_name',hem='lh')<br>
+\>>> patient.prep_recon()<br>
 
 
 
