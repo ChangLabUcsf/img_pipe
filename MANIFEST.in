@@ -1,7 +1,4 @@
-graft img_pipe/surface_warping_scripts/
-graft img_pipe/SupplementalScripts/
-graft img_pipe/plotting/
-graft img_pipe/SupplementalFiles/
+recursive-include img_pipe *
 include img_pipe/dependencies.sh
 include README.md
 include requirements.txt
