@@ -10,14 +10,14 @@ class MyInstall(install):
 
 setup(name = "img_pipe",
 	  description = "Image processing pipeline for localization and identification of electrodes for electrocorticography",
-	  version = "2017.3.9.12",
+	  version = "2017.3.9.13",
 	  url = "https://github.com/ChangLabUcsf/img_pipe",
 	  author = "Liberty Hamilton",
 	  author_email = "libertyhamilton@gmail.com",
 	  packages = find_packages(),
 	  include_package_data = True,
 	  setup_requires=['cython','numpy','scipy'],
-	  install_requires=['numpy','scipy','mayavi','pyvtk','pymcubes','mne','nibabel','nipy','nipype','matplotlib','configparser'],
+	  install_requires=['numpy','scipy','pyvtk','vtk','mayavi','pymcubes','mne','nibabel','nipy','nipype','matplotlib','configparser'],
 	  dependency_links=['https://downloads.sourceforge.net/project/pyqt/PyQt4/PyQt-4.12/PyQt4_gpl_mac-4.12.tar.gz?r=&ts=1487961590&use_mirror=superb-sea2'],
 	  cmdclass={'install':MyInstall},
 	  classifiers = [
