@@ -1,5 +1,6 @@
 numpy>=1.11.1
 scipy>=0.18.1
+cython
 pyvtk
 mayavi>=4.5.0
 mne>=0.13.1
