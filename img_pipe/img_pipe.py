@@ -30,7 +30,7 @@ from nipype.interfaces import matlab as matlab
 from nipy.core.api import AffineTransform
 import nipy.algorithms
 import nipy.algorithms.resample
-import nipy.algorithms.registration
+import nipy.algorithms.registration.histogram_registration
 
 class freeCoG:
     ''' This defines the class freeCoG, which creates a patient object      
@@ -230,7 +230,7 @@ class freeCoG:
 
         setattr(self, mesh_name+'_surf_file', out_file)
   
-    def reg_img(self, source, target):
+    def reg_img(self, source='CT.nii', target='orig.mgz'):
         '''Runs nmi coregistration between two images.
         Usually run as patient.reg_img('CT.nii','orig.mgz').'''
 
@@ -411,15 +411,15 @@ class freeCoG:
             roi = 'ofc_'
 
         mlab = matlab.MatlabCommand()
-        mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts'));\
-                             addpath(genpath('%s/plotting'));\
-                             load('%s/%s/elecs/individual_elecs/%s.mat'); \
-                             save('%s/%s/elecs/individual_elecs/preproc/%s_orig.mat','elecmatrix');\
-                             load('%s/%s/Meshes/%s_%s_%s%s.mat');\
+        mlab.inputs.script = "addpath(genpath(['%s' filesep 'surface_warping_scripts']));\
+                             addpath(genpath(['%s' filesep 'plotting']));\
+                             load(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep '%s.mat']); \
+                             save(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep 'preproc' filesep '%s_orig.mat'],'elecmatrix');\
+                             load(['%s' filesep '%s' filesep 'Meshes' filesep '%s_%s_%s%s.mat']);\
                              hem = '%s';debug_plots = 0; [elecs_proj] = project_electrodes_anydirection(cortex, \
                              elecmatrix, %s, debug_plots,'%s');\
                              elecmatrix = elecs_proj;\
-                             save('%s/%s/elecs/individual_elecs/%s.mat', 'elecmatrix');\
+                             save(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep '%s.mat'], 'elecmatrix');\
                              "% (self.img_pipe_dir, self.img_pipe_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
                                 self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, elecfile_prefix)
 
@@ -430,9 +430,12 @@ class freeCoG:
 
         #move files to preproc subfolder
         if grid:
-            print('Moving ' + elecfile_prefix + '_orig.mat and ' + elecfile_prefix + '_corners.mat to %s/individual_elecs/preproc'%(self.elecs_dir))
-            os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_orig.mat %s/individual_elecs/preproc'%(self.elecs_dir))
-            os.system('mv %s/'%(self.elecs_dir) + '/individual_elecs/'+elecfile_prefix + '_corners.mat %s/individual_elecs/preproc'%(self.elecs_dir))            
+            corner_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_corners.mat')
+            orig_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_orig.mat')
+            preproc_dir = os.path.join(self.elecs_dir, 'individual_elecs', 'preproc') 
+            print('Moving %s to %s'%(orig_file, preproc_dir))
+            os.system('mv %s %s'%(corner_file, preproc_dir))
+            os.system('mv %s %s'%(orig_file, preproc_dir))
         return out
 
     def get_clinical_grid(self):
@@ -870,12 +873,14 @@ class freeCoG:
 
         print("Using %s as the template for warps"%(template))
 
-        if os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))):
-            print("The electrodes in %s/%s/%s.mat have already been warped and are in %s/%s/%s_warped.mat"\
-                %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix))
-            return
-
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        elecfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))
+        elecfile_nearest_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_nearest_warped.mat'%(elecfile_prefix))
+        
+        if os.path.isfile(elecfile_warped):
+            print("The electrodes in %s have already been warped and are in %s"%(elecfile, elecfile_warped))
+            return
+        
         orig_elecs = scipy.io.loadmat(elecfile)
 
         if 'depth' in orig_elecs['anatomy'][:,2] and warp_depths:
@@ -884,12 +889,11 @@ class freeCoG:
                 self.get_cvsWarp(template)
             else:
                 print('%s registration file already created, proceeding to apply the depth warp'%(os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template+'_elreg_afteraseg-norm.tm3d')))
-            if not os.path.isfile(os.path.join(self.subj_dir, self.subj, 'elecs', '%s_nearest_warped.mat'%(elecfile_prefix))):
+            if not os.path.isfile(elecfile_nearest_warped):
                 self.apply_cvsWarp(elecfile_prefix,template)
             else:
-                print "Depth warping has already been applied to the depth electrodes of %s/%s/%s.mat and are in %s/%s/%s_nearest_warped.mat"\
-                    %(self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, self.subj, elecfile_prefix)
-            elecfile_nearest_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
+                print "Depth warping has already been applied to the depth electrodes of %s and are in %s"\
+                    %(elecfile, elecfile_nearest_warped)
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
             elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
@@ -910,12 +914,12 @@ class freeCoG:
 
         #if both depth and surface warping have been done, create the combined warp .mat file
         if warp_depths and warp_surface:
-            elecsfile_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_warped.mat')
-            scipy.io.savemat(elecsfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
+            scipy.io.savemat(elecfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
             #create pdf for visual inspection of the original elecs vs the warps
             mlab = matlab.MatlabCommand()
-            mlab.inputs.script = "addpath(genpath('%s/surface_warping_scripts')); addpath(genpath('%s/plotting));\
+            mlab.inputs.script = "addpath(genpath(['%s' filesep 'surface_warping_scripts'])); \
+                                  addpath(genpath(['%s' filesep 'plotting']));\
                                   plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir, self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
             out = mlab.run()
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
@@ -1076,8 +1080,11 @@ class freeCoG:
         Generates a pdf file with one page for each depth electrode, showing that electrode
         in the original surface space as well as in warped CVS space.  '''
         #get all subj elecs
-        subj_elecs,subj_elecnums = self.get_depth_elecs('%s/%s/elecs/%s_RAS.txt'%(self.subj_dir, self.subj, elecfile_prefix),'\n','\t',elecfile_prefix)
-        warped_elecs,warped_elecnums = self.get_depth_elecs('%s/%s/elecs/%s_nearest_warped.txt'%(self.subj_dir,self.subj,elecfile_prefix),'\n',' ',elecfile_prefix)
+        RAS_file = os.path.join(self.elecs_dir, '%s_RAS.txt'%(elecfile_prefix))
+        subj_elecs,subj_elecnums = self.get_depth_elecs(RAS_file,'\n','\t',elecfile_prefix)
+
+        nearest_warped_file = os.path.join(self.elecs_dir, '%s_nearest_warped.txt'%(elecfile_prefix))
+        warped_elecs,warped_elecnums = self.get_depth_elecs(nearest_warped_file,'\n',' ',elecfile_prefix)
 
         #template brain (cvs)
         if atlas_depth == 'desikan-killiany':
@@ -1107,16 +1114,18 @@ class freeCoG:
              patient.apply_transform(elecfile_prefix = 'TDT_elecs_all', reorient_file = 'T1_reorient')
         assumes transform is located in the subject's acpc directory
         '''
-        elecs = scipy.io.loadmat( self.subj_dir + '/' + self.subj + '/elecs/' + elecfile_prefix + '.mat' )
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        elecs = scipy.io.loadmat(elecfile)
         elec = elecs.get('elecmatrix')
         anatomy = elecs.get('anatomy')
         
-        rmat = scipy.io.loadmat( self.subj_dir + '/' + self.subj + '/acpc/' + reorient_file + '.mat')['M']
+        reorient_file =  os.path.join(self.subj_dir, self.subj, 'acpc', reorient_file+'.mat')
+        rmat = scipy.io.loadmat(reorient_file)['M']
         elecs_reoriented = nib.affines.apply_affine(rmat, elec)
         
         print("Saving reoriented electrodes")
-        scipy.io.savemat(self.subj_dir + '/' + self.subj +
-                         '/elecs/' + elecfile_prefix + '_reoriented.mat', {'elecmatrix': elecs_reoriented, 'anatomy': anatomy})
+        reoriented_elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'_reoriented.mat')
+        scipy.io.savemat(reoriented_elecfile, {'elecmatrix': elecs_reoriented, 'anatomy': anatomy})
         print("Done.")
 
      #helper method to check the cvs depth warps:
@@ -1130,8 +1139,11 @@ class freeCoG:
         marked with a red title.        
         '''
 
-        cmap = matplotlib.colors.ListedColormap(np.load('%s/SupplementalFiles/FreeSurferLUTRGBValues.npy'%(self.img_pipe_dir))[:cvs_dat.max()+1,:])
-        lookup_dict = pickle.load(open('%s/SupplementalFiles/FreeSurferLookupTable'%(self.img_pipe_dir),'r'))
+        fs_lut = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLUTRGBValues.npy')
+        cmap = matplotlib.colors.ListedColormap(np.load()[:cvs_dat.max()+1,:])
+
+        lookupTable = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLookupTable')
+        lookup_dict = pickle.load(open(lookupTable,'r'))
         fig = plt.figure(figsize=((30,17)))
         nonzero_indices = np.where(cvs_dat>0)
         offset = 35 #this is how much you want to trim the mri by, there is a lot of empty space
@@ -1193,7 +1205,8 @@ class freeCoG:
         f = open(fpath,'r')
         elecs = (f.read().split(delim1))
         elecs = np.array([e for e in elecs if len(e)>1])
-        tdt_elec_types = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir,self.subj, elecfile_prefix))['anatomy'][:,2][:-1]
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        tdt_elec_types = scipy.io.loadmat(elecfile)['anatomy'][:,2][:-1]
         # depth_elecs = elecs[np.where(tdt_elec_types == 'depth')[0]]
         str_to_float = np.vectorize(lambda x: float(x))
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
@@ -1213,7 +1226,8 @@ class freeCoG:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
 
-        e = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))
+        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
+        e = scipy.io.loadmat(elecfile)
 
         # Plot the pial surface
         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
@@ -1267,7 +1281,7 @@ class freeCoG:
             mlab.close()
         return mesh, mlab
 
-    def plot_weights(self, weights, elecfile_prefix='TDT_elecs_all'):
+    def plot_weights(self, weights, elecfile_prefix='TDT_elecs_all', gaussian=True):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
 
@@ -1280,7 +1294,13 @@ class freeCoG:
         print elecmatrix.shape
   
         # Plot the pial surface
-        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(pial_mesh['tri'], pial_mesh['vert'], color=(0.8, 0.8, 0.8), elecs = elecmatrix, weights=weights)
+        if gaussian: 
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(pial_mesh['tri'], pial_mesh['vert'], color=(0.8, 0.8, 0.8), elecs = elecmatrix, weights=weights)
+        else: 
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(pial_mesh['tri'], pial_mesh['vert'], color=(0.8, 0.8, 0.8))
+            colors = np.zeros((weights.shape[0],3))
+            colors[:,0] = weights
+            points, mlab = ctmr_brain_plot.el_add(elecmatrix,color=colors)
 
         return mesh, mlab
 
