@@ -1267,3 +1267,20 @@ class freeCoG:
             mlab.close()
         return mesh, mlab
 
+    def plot_weights(self, weights, elecfile_prefix='TDT_elecs_all'):
+        import mayavi
+        import plotting.ctmr_brain_plot as ctmr_brain_plot
+
+        subj = self.subj
+        hem = self.hem
+
+        pial_mesh = scipy.io.loadmat(self.pial_surf_file)
+        elecmatrix = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))['elecmatrix']
+
+        print elecmatrix.shape
+  
+        # Plot the pial surface
+        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(pial_mesh['tri'], pial_mesh['vert'], color=(0.8, 0.8, 0.8), elecs = elecmatrix, weights=weights)
+
+        return mesh, mlab
+
