@@ -30,9 +30,9 @@ export SPM_PATH=/path/to/spm/
 
 You should now be able to import img_pipe from python. 
 
->>> import img_pipe
->>> patient=img_pipe.freeCoG(subj='subject_name',hem='lh')
->>> patient.prep_recon()
+\>>> import img_pipe
+\>>> patient=img_pipe.freeCoG(subj='subject_name',hem='lh')
+\>>> patient.prep_recon()
 
 
 
