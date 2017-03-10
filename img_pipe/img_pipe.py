@@ -1302,5 +1302,5 @@ class freeCoG:
             colors[:,0] = weights
             points, mlab = ctmr_brain_plot.el_add(elecmatrix,color=colors)
 
-        return mesh, mlab
+        return mesh, points, mlab
 
