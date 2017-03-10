@@ -6,7 +6,7 @@
 import mayavi
 import scipy.io
 import ctmr_brain_plot
-from SupplementalFiles import FS_colorLUT
+from ../SupplementalFiles import FS_colorLUT
 import numpy as np
 import os
 
