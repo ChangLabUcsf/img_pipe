@@ -37,11 +37,16 @@ for i=1:length(brain_areas)
     else
         this_area = brain_areas{i};
     end
-    
+
     grep_cmd = sprintf('grep ''%s'' %s/FreeSurferColorLUT.txt', this_area,fs_dir);
     [stat, result] = system(grep_cmd);
-    LUT = strsplit(result, '\s','DelimiterType','RegularExpression');
-    elec_color = [str2double(LUT{3}) str2double(LUT{4}) str2double(LUT{5})]./255;
+
+    if ~isempty(result)
+        LUT = strsplit(result, '\s','DelimiterType','RegularExpression');
+        elec_color = [str2double(LUT{3}) str2double(LUT{4}) str2double(LUT{5})]./255;
+    else
+        elec_color = cm(i,:);
+    end
     
     el_add(elecmatrix(inds,:), 'elcol', elec_color, 'numbers', inds_labels, 'msize', 8);
     
