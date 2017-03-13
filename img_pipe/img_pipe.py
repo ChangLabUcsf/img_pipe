@@ -144,11 +144,11 @@ class freeCoG:
 
         #create gyri labels directory
         gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
-            if not os.path.isdir(gyri_labels_dir):
-                os.mkdir(gyri_labels_dir)
-                # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
-                os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
-                    %(self.subj, self.hem, gyri_labels_dir))
+        if not os.path.isdir(gyri_labels_dir):
+            os.mkdir(gyri_labels_dir)
+            # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
+            os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
+                %(self.subj, self.hem, gyri_labels_dir))
 
     def check_pial(self):
         '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. 
@@ -1271,7 +1271,10 @@ class freeCoG:
                     print(this_label)
                 
                 if this_label != '':
-                    el_color = np.array(cmap[this_label])/255.
+                    if this_label not in cmap:
+                        el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                    else:
+                        el_color = np.array(cmap[this_label])/255.
                     ctmr_brain_plot.el_add(np.atleast_2d(e['elecmatrix'][e['anatomy'][:,3]==b,:]), 
                                            color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b])
         if self.hem=='lh':
