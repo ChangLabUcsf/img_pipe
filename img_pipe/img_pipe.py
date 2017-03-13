@@ -1050,7 +1050,10 @@ class freeCoG:
                 # Open label file for writing
                 if anatomy[chan,2] != 'depth':
                     labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
-                    labelname = os.path.join(self.subj_dir, self.subj, 'label', labelname_nopath)
+		    labelpath = os.path.join(self.subj_dir, self.subj, 'label', 'labels_to_warp')
+		    if not os.path.isdir(labelpath):
+                        os.mkdir(labelpath)
+                    labelname = os.path.join(labelpath, labelname_nopath)
                     
                     fid = open(labelname,'w')
                     fid.write('%s\n'%(labelname))
@@ -1062,7 +1065,10 @@ class freeCoG:
                     fid.close()
 
                     print("Warping ch %d"%(chan))
-                    trglabel = os.path.join(self.subj_dir, template, 'label', '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
+		    warped_labels_dir = os.path.join(self.subj_dir, template, 'label', 'warped_labels')
+		    if not os.path.isdir(warped_labels_dir):
+		        os.mkdir(warped_labels_dir)
+                    trglabel = os.path.join(warped_labels_dir, '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
                     os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
                               ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
                               ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
