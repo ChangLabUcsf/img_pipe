@@ -378,7 +378,7 @@ class freeCoG:
 
             #mean normal vector should point outwards (laterally, not towards the center of the brain)
             #if it doesn't, flip the mean normal vector
-            if (self.hem=='lh' and mean_normal[0] > 0) or (self.hem=='rh' and mean_normal[0] < 0):
+            if (self.hem=='lh' and mean_normal[0] < 0) or (self.hem=='rh' and mean_normal[0] > 0):
                 direction = '[%f %f %f]'%(mean_normal[0],mean_normal[1],mean_normal[2])
             else:
                 direction = '[%f %f %f]'%(-1.0*mean_normal[0],-1.0*mean_normal[1],-1.0*mean_normal[2])
