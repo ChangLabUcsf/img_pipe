@@ -7,32 +7,35 @@ This contains the imaging pipeline as one importable python class for running a 
 brain surface reconstruction and electrode localization/labeling.
 
 To download this package, you will need:
+* a MacOS or Linux machine
+* __anaconda__ (https://www.continuum.io/downloads)<br>
+* __pip__ (in terminal, run <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i>, or download from https://pip.pypa.io/en/stable/installing/<br>
+* __MATLAB__
+* __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 4?
 
-<b> anaconda </b> (https://www.continuum.io/downloads)<br>
-<b> pip </b> (in terminal, run <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i>, or download from https://pip.pypa.io/en/stable/installing/<br>
-<b> MATLAB </b>
-
-Afterwards, run the following two commands:<br>
-<i>conda install vtk</i><br>
-<i>conda install pyqt==4.11.4</i><br>
-
-Then, run <b>pip install img_pipe</b> from the terminal. 
-
-You can then download spm (http://www.fil.ion.ucl.ac.uk/spm/software/download/), and Freesurfer (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall). 
+After you download and install those dependencies, run the following commands in your terminal:<br>
+``` 
+$ conda install vtk
+$ conda install pyqt==4.11.4 
+$ pip install img_pipe
+ ```
 
 After that, edit your ~/.bash_profile or ~/.bashrc and set the following environment variables with these lines:
 
-export FREESURFER_HOME=/path/to/freesurfer/<br>
-export SUBJECTS_DIR=/path/to/subjects/directory/<br>
-export SPM_PATH=/path/to/spm/<br>
+```
+export FREESURFER_HOME=/path/to/freesurfer/
+export SUBJECTS_DIR=/path/to/subjects/directory/
+export SPM_PATH=/path/to/spm/
+```
 
 (matlab environment variable?)
 
 You should now be able to import img_pipe from python. 
-
-\>>> import img_pipe<br>
-\>>> patient=img_pipe.freeCoG(subj='subject_name',hem='lh')<br>
-\>>> patient.prep_recon()<br>
+```python
+>>> import img_pipe
+>>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
+>>> patient.prep_recon()
+```
 
 
 
