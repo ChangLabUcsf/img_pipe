@@ -10,7 +10,7 @@ brain surface reconstruction and electrode localization/labeling.
 
 To download this package, you will need:
 * a MacOS or Linux machine (if you are using Windows, download a Linux Virtual Machine to use this package)
-* __anaconda__ (https://www.continuum.io/downloads)<br>
+* __anaconda__ for Python version 2.7, not 3 (https://www.continuum.io/downloads)<br>
 * __MATLAB__
 * __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 5.3.0 or higher
 
