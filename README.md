@@ -6,6 +6,8 @@ Developed by Liberty Hamilton, David Chang, Morgan Lee
 This contains the imaging pipeline as one importable python class for running a patient's
 brain surface reconstruction and electrode localization/labeling.
 
+### Setup and Installation ###
+
 To download this package, you will need:
 * a MacOS or Linux machine (if you are using Windows, download a Linux Virtual Machine to use this package)
 * __anaconda__ (https://www.continuum.io/downloads)<br>
