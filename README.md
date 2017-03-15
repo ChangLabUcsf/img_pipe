@@ -25,9 +25,9 @@ After that, edit your ~/.bash_profile or ~/.bashrc and set the following environ
 export FREESURFER_HOME=/path/to/freesurfer/
 export SUBJECTS_DIR=/path/to/subjects/directory/
 export SPM_PATH=/path/to/spm/
+matlab environ variable?
 ```
-
-(matlab environment variable?)
+Then in terminal, run `source ~/.bash_profile` or `source ~/.bashrc` to activate these environment variables.
 
 You should now be able to import img_pipe from python. 
 ```python
