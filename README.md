@@ -9,7 +9,7 @@ brain surface reconstruction and electrode localization/labeling.
 To download this package, you will need:
 
 <b> anaconda </b> (https://www.continuum.io/downloads)<br>
-<b> pip </b> (you can get this by running <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i> or download from https://pip.pypa.io/en/stable/installing/<br>
+<b> pip </b> (in terminal, run <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i>, or download from https://pip.pypa.io/en/stable/installing/<br>
 <b> MATLAB </b>
 
 Afterwards, run the following two commands:<br>
