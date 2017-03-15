@@ -86,7 +86,9 @@ class freeCoG:
         self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
         surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
         if os.path.isfile(surf_file):
-            self.pial_surf_file = surf_file
+            self.pial_surf_file = dict()
+            self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
+            self.pial_surf_file['rh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'rh_pial_trivert.mat')
 
         # surf directory
         self.surf_dir = os.path.join(self.subj_dir, self.subj, 'surf')
@@ -140,7 +142,9 @@ class freeCoG:
             otherwise use gpu_flag='' '''       
         os.system('recon-all -subjid %s -sd %s -all %s %s %s' % (self.subj, self.subj_dir, flag_T3, openmp_flag, gpu_flag))
 
-        self.pial_surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+        self.pial_surf_file = dict()
+        self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
+        self.pial_surf_file['rh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'rh_pial_trivert.mat')
 
         #create gyri labels directory
         gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
@@ -1029,7 +1033,7 @@ class freeCoG:
             print("Surface warp file exists")
         else:
             print("Computing surface warp")
-            cortex_src = scipy.io.loadmat(self.pial_surf_file)
+            cortex_src = scipy.io.loadmat(self.pial_surf_file[self.hem])
             atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
             if not os.path.isfile(atlas_file):
                 atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
@@ -1235,7 +1239,7 @@ class freeCoG:
         hem = self.hem
 
         if template == None:
-            a = scipy.io.loadmat(self.pial_surf_file)
+            a = scipy.io.loadmat(self.pial_surf_file[self.hem])
         else:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
@@ -1305,7 +1309,7 @@ class freeCoG:
         subj = self.subj
         hem = self.hem
 
-        pial_mesh = scipy.io.loadmat(self.pial_surf_file)
+        pial_mesh = scipy.io.loadmat(self.pial_surf_file[self.hem])
         elecmatrix = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))['elecmatrix']
 
         print elecmatrix.shape
