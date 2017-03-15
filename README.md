@@ -7,11 +7,11 @@ This contains the imaging pipeline as one importable python class for running a 
 brain surface reconstruction and electrode localization/labeling.
 
 To download this package, you will need:
-* a MacOS or Linux machine
+* a MacOS or Linux machine (if you are using Windows, download a Linux Virtual Machine to use this package)
 * __anaconda__ (https://www.continuum.io/downloads)<br>
 * __pip__ (in terminal, run <i>sudo easy_install pip</i> or <i>sudo apt-get pip</i>, or download from https://pip.pypa.io/en/stable/installing/<br>
 * __MATLAB__
-* __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 4?
+* __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 5.3.0 or higher
 
 After you download and install those dependencies, run the following commands in your terminal:<br>
 ``` 
