@@ -1220,13 +1220,23 @@ class freeCoG:
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
-    def plot_brain(self, hem='lh',roi=None):
+    def plot_brain(self, hems=['lh','rh'],rois=['pial']):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
-        if roi==None:
-            #use pial surface of the entire hemisphere
-            return
-        return
+        
+        mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
+        for roi in rois:
+            if roi=='pial':
+                #use pial surface of the entire hemisphere
+                lh_pial = scipy.io.loadmat(self.pial_surf_file['lh'])
+                rh_pial = scipy.io.loadmat(self.pial_surf_file['rh'])
+                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], new_fig=False, opacity=0.3)
+                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], new_fig=False, opacity=0.3)
+            else:
+                roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'subcortical','%s_subcort_trivert.mat'%(roi)))
+                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],new_fig=False, color=((0.3,0.6,0.5)))
+        mlab.show()
+        return mesh, mlab
 
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
