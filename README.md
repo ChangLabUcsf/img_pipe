@@ -6,7 +6,7 @@ Developed by Liberty Hamilton, David Chang, Morgan Lee
 This contains the imaging pipeline as one importable python class for running a patient's
 brain surface reconstruction and electrode localization/labeling.
 
-##About##
+## About ##
 Show end results and capabilities, workflow diagram.
 
 ## Setup and Installation ##
