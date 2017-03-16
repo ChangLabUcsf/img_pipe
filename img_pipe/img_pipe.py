@@ -1221,10 +1221,10 @@ class freeCoG:
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
     def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
-        '''utility function to get electrode coordinates of all electrodes in a certain anatomical region'''
+        '''utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region'''
 
         if roi==None:
-            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))['elecmatrix']
         else:
             elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
             roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
@@ -1234,7 +1234,7 @@ class freeCoG:
             return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
             return {'elecmatrix': elecmatrix} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
 
-    def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0,'surface')], elecs=[], weights=[], gaussian=False):
+    def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0,'surface')], elecs=None, weights=None, gaussian=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois:
             name:
@@ -1289,9 +1289,12 @@ class freeCoG:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
                 else:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
-        if not gaussian:
-            elec_colors = np.zeros((elecs.shape[0],3))
-            elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
+        if not gaussian and elecs!=None:
+            if weights==None:
+                elec_colors = np.ones((elecs.shape[0],3))
+            else:
+                elec_colors = np.zeros((elecs.shape[0],3))
+                elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
             points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
 
         mlab.show()
