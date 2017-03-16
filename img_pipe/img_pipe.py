@@ -472,7 +472,7 @@ class freeCoG:
 
         # tessellate all subjects freesurfer subcortical segmentations
         print('::: Tesselating freesurfer subcortical segmentations from aseg using aseg2srf... :::')
-        os.system('aseg2srf.sh -s "%s" -l "4 5 10 11 12 13 17 18 26 \
+        os.system(os.path.join(self.img_pipe_dir, 'SupplementalScripts', 'aseg2srf.sh') + ' -s "%s" -l "4 5 10 11 12 13 17 18 26 \
                  28 43 44  49 50 51 52 53 54 58 60 14 15 16" -d' % (self.subj))
 
         # get list of all .srf files and change fname to .asc
@@ -1220,13 +1220,19 @@ class freeCoG:
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
+    def plot_brain(self, hem='lh',roi=None):
+        import mayavi
+        import plotting.ctmr_brain_plot as ctmr_brain_plot
+        if roi==None:
+            #use pial surface of the entire hemisphere
+            return
+        return
+
+
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
-        
-        subj = self.subj
-        hem = self.hem
 
         if template == None:
             a = scipy.io.loadmat(self.pial_surf_file[self.hem])
@@ -1261,7 +1267,7 @@ class freeCoG:
             if b != 'NaN':
                 this_label = b[0]
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
-                    this_label = 'ctx-%s-%s'%(hem, b[0])
+                    this_label = 'ctx-%s-%s'%(self.hem, b[0])
                     print(this_label)
                 
                 if this_label != '':
@@ -1295,9 +1301,6 @@ class freeCoG:
     def plot_weights(self, weights, elecfile_prefix='TDT_elecs_all', gaussian=True):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
-
-        subj = self.subj
-        hem = self.hem
 
         pial_mesh = scipy.io.loadmat(self.pial_surf_file[self.hem])
         elecmatrix = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))['elecmatrix']
