@@ -421,15 +421,15 @@ class freeCoG:
             roi = 'ofc_'
 
         print('::: Loading Mesh data :::')
-        print '%s/%s/Meshes/%s_%s_trivert.mat'%(self.subj_dir, self.subj, self.hem, surf_type)
-        cortex = scipy.io.loadmat('%s/%s/Meshes/%s_%s_trivert.mat'%(self.subj_dir, self.subj, self.hem, surf_type))
+        print os.path.join(self.subj_dir, self.subj, Meshes, '%s_%s_trivert.mat'%(self.hem, surf_type))
+        cortex = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, Meshes, '%s_%s_trivert.mat'%(self.hem, surf_type)))
         tri, vert = cortex['tri'], cortex['vert']
 
         print('::: Projecting electrodes to mesh :::')
-        elecmatrix = scipy.io.loadmat('%s/%s/elecs/individual_elecs/%s_orig.mat'%(self.subj_dir, self.subj, elecfile_prefix))['elecmatrix']
+        elecmatrix = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, 'elecs', 'individual_elecs', '%s_orig.mat'%(elecfile_prefix)))['elecmatrix']
         print direction
         elecs_proj = project_electrodes_anydirection(tri, vert, elecmatrix, direction)
-        scipy.io.savemat('%s/%s/elecs/individual_elecs/%s.mat'%(self.subj_dir, self.subj, elecfile_prefix),{'elecmatrix':elecs_proj})
+        scipy.io.savemat(os.path.join(self.subj_dir, self.subj, 'elecs', 'individual_elecs', '%s.mat'%(elecfile_prefix)),{'elecmatrix':elecs_proj})
         print('::: Done :::')
 
         #move files to preproc subfolder
