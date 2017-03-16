@@ -111,7 +111,6 @@ for i=1:size(elecmatrix,1) % Loop through all electrodes
     
     % Calculate the intersection of the electrode with the convex hull mesh
     [elec_intersect, ~, ~, ~, xcoor] = TriangleRayIntersection(orig, direction, vert1, vert2, vert3, 'linetype','line','planetype','two sided');
-    
     % Plot the convex hull mesh with electrodes, if desired
     % The face containing the point of intersection will be colored and a
     % blue dot will be placed along the ray at the intersection.
@@ -151,6 +150,7 @@ for i=1:size(elecmatrix,1) % Loop through all electrodes
         else % right hemisphere
             x = xctmp(inds(end),:);
         end
+
     elseif sum(elec_intersect)==1
         x = xcoor(elec_intersect,:);
     else
