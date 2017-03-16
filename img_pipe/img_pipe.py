@@ -1232,6 +1232,7 @@ class freeCoG:
             elecmatrix = elecfile['elecmatrix'][roi_indices,:]
             #eleclabels = elecfile['eleclabels'][roi_indices,:]
             return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            return {'elecmatrix': elecmatrix} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
 
     def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0)], elecs=[], weights=[], gaussian=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
