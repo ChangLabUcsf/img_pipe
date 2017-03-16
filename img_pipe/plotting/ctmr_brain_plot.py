@@ -26,9 +26,9 @@ import mayavi
 from mayavi import mlab
 import numpy as np
 
-def ctmr_gauss_plot(tri, vert, color = (0.6, 0.6, 0.6), elecs = [], weights = [], 
+def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = [], 
                     opacity = 1.0, representation = 'surface', line_width=1.0, gsp = 10,
-                    cmap = 'RdBu'):
+                    cmap = 'RdBu', new_fig=True):
     '''
     ctmr_gauss_plot(tri, vert)
     This function plots the 3D brain surface mesh
@@ -58,7 +58,8 @@ def ctmr_gauss_plot(tri, vert, color = (0.6, 0.6, 0.6), elecs = [], weights = []
     print brain_color
 
     # plot cortex and begin display
-    mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
+    if new_fig:
+        mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
 
     if elecs!=[]:
         mesh = mlab.triangular_mesh(vert[:,0],vert[:,1],vert[:,2], tri, 
