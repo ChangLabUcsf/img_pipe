@@ -1234,7 +1234,7 @@ class freeCoG:
             return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
             return {'elecmatrix': elecmatrix} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
 
-    def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0)], elecs=[], weights=[], gaussian=False):
+    def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0,'surface')], elecs=[], weights=[], gaussian=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois:
             name:
@@ -1245,6 +1245,8 @@ class freeCoG:
         gaussian:
         weights:
 
+        possible: elec sizes? colormap.. 
+
         Example: 
 
         '''
@@ -1254,13 +1256,15 @@ class freeCoG:
         
         mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
         for roi in rois:
-            roi_name, color, opacity = roi[0], roi[1], roi[2]
+            roi_name, color, opacity, representation = roi[0], roi[1], roi[2], roi[3]
 
             #if color or opacity == None, then use default values 
             if color == None:
                 color = (0.8,0.8,0.8)
             if opacity == None:
                 opacity = 1.0
+            if representation == None:
+                representation = 'surface'
 
             #default roi_name of 'pial' plots both hemispheres' pial surfaces
             if roi_name =='pial':
@@ -1268,11 +1272,11 @@ class freeCoG:
                 lh_pial = scipy.io.loadmat(self.pial_surf_file['lh'])
                 rh_pial = scipy.io.loadmat(self.pial_surf_file['rh'])
                 if gaussian:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, new_fig=False)
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
                 else:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, new_fig=False)
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False)
                     
             else: 
                 subcort_dir = os.path.join(self.mesh_dir,'subcortical')
@@ -1282,9 +1286,9 @@ class freeCoG:
                     roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'%s_trivert.mat'%(roi_name)))
 
                 if gaussian:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
                 else:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
         if not gaussian:
             elec_colors = np.zeros((elecs.shape[0],3))
             elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
