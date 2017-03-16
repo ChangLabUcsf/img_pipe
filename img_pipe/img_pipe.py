@@ -321,8 +321,8 @@ class freeCoG:
         orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
-    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, 
-                                 surf_type='dural', projection_method='convex_hull', 
+    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
+                                 surf_type='dural', \
                                  num_iter=30, dilate=0.0, grid=True):
         '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
         use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
@@ -335,8 +335,8 @@ class freeCoG:
         corner electrodes that were manually localized from the registered CT.'''
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
-               Surface Type: %s \n\t Projection Method: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
-                %(elecfile_prefix,use_mean_normal,surf_type,projection_method,num_iter))
+               Surface Type: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
+                %(elecfile_prefix,use_mean_normal,surf_type,num_iter))
         if grid: 
             corners_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_corners.mat')
             elec_corners = scipy.io.loadmat(corners_file)['elecmatrix']
@@ -383,9 +383,9 @@ class freeCoG:
             #mean normal vector should point outwards (laterally, not towards the center of the brain)
             #if it doesn't, flip the mean normal vector
             if (self.hem=='lh' and mean_normal[0] < 0) or (self.hem=='rh' and mean_normal[0] > 0):
-                direction = '[%f %f %f]'%(mean_normal[0],mean_normal[1],mean_normal[2])
+                direction = [mean_normal[0],mean_normal[1],mean_normal[2]]
             else:
-                direction = '[%f %f %f]'%(-1.0*mean_normal[0],-1.0*mean_normal[1],-1.0*mean_normal[2])
+                direction = [-1.0*mean_normal[0],-1.0*mean_normal[1],-1.0*mean_normal[2]]
 
             # project the electrodes to the convex hull of the pial surface
             print('Projection direction vector: ', direction)
@@ -395,11 +395,9 @@ class freeCoG:
                 x = raw_input('Enter projection vector\'s x-component: \n')
                 y = raw_input('Enter projection vector\'s y-component: \n')
                 z = raw_input('Enter projection vector\'s z-component: \n')
-                direction ='[%s %s %s]'%(x,y,z)
-            elif len(proj_direction)>0:
-                direction = "'" + proj_direction + "'"
-            else:
-                direction = "'" + self.hem + "'"
+                direction = [float(x),float(y),float(z)]
+            elif proj_direction not in ['lh','rh','top','bottom','front','back','custom']:
+                direction = self.hem
 
         #if the grid is placed on the OFC, should create an ROI mesh with only frontal areas 
         roi = ''
@@ -422,22 +420,16 @@ class freeCoG:
             create_roi.run()
             roi = 'ofc_'
 
-        mlab = matlab.MatlabCommand()
-        mlab.inputs.script = "addpath(genpath(['%s' filesep 'surface_warping_scripts']));\
-                             addpath(genpath(['%s' filesep 'plotting']));\
-                             load(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep '%s.mat']); \
-                             save(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep 'preproc' filesep '%s_orig.mat'],'elecmatrix');\
-                             load(['%s' filesep '%s' filesep 'Meshes' filesep '%s_%s_%s%s.mat']);\
-                             hem = '%s';debug_plots = 0; [elecs_proj] = project_electrodes_anydirection(cortex, \
-                             elecmatrix, %s, debug_plots,'%s');\
-                             elecmatrix = elecs_proj;\
-                             save(['%s' filesep '%s' filesep 'elecs' filesep 'individual_elecs' filesep '%s.mat'], 'elecmatrix');\
-                             "% (self.img_pipe_dir, self.img_pipe_dir, self.subj_dir, self.subj, elecfile_name, self.subj_dir, self.subj, elecfile_prefix, self.subj_dir, \
-                                self.subj, self.subj, self.hem, roi, surf_type, self.hem,direction, projection_method, self.subj_dir, self.subj, elecfile_prefix)
-
         print('::: Loading Mesh data :::')
+        print '%s/%s/Meshes/%s_%s_trivert.mat'%(self.subj_dir, self.subj, self.hem, surf_type)
+        cortex = scipy.io.loadmat('%s/%s/Meshes/%s_%s_trivert.mat'%(self.subj_dir, self.subj, self.hem, surf_type))
+        tri, vert = cortex['tri'], cortex['vert']
+
         print('::: Projecting electrodes to mesh :::')
-        out = mlab.run()
+        elecmatrix = scipy.io.loadmat('%s/%s/elecs/individual_elecs/%s_orig.mat'%(self.subj_dir, self.subj, elecfile_prefix))['elecmatrix']
+        print direction
+        elecs_proj = project_electrodes_anydirection(tri, vert, elecmatrix, direction)
+        scipy.io.savemat('%s/%s/elecs/individual_elecs/%s.mat'%(self.subj_dir, self.subj, elecfile_prefix),{'elecmatrix':elecs_proj})
         print('::: Done :::')
 
         #move files to preproc subfolder
@@ -448,7 +440,7 @@ class freeCoG:
             print('Moving %s to %s'%(orig_file, preproc_dir))
             os.system('mv %s %s'%(corner_file, preproc_dir))
             os.system('mv %s %s'%(orig_file, preproc_dir))
-        return out
+        return 
 
     def get_clinical_grid(self):
         '''Loads in HD grid coordinates and use a list

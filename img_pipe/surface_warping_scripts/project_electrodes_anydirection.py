@@ -1,6 +1,6 @@
 import numpy as np
 
-def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, surf_type = 'convex_hull', debug_plot=None):
+def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, debug_plot=None):
     ''' 
     Projects electrode locations onto the convex hull of a cortical surface.
     This allows for the electrode locations to wrap smoothly around the
@@ -16,8 +16,6 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, surf_
                            'lh','rh','top','bottom','front','back' depending
                            on where you want electrodes to project to
              debug_plot:   0 or 1, whether to plot debugging plots or not
-             surf_type:    'alphavol', 'convex_hull', or 'none' to project
-                           directly to the nearest cortical surface point
 
      Output: elecs_proj:   A [nchans] x 3 position array of locations of
                            electrodes that have been projected to the convex
@@ -41,15 +39,9 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, surf_
     elif proj_direction=='rh':
     	direction = [-1000, 0, 0]
 
-    if surf_type == 'convex_hull':
-    	# Use dural surface?
-        #fix this
-        return  
-    else:
-        vert1 = vert[tri[:,0],:]
-        vert2 = vert[tri[:,1],:]
-        vert3 = vert[tri[:,2],:]
-
+    vert1 = vert[tri[:,0],:]
+    vert2 = vert[tri[:,1],:]
+    vert3 = vert[tri[:,2],:]
 
     elecs_proj = np.zeros(elecmatrix.shape)
     elec_intersect = np.zeros((elecmatrix.shape[0],1))
@@ -60,7 +52,7 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, surf_
         orig = elecmatrix[i,:]
         # Calculate the intersection of the electrode with the convex hull mesh
         elec_intersect,_,_,_,xcoor = TriangleRayIntersection(orig, direction, vert1, vert2, vert3)
-        #print elec_intersect, elec_intersect.sum(), np.where(elec_intersect>0), xcoor.shape
+        #print xcoor[elec_intersect,:] , elec_intersect.sum(), np.where(elec_intersect>0), xcoor.shape
         # If there is more than one intersection of this ray with the cortical
         # mesh, only get the most negative coordinate for the left hemisphere,
         # or only the most positive coordinate for the right hemisphere (this
@@ -76,7 +68,7 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, surf_
             #     x = sorted_xctmp[-1,:]
 
             #instead, select from competing intersection coordinates using least euclidean distance metric
-            x = xctmp[np.argmin(np.sum(np.abs(orig-xctmp)**2,axis=-1)**(1./2)),:]
+            x = xctmp[np.argmin(np.sum(np.abs(orig-xctmp)**2,axis=1)**(1./2)),:]
             elecs_proj[i,:] = x
         elif np.sum(elec_intersect)==1:
             x = xcoor[elec_intersect,:]
