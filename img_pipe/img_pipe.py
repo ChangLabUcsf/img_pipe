@@ -596,7 +596,7 @@ class freeCoG:
         
         out_file_struct = '%s_subcort.mat' % (nuc)
         
-        cortex = {'tri': tri+1, 'vert': vert}
+        cortex = {'tri': subcort_tri+1, 'vert': subcort_vert}
         scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
     def make_elecs_all(self):
