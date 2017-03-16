@@ -481,7 +481,7 @@ class freeCoG:
         asc_list.sort()
         for fname in srf_list:
             new_fname = fname.replace('.srf', '.asc')
-            os.system('mv %s %s'%(subjAscii_dir+fname, subjAscii_dir+new_fname))
+            os.system('mv %s %s'%(os.path.join(subjAscii_dir,fname), os.path.join(subjAscii_dir,new_fname)))
 
         # convert all ascii subcortical meshes to matlab vert, tri coords
         subcort_list = ['aseg_058.asc', 'aseg_054.asc', 'aseg_050.asc',
