@@ -1,6 +1,6 @@
 import numpy as np
 
-def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, debug_plot=None):
+def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction):
     ''' 
     Projects electrode locations onto the convex hull of a cortical surface.
     This allows for the electrode locations to wrap smoothly around the
@@ -15,7 +15,6 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, debug
              proj_direction:    a string with value
                            'lh','rh','top','bottom','front','back' depending
                            on where you want electrodes to project to
-             debug_plot:   0 or 1, whether to plot debugging plots or not
 
      Output: elecs_proj:   A [nchans] x 3 position array of locations of
                            electrodes that have been projected to the convex
@@ -83,7 +82,7 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction, debug
     # on bottom surface or concave surfaces... need to develop!!
     #figure trisurf(S.bnd, cortex.vert(:,1), cortex.vert(:,2), cortex.vert(:,3))
 
-def TriangleRayIntersection (orig, direction, vert0, vert1, vert2, planeType='two sided', lineType='line', border='normal', eps=1e-5, fullReturn=False):
+def TriangleRayIntersection (orig, direction, vert0, vert1, vert2, planeType='two sided', border='normal', eps=1e-5, fullReturn=False):
     # TRIANGLERAYINTERSECTION Ray/triangle intersection.
     #    INTERSECT = TriangleRayIntersection(ORIG, DIRECTION, VERT1, VERT2, VERT3) 
     #      calculates ray/triangle intersections using the algorithm proposed
@@ -109,10 +108,6 @@ def TriangleRayIntersection (orig, direction, vert0, vert1, vert2, planeType='tw
     #        triangles. In 'one sided' version only intersections in single
     #        direction are counted and intersections with back facing
     #           tringles are ignored
-    #    * lineType - 'ray' (default), 'line' or 'segment' - how to treat rays:
-    #        - 'line' means infinite (on both sides) line; 
-    #        - 'ray' means infinite (on one side) ray comming out of origin; 
-    #        - 'segment' means line segment bounded on both sides
     #    * border - controls border handling:
     #        - 'normal'(default) border - triangle is exactly as defined. 
     #           Intersections with border points can be easily lost due to
@@ -246,24 +241,13 @@ def TriangleRayIntersection (orig, direction, vert0, vert1, vert2, planeType='tw
 
         qvec = np.cross(tvec[ok,:], edge1[ok,:]) # prepare to test V parameter
         v[ok] = np.sum(direction[ok,:]*qvec,axis=1) / det[ok] # 2nd barycentric coordinate
-        
-        if lineType != 'line': # 'position on the line' coordinate
-            t[ok] = np.sum(edge2[ok,:]*qvec, axis=1)/det[ok]
 
         # test if line/plane intersection is within the triangle
         ok = (ok) & (v>=-zero) & ((u+v)<=(1.0+zero))
 
 
     # Test where along the line the line/plane intersection occurs
-    if lineType == 'line':      # infinite line
-        intersect = ok
-    elif lineType == 'ray':
-        intersect = (ok) & (t>=-zero) # intersection on the correct side of the origin
-    elif lineType == 'segment':   # segment is bound on two sides
-        intersect = (ok) & (t>=-zero) & (t<=1.0+zero) # intersection between origin and destination
-    else:
-        print("assuming line type")
-        intersect = ok
+    intersect = ok
 
     # calculate intersection coordinates if requested
     xcoor = np.nan+np.zeros((orig.shape))
