@@ -39,7 +39,8 @@ class freeCoG:
     
     To initialize a patient, you must provide the subject ID, hemisphere,       
     freesurfer subjects directory, and (optionally) the freesurfer      
-    executable directory and path to your copy of SPM.      
+    executable directory. If these aren't specified they will default to the environment
+    variables $SUBJECTS_DIR and $FREESURFER_HOME.
     
     For example:        
     
@@ -47,8 +48,7 @@ class freeCoG:
     >>> subj_dir = '/usr/local/freesurfer/subjects'      
     >>> hem = 'rh'       
     >>> fs_dir = '/usr/local/freesurfer'     
-    >>> spm_dir = '/usr/local/spm12'     
-    >>> patient = img_pipe.freeCoG(subj = subj, subj_dir = subj_dir, hem = hem, fs_dir = fs_dir, spm_dir = spm_dir)
+    >>> patient = img_pipe.freeCoG(subj = subj, subj_dir = subj_dir, hem = hem, fs_dir = fs_dir)
 
     Attributes:         
         subj [str]: the subject ID      
@@ -58,7 +58,7 @@ class freeCoG:
         elecs_dir [str]: the directory (usually [subj_dir]/[subj]/elecs)        
     '''
 
-    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'], subj_dir=os.environ['SUBJECTS_DIR'], spm_dir = os.environ['SPM_PATH']):
+    def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'], subj_dir=os.environ['SUBJECTS_DIR']):
         '''
         subj: patient name (i.e. 'SUBJ_25')
         hem: patient hem of implantation ('lh' or 'rh')
@@ -74,7 +74,6 @@ class freeCoG:
 
         #Freesurfer home directory
         self.fs_dir = fs_dir
-        matlab.MatlabCommand.set_default_paths(spm_dir) 
 
         # CT_dir: dir for CT img data
         self.CT_dir = os.path.join(self.subj_dir, self.subj, 'CT')
@@ -99,7 +98,6 @@ class freeCoG:
         #if paths are not the default paths in the shell environment:
         os.environ['FREESURFER_HOME'] = fs_dir
         os.environ['SUBJECTS_DIR'] = subj_dir
-        os.environ['SPM_PATH'] = spm_dir
 
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
