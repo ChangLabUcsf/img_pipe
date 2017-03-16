@@ -1220,24 +1220,64 @@ class freeCoG:
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
-    def plot_brain(self, hems=['lh','rh'],rois=['pial']):
+    def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0)], elecs=[], weights=[], gaussian=False):
+        '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
+        rois:
+            name:
+            opacities:
+            colors:
+        weights:
+        elecs:
+        gaussian:
+        weights:
+
+        Example: 
+
+        '''
+
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         
         mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
         for roi in rois:
-            if roi=='pial':
+            roi_name, color, opacity = roi[0], roi[1], roi[2]
+
+            #if color or opacity == None, then use default values 
+            if color == None:
+                color = (0.8,0.8,0.8)
+            if opacity == None:
+                opacity = 1.0
+
+            #default roi_name of 'pial' plots both hemispheres' pial surfaces
+            if roi_name =='pial':
                 #use pial surface of the entire hemisphere
                 lh_pial = scipy.io.loadmat(self.pial_surf_file['lh'])
                 rh_pial = scipy.io.loadmat(self.pial_surf_file['rh'])
-                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], new_fig=False, opacity=0.3)
-                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], new_fig=False, opacity=0.3)
-            else:
-                roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'subcortical','%s_subcort_trivert.mat'%(roi)))
-                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],new_fig=False, color=((0.3,0.6,0.5)))
+                if gaussian:
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, new_fig=False)
+                else:
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, new_fig=False)
+                    
+            else: 
+                subcort_dir = os.path.join(self.mesh_dir,'subcortical')
+                if '%s_subcort_trivert.mat'%(roi_name) in os.listdir(subcort_dir):
+                    roi_mesh = scipy.io.loadmat(os.path.join(subcort_dir,'%s_subcort_trivert.mat'%(roi_name)))
+                else:
+                    roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'%s_trivert.mat'%(roi_name)))
+
+                if gaussian:
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, new_fig=False)
+                else:
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, new_fig=False)
+        if not gaussian:
+            elec_colors = np.zeros((elecs.shape[0],3))
+            elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
+            points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
+
         mlab.show()
         return mesh, mlab
-
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
         import mayavi
@@ -1282,6 +1322,7 @@ class freeCoG:
                 
                 if this_label != '':
                     if this_label not in cmap:
+                        #in case the label was manually assigned, and not found in the LUT colormap dictionary
                         el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
                     else:
                         el_color = np.array(cmap[this_label])/255.
