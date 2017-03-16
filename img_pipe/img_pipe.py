@@ -1220,6 +1220,17 @@ class freeCoG:
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
+    def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
+        if roi==None:
+            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+        else:
+            elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+            roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
+            #anatomy = elecfile['anatomy'][roi_indices,:]
+            elecmatrix = elecfile['elecmatrix'][roi_indices,:]
+            #eleclabels = elecfile['eleclabels'][roi_indices,:]
+            return {'elecmatrix': elecmatrix} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+
     def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0)], elecs=[], weights=[], gaussian=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois:
@@ -1348,24 +1359,3 @@ class freeCoG:
         else:
             mlab.close()
         return mesh, mlab
-
-    def plot_weights(self, weights, elecfile_prefix='TDT_elecs_all', gaussian=True):
-        import mayavi
-        import plotting.ctmr_brain_plot as ctmr_brain_plot
-
-        pial_mesh = scipy.io.loadmat(self.pial_surf_file[self.hem])
-        elecmatrix = scipy.io.loadmat('%s/%s/elecs/%s.mat'%(self.subj_dir, self.subj,elecfile_prefix))['elecmatrix']
-
-        print elecmatrix.shape
-  
-        # Plot the pial surface
-        if gaussian: 
-            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(pial_mesh['tri'], pial_mesh['vert'], color=(0.8, 0.8, 0.8), elecs = elecmatrix, weights=weights)
-        else: 
-            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(pial_mesh['tri'], pial_mesh['vert'], color=(0.8, 0.8, 0.8))
-            colors = np.zeros((weights.shape[0],3))
-            colors[:,0] = weights
-            points, mlab = ctmr_brain_plot.el_add(elecmatrix,color=colors)
-
-        return mesh, points, mlab
-
