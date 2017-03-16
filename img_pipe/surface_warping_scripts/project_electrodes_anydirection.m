@@ -100,31 +100,6 @@ switch surf_type
         chull.tri = cortex.tri;
 end
 
-% if debug_plot
-%     figure(1); clf();
-%     plot_electrodes(cortex, elecmatrix, hem, 'Original electrodes');
-%     pause();
-%     
-%     figure(2); clf();
-%     % Plot the convex hull
-%     trisurf(chull.tri, chull.vert(:,1), chull.vert(:,2), chull.vert(:,3),'facealpha',0.4); hold on;
-%     % Plot the brain surface
-%     trisurf(cortex.tri, x, y, z);
-%     plot3(elecmatrix(:,1),elecmatrix(:,2),elecmatrix(:,3),'.g');
-%     axis equal; axis off;
-%     title('original electrodes and convex hull');
-%     if strcmp(proj_direction, 'lh')
-%         view([-120 8]);
-%     elseif strcmp(proj_direction, 'rh')
-%         view([120 8]);
-%     elseif strcmp(proj_direction, 'top')
-%         view([0 90]);
-%     elseif strcmp(proj_direction, 'bottom')
-%         view([0 -90]);
-%     end
-%     pause();
-% end
-
 elecs_proj = zeros(size(elecmatrix));
 elec_intersect = zeros(size(elecmatrix,1),1);
 for i=1:size(elecmatrix,1) % Loop through all electrodes
@@ -135,7 +110,7 @@ for i=1:size(elecmatrix,1) % Loop through all electrodes
     orig = elecmatrix(i,:);
     
     % Calculate the intersection of the electrode with the convex hull mesh
-    [elec_intersect, ~, ~, ~, xcoor] = TriangleRayIntersection(orig, direction, vert1, vert2, vert3, 'linetype','line','planetype','one sided');
+    [elec_intersect, ~, ~, ~, xcoor] = TriangleRayIntersection(orig, direction, vert1, vert2, vert3, 'linetype','line','planetype','two sided');
     
     % Plot the convex hull mesh with electrodes, if desired
     % The face containing the point of intersection will be colored and a
@@ -171,7 +146,7 @@ for i=1:size(elecmatrix,1) % Loop through all electrodes
     if sum(elec_intersect)>1
         xctmp = xcoor(elec_intersect,:); % all intersecting coordinates
         [~,inds] = sort(xctmp(:,1));
-        if strcmp(proj_direction,'left')
+        if strcmp(proj_direction,'lh')
             x = xctmp(inds(1),:);
         else % right hemisphere
             x = xctmp(inds(end),:);
@@ -186,7 +161,8 @@ end
 
 if debug_plot
     figure(4); clf();
-    plot_electrodes(cortex, elecs_proj, hem, 'Projected electrodes');
+    ctmr_gauss_plot(cortex, [0 0 0], 0, 'lh');
+    el_add(elecs_proj,'color','b');
 end
 
 % Not currently implemented: (this could replace the convex hull step)

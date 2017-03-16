@@ -173,6 +173,7 @@ if all(~angleOK), return; end % if all parallel than no intersections
 %% Different behavior depending on one or two sided triangles
 det(~angleOK) = nan;              % change to avoid division by zero
 u    = sum(tvec.*pvec,2)./det;    % 1st barycentric coordinate
+
 if fullReturn
   % calculate all variables for all line/triangle pairs
   qvec = cross(tvec, edge1,2);    % prepare to test V parameter
@@ -185,6 +186,7 @@ else
   % a difference. It is tempting to try to push this concept of
   % limiting the number of calculations to only the necessary to "u"
   % and "t" but that produces slower code
+
   v = nan+zeros(size(u)); t=v;
   ok = (angleOK & u>=-zero & u<=1.0+zero); % mask
   % if all line/plane intersections are outside the triangle than no intersections

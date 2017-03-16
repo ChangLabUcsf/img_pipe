@@ -22,7 +22,7 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
-from surface_warping_scripts.TriangleRayIntersection import TriangleRayIntersection
+from surface_warping_scripts.project_electrodes_anydirection import *
 
 from nipype.interfaces import matlab as matlab
 
