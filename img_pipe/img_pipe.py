@@ -1227,32 +1227,50 @@ class freeCoG:
             elecmatrix = elecfile['elecmatrix'][roi_indices,:]
             anatomy = elecfile['anatomy'][roi_indices,:]
             #eleclabels = elecfile['eleclabels'][roi_indices,:]
-            return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
             return {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
 
-    def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0,'surface')], elecs=None, weights=None, gaussian=False):
-        '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
-        rois:
-            name:
-            opacities:
-            colors:
-        weights:
-        elecs:
-        gaussian:
-        weights:
+    class roi:
 
-        possible: elec sizes? colormap.. 
+        def __init__(self, name, color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False):
+            '''wrapper class for an ROI
+            name: name of the ROI
+            color: tuple for the ROI's color where each value is between 0.0 and 1.0. 
+            opacity: opacity of the mesh, between 0.0 and 1.0
+            representation: 'surface' or 'wireframe'
+            gaussian: boolean specifying how to represent electrodes and their weights on this mesh, note that setting gaussian to True 
+                      means the mesh color cannot be specified by the user'''
+                       
+            self.name = name
+            self.color = color
+            self.opacity = opacity
+            self.representation = representation
+            self.gaussian = gaussian
+
+    def plot_brain(self, rois=[roi('pial',(0.8,0.8,0.8),1.0,'surface',False)], elecs=None, weights=None):
+        '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
+        rois: list of roi objects (create an roi object like so:
+              hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
+        elecs: electrode coordinate matrix
+        weights: weight matrix associated with the electrode coordinate matrix
 
         Example: 
-
+        >>> pial, hipp = patient.roi('pial',(0.6,0.3,0.6),0.1,'wireframe',True), patient.roi('lHipp',(0.5,0.1,0.8),1.0,'surface',True)
+        >>> elecs = patient.get_elecs()['elecmatrix']
+        >>> patient.plot_brain(rois=[pial,hipp],elecs=elecs,weights=np.random.uniform(0,1,(elecs.shape[0])))
         '''
 
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         
         mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
+
+        #if there are any rois with gaussian set to True, don't plot any elecs as points3d, to avoid mixing gaussian representation
+        #if needed, simply add the elecs by calling el_add
+        any_gaussian = False
+
         for roi in rois:
-            roi_name, color, opacity, representation = roi[0], roi[1], roi[2], roi[3]
+            roi_name, color, opacity, representation, gaussian = roi.name, roi.color, roi.opacity, roi.representation, roi.gaussian
 
             #if color or opacity == None, then use default values 
             if color == None:
@@ -1261,6 +1279,10 @@ class freeCoG:
                 opacity = 1.0
             if representation == None:
                 representation = 'surface'
+            if gaussian == None:
+                gaussian = False
+            if gaussian == True:
+                any_gaussian = True
 
             #default roi_name of 'pial' plots both hemispheres' pial surfaces
             if roi_name =='pial':
@@ -1285,7 +1307,7 @@ class freeCoG:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
                 else:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
-        if not gaussian and elecs!=None:
+        if not any_gaussian and elecs!=None:
             if weights==None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 elec_colors = np.ones((elecs.shape[0],3))
             else:
@@ -1293,7 +1315,7 @@ class freeCoG:
                 elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
             points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
 
-        #mlab.show()
+        mlab.show()
         return mesh, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
@@ -1499,3 +1521,5 @@ class freeCoG:
         else:
             mlab.close()
         return subj_mesh, template_mesh, mlab
+
+    
