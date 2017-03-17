@@ -84,9 +84,7 @@ class freeCoG:
         # Meshes directory for matlab/python meshes
         self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
         surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
-        print surf_file, os.path.isfile(surf_file)
         if os.path.isfile(surf_file):
-            print 'here'
             self.pial_surf_file = dict()
             self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
             self.pial_surf_file['rh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'rh_pial_trivert.mat')
@@ -1354,8 +1352,16 @@ class freeCoG:
                         el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
                     else:
                         el_color = np.array(cmap[this_label])/255.
-                    ctmr_brain_plot.el_add(np.atleast_2d(e['elecmatrix'][e['anatomy'][:,3]==b,:]), 
-                                           color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b], offset=offset)
+            elec_indices = np.where(e['anatomy'][:,3]==b)[0]
+            elec_colors[elec_indices,:] = el_color
+
+        if self.zero_indexed_electrodes:
+            elec_nums = range(e['elecmatrix'].shape[0])
+        else:
+            elec_nums = range(1,e['elecmatrix'].shape[0]+1)
+
+        ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_nums, offset=offset)
+  
         if self.hem=='lh':
             azimuth=180
         elif self.hem=='rh':
