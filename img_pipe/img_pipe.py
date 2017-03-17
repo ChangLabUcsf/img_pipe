@@ -1311,7 +1311,7 @@ class freeCoG:
 
         # Plot the pial surface
         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
-        
+
         # Add the electrodes, colored by anatomical region
         elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
 
@@ -1324,9 +1324,9 @@ class freeCoG:
         else:
             elec_numbers = np.arange(e['elecmatrix'].shape[0])+1
         if self.hem=='lh':
-            offset=-1.0
+            label_offset=-1.0
         elif self.hem=='rh':
-            offset=1.0
+            label_offset=1.0
 
         # Find all the unique brain areas in this subject
         brain_areas = np.unique(e['anatomy'][:,3])
@@ -1354,8 +1354,8 @@ class freeCoG:
         else:
             elec_nums = range(1,e['elecmatrix'].shape[0]+1)
 
-        ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_nums, offset=offset)
-  
+        ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_nums, label_offset=label_offset)
+
         if self.hem=='lh':
             azimuth=180
         elif self.hem=='rh':
@@ -1364,6 +1364,8 @@ class freeCoG:
 
         #adjust transparency of brain mesh
         mesh.actor.property.opacity = alpha 
+
+        mlab.title('%s recon anatomy'%(self.subj),size=0.3)
 
         arr = mlab.screenshot(antialiased=True)
         if screenshot:
@@ -1393,7 +1395,7 @@ class freeCoG:
         anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir,'TDT_elecs_all.mat'))['anatomy'][:,3]
 
         mesh,mlab = self.plot_brain(rois=[('pial',None,1.0,None)])
-        elecmatrix = self.get_elecs()
+        elecmatrix = self.get_elecs()['elecmatrix']
         for c in range(erp_matrix.shape[1]):
             b = anatomy_labels[c]
             if b != 'NaN':

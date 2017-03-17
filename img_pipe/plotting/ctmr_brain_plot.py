@@ -90,7 +90,7 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
     return mesh, mlab
 
 
-def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, offset=-1.0):
+def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0):
     '''
     el_add(elecs, color = (1., 0., 0.), msize = 2)
     This function adds the electrode matrix [elecs] (nchans x 3) to 
@@ -100,16 +100,20 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, offset=-1.0):
         color: Electrode color is either a triplet (r, g, b),
                or a numpy array with the same shape as [elecs] to plot one color per electrode
         msize: size of the electrode.  default = 2
-        offset: how much to move the number labels out by (so not blocked by electrodes)
+        label_offset: how much to move the number labels out by (so not blocked by electrodes)
     '''
     
     # plot the electrodes as spheres
     # If we have one color for each electrode, color them separately
     if type(color) is np.ndarray:
         if color.shape[0] == elecs.shape[0]: 
-            for e in np.arange(elecs.shape[0]):
-                points = mlab.points3d(elecs[e,0], elecs[e,1], elecs[e,2], scale_factor = msize, 
-                                   color = tuple( color[e,:] ) , resolution=25)
+            # for e in np.arange(elecs.shape[0]):
+            #     points = mlab.points3d(elecs[e,0], elecs[e,1], elecs[e,2], scale_factor = msize, 
+            #                        color = tuple( color[e,:] ) , resolution=25)
+            unique_colors = np.array(list(set([tuple(row) for row in color])))
+            for individual_color in unique_colors:
+                indices = np.where((color==individual_color).all(axis=1))[0]
+                points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2],scale_factor=msize,color=tuple(individual_color),resolution=25)
         else:
             print('Warning: color array does not match size of electrode matrix')
 
@@ -127,6 +131,6 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, offset=-1.0):
 
     if numbers is not None:
         for ni, n in enumerate(numbers):
-            mayavi.mlab.text3d(elecs[ni,0]+offset, elecs[ni,1], elecs[ni,2], str(n), orient_to_camera=True)
+            mayavi.mlab.text3d(elecs[ni,0]+label_offset, elecs[ni,1], elecs[ni,2], str(n), orient_to_camera=True)
 
     return points, mlab
