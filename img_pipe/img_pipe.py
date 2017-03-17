@@ -24,8 +24,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
 from surface_warping_scripts.project_electrodes_anydirection import *
 
-from nipype.interfaces import matlab as matlab
-
 # For CT to MRI registration
 from nipy.core.api import AffineTransform
 import nipy.algorithms
@@ -876,8 +874,8 @@ class freeCoG:
         print("Using %s as the template for warps"%(template))
 
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
-        elecfile_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_warped.mat'%(elecfile_prefix))
-        elecfile_nearest_warped = os.path.join(self.subj_dir, self.subj, 'elecs', '%s_nearest_warped.mat'%(elecfile_prefix))
+        elecfile_warped = os.path.join(self.elecs_dir, '%s_warped.mat'%(elecfile_prefix))
+        elecfile_nearest_warped = os.path.join(self.elecs_dir, '%s_nearest_warped.mat'%(elecfile_prefix))
         
         if os.path.isfile(elecfile_warped):
             print("The electrodes in %s have already been warped and are in %s"%(elecfile, elecfile_warped))
@@ -918,12 +916,8 @@ class freeCoG:
         if warp_depths and warp_surface:
             scipy.io.savemat(elecfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
 
-            #create pdf for visual inspection of the original elecs vs the warps
-            mlab = matlab.MatlabCommand()
-            mlab.inputs.script = "addpath(genpath(['%s' filesep 'surface_warping_scripts'])); \
-                                  addpath(genpath(['%s' filesep 'plotting']));\
-                                  plot_recon_anatomy_compare_warped('%s','%s','%s','%s','%s','%s','%s');"%(self.img_pipe_dir, self.img_pipe_dir,self.fs_dir,self.subj_dir,self.subj,template,self.hem,elecfile_prefix,self.zero_indexed_electrodes)
-            out = mlab.run()
+            self.plot_recon_anatomy_compare_warp()
+
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
                 print('Making preproc directory')
                 os.mkdir(os.path.join(self.elecs_dir, 'warps_preproc'))
@@ -1224,15 +1218,16 @@ class freeCoG:
         '''utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region'''
 
         if roi==None:
-            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))['elecmatrix']
+            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
         else:
             elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
             roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
             #anatomy = elecfile['anatomy'][roi_indices,:]
             elecmatrix = elecfile['elecmatrix'][roi_indices,:]
+            anatomy = elecfile['anatomy'][roi_indices,:]
             #eleclabels = elecfile['eleclabels'][roi_indices,:]
             return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
-            return {'elecmatrix': elecmatrix} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            return {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
 
     def plot_brain(self, rois=[('pial',(0.8,0.8,0.8),1.0,'surface')], elecs=None, weights=None, gaussian=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
@@ -1311,8 +1306,7 @@ class freeCoG:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
 
-        elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
-        e = scipy.io.loadmat(elecfile)
+        e = self.get_elecs(elecfile_prefix = elecfile_prefix)
 
         # Plot the pial surface
         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
@@ -1369,3 +1363,86 @@ class freeCoG:
         else:
             mlab.close()
         return mesh, mlab
+
+    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',interactive=True, screenshot=False, alpha=1.0):
+        import mayavi
+        import plotting.ctmr_brain_plot as ctmr_brain_plot
+        import SupplementalFiles.FS_colorLUT as FS_colorLUT
+
+        subj_brain = scipy.io.loadmat(self.pial_surf_file[self.hem])
+        template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
+        template_brain = scipy.io.loadmat(template_pial_surf_file)
+
+        # Get native space and warped electrodes
+        subj_e = self.get_elecs(elecfile_prefix = elecfile_prefix)
+        template_e = self.get_elecs(elecfile_prefix = elecfile_prefix+'_warped')
+        
+        subj_brain_width = np.abs(np.max(subj_brain['vert'][:,1])-np.min(subj_brain['vert'][:,1]))
+        template_brain_width = np.abs(np.max(template_brain['vert'][:,1])-np.min(template_brain['vert'][:,1]))
+        
+        subj_e['elecmatrix'][:,1] = subj_e['elecmatrix'][:,1]-((subj_brain_width+template_brain_width)/4)
+        template_e['elecmatrix'][:,1] = template_e['elecmatrix'][:,1]+((subj_brain_width+template_brain_width)/4)
+
+        subj_brain['vert'][:,1] = subj_brain['vert'][:,1]-((subj_brain_width+template_brain_width)/4)
+        template_brain['vert'][:,1] = template_brain['vert'][:,1]+((subj_brain_width+template_brain_width)/4)
+        
+        # Plot the pial surface
+        subj_mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(subj_brain['tri'], subj_brain['vert'], color=(0.8, 0.8, 0.8))
+        template_mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(template_brain['tri'], template_brain['vert'], color=(0.8, 0.8, 0.8),new_fig=False)
+        
+        # Add the electrodes, colored by anatomical region
+        elec_colors = np.zeros((subj_e['elecmatrix'].shape[0], subj_e['elecmatrix'].shape[1]))
+
+        # Import freesurfer color lookup table as a dictionary
+        cmap = FS_colorLUT.get_lut()
+
+        # Make a list of electrode numbers
+        if self.zero_indexed_electrodes:
+            elec_numbers = np.arange(subj_e['elecmatrix'].shape[0])
+        else:
+            elec_numbers = np.arange(subj_e['elecmatrix'].shape[0])+1
+
+        # Find all the unique brain areas in this subject
+        brain_areas = np.unique(subj_e['anatomy'][:,3])
+
+        # Loop through unique brain areas and plot the electrodes in each brain area
+        for b in brain_areas:
+            # Add relevant extra information to the label if needed for the color LUT
+            if b != 'NaN':
+                this_label = b[0]
+                if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
+                    this_label = 'ctx-%s-%s'%(self.hem, b[0])
+                    print(this_label)
+                
+                if this_label != '':
+                    if this_label not in cmap:
+                        #in case the label was manually assigned, and not found in the LUT colormap dictionary
+                        el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                    else:
+                        el_color = np.array(cmap[this_label])/255.
+                    ctmr_brain_plot.el_add(np.atleast_2d(subj_e['elecmatrix'][subj_e['anatomy'][:,3]==b,:]), 
+                                           color=tuple(el_color), numbers=elec_numbers[subj_e['anatomy'][:,3]==b])
+
+                    ctmr_brain_plot.el_add(np.atleast_2d(template_e['elecmatrix'][subj_e['anatomy'][:,3]==b,:]), 
+                                           color=tuple(el_color), numbers=elec_numbers[subj_e['anatomy'][:,3]==b])
+        if self.hem=='lh':
+            azimuth=180
+        elif self.hem=='rh':
+            azimuth=0
+        mlab.view(azimuth, elevation=90)
+
+        #adjust transparency of brain mesh
+        subj_mesh.actor.property.opacity = alpha
+        template_mesh.actor.property.opacity = alpha 
+
+        arr = mlab.screenshot(antialiased=True)
+        if screenshot:
+            plt.figure(figsize=(20,10))
+            plt.imshow(arr, aspect='equal')
+            plt.axis('off')
+            plt.show()
+        if interactive:
+            mlab.show()
+        else:
+            mlab.close()
+        return subj_mesh, template_mesh, mlab
