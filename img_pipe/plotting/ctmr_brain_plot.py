@@ -55,7 +55,6 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
             b_x = np.abs(vert[:,0] - elecs[i,0])
             gauss_wt = np.nan_to_num(weights[i] * np.exp((-(b_x**2+b_z**2+b_y**2))/gsp)) #gaussian
             brain_color = brain_color + gauss_wt
-    print brain_color
 
     # plot cortex and begin display
     if new_fig:
@@ -131,6 +130,6 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
 
     if numbers is not None:
         for ni, n in enumerate(numbers):
-            mayavi.mlab.text3d(elecs[ni,0]+label_offset, elecs[ni,1], elecs[ni,2], str(n), orient_to_camera=True)
+            mayavi.mlab.text3d(elecs[ni,0]+label_offset, elecs[ni,1], elecs[ni,2], str(n), orient_to_camera=True) #line_width=5.0, scale=1.5)
 
     return points, mlab
