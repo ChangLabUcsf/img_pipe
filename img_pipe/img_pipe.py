@@ -1337,7 +1337,7 @@ class freeCoG:
         # Find all the unique brain areas in this subject
         brain_areas = np.unique(e['anatomy'][:,3])
 
-        # Loop through unique brain areas and plot the electrodes in each brain area
+        # Loop through unique brain areas and find the appropriate color for each brain area from the color LUT dictionary
         for b in brain_areas:
             # Add relevant extra information to the label if needed for the color LUT
             if b != 'NaN':
