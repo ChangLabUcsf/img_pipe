@@ -14,7 +14,6 @@ Show end results and capabilities, workflow diagram.
 To download this package, you will need:
 * a MacOS or Linux machine (if you are using Windows, download a Linux Virtual Machine to use this package)
 * __anaconda__ for Python version 2.7, not 3 (https://www.continuum.io/downloads)<br>
-* __MATLAB__
 * __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 5.3.0 or higher
 
 After you download and install those dependencies, run the following commands in your terminal:
@@ -30,8 +29,6 @@ After that, edit your ~/.bash_profile or ~/.bashrc and set the following environ
 ```
 export FREESURFER_HOME=/path/to/freesurfer/
 export SUBJECTS_DIR=/path/to/subjects/directory/
-export SPM_PATH=/path/to/spm/
-matlab environ variable?
 ```
 Note that you can set `SUBJECTS_DIR` to wherever you want to place your subjects' imaging data - for example, `/Applications/freesurfer/subjects`.
 
