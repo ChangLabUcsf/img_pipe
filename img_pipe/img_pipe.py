@@ -82,7 +82,9 @@ class freeCoG:
         # Meshes directory for matlab/python meshes
         self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
         surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+        print surf_file, os.path.isfile(surf_file)
         if os.path.isfile(surf_file):
+            print 'here'
             self.pial_surf_file = dict()
             self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
             self.pial_surf_file['rh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'rh_pial_trivert.mat')
@@ -470,6 +472,7 @@ class freeCoG:
 
         # tessellate all subjects freesurfer subcortical segmentations
         print('::: Tesselating freesurfer subcortical segmentations from aseg using aseg2srf... :::')
+        print(os.path.join(self.img_pipe_dir, 'SupplementalScripts', 'aseg2srf.sh'))
         os.system(os.path.join(self.img_pipe_dir, 'SupplementalScripts', 'aseg2srf.sh') + ' -s "%s" -l "4 5 10 11 12 13 17 18 26 \
                  28 43 44  49 50 51 52 53 54 58 60 14 15 16" -d' % (self.subj))
 
@@ -1285,14 +1288,14 @@ class freeCoG:
                 else:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
         if not gaussian and elecs!=None:
-            if weights==None:
+            if weights==None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 elec_colors = np.ones((elecs.shape[0],3))
             else:
                 elec_colors = np.zeros((elecs.shape[0],3))
                 elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
             points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
 
-        mlab.show()
+        #mlab.show()
         return mesh, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
@@ -1322,6 +1325,10 @@ class freeCoG:
             elec_numbers = np.arange(e['elecmatrix'].shape[0])
         else:
             elec_numbers = np.arange(e['elecmatrix'].shape[0])+1
+        if self.hem=='lh':
+            offset=-1.0
+        elif self.hem=='rh':
+            offset=1.0
 
         # Find all the unique brain areas in this subject
         brain_areas = np.unique(e['anatomy'][:,3])
@@ -1342,7 +1349,7 @@ class freeCoG:
                     else:
                         el_color = np.array(cmap[this_label])/255.
                     ctmr_brain_plot.el_add(np.atleast_2d(e['elecmatrix'][e['anatomy'][:,3]==b,:]), 
-                                           color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b])
+                                           color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b], offset=offset)
         if self.hem=='lh':
             azimuth=180
         elif self.hem=='rh':
@@ -1363,6 +1370,45 @@ class freeCoG:
         else:
             mlab.close()
         return mesh, mlab
+
+    def plot_erps(self, erp_matrix, time_scale_factor=0.03, z_scale_factor=3.0):
+        import mayavi
+        import plotting.ctmr_brain_plot as ctmr_brain_plot
+        import SupplementalFiles.FS_colorLUT as FS_colorLUT
+        #use mean normal vector
+        #no anat color map option
+        #time *-1 if left hemisphere
+        #centering the time series more accurately
+        #plotting all lines without the loop
+        #mean normal as the offset for the erp lines' x-coordinate
+
+        cmap = FS_colorLUT.get_lut()
+
+        anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir,'TDT_elecs_all.mat'))['anatomy'][:,3]
+
+        mesh,mlab = self.plot_brain(rois=[('pial',None,1.0,None)])
+        elecmatrix = self.get_elecs()
+        for c in range(erp_matrix.shape[1]):
+            b = anatomy_labels[c]
+            if b != 'NaN':
+                this_label = b[0]
+                if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
+                    this_label = 'ctx-%s-%s'%('lh', b[0])
+
+                if this_label != '':
+                    if this_label not in cmap:
+                        #in case the label was manually assigned, and not found in the LUT colormap dictionary
+                        el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                    else:
+                        el_color = np.array(cmap[this_label])/255.
+
+            el_color = tuple(el_color)
+            elec_coord = elecmatrix[c,:]
+            mlab.points3d(elec_coord[0],elec_coord[1],elec_coord[2], scale_factor = 0.25, color = (1.0, 0.0, 0.0), resolution=25)
+            erp = erp_matrix[:,c]
+            mlab.plot3d(np.array([elec_coord[0] for i in range(erp_matrix.shape[0])])-2.0, ((np.array([i for i in range(-50,55)]))*time_scale_factor+elec_coord[1])[::-1], erp*z_scale_factor+elec_coord[2],\
+                            figure=mlab.gcf(),color=(el_color),tube_radius=0.15,tube_sides=3)
+        mlab.show()
 
     def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',interactive=True, screenshot=False, alpha=1.0):
         import mayavi
@@ -1413,13 +1459,12 @@ class freeCoG:
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
                     this_label = 'ctx-%s-%s'%(self.hem, b[0])
                     print(this_label)
-                
-                if this_label != '':
-                    if this_label not in cmap:
-                        #in case the label was manually assigned, and not found in the LUT colormap dictionary
-                        el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
-                    else:
-                        el_color = np.array(cmap[this_label])/255.
+                    if this_label != '':
+                        if this_label not in cmap:
+                            #in case the label was manually assigned, and not found in the LUT colormap dictionary
+                            el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                        else:
+                            el_color = np.array(cmap[this_label])/255.
                     ctmr_brain_plot.el_add(np.atleast_2d(subj_e['elecmatrix'][subj_e['anatomy'][:,3]==b,:]), 
                                            color=tuple(el_color), numbers=elec_numbers[subj_e['anatomy'][:,3]==b])
 

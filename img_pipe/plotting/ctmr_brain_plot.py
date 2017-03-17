@@ -90,7 +90,7 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
     return mesh, mlab
 
 
-def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None):
+def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, offset=-1.0):
     '''
     el_add(elecs, color = (1., 0., 0.), msize = 2)
     This function adds the electrode matrix [elecs] (nchans x 3) to 
@@ -100,6 +100,7 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None):
         color: Electrode color is either a triplet (r, g, b),
                or a numpy array with the same shape as [elecs] to plot one color per electrode
         msize: size of the electrode.  default = 2
+        offset: how much to move the number labels out by (so not blocked by electrodes)
     '''
     
     # plot the electrodes as spheres
@@ -126,6 +127,6 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None):
 
     if numbers is not None:
         for ni, n in enumerate(numbers):
-            mayavi.mlab.text3d(elecs[ni,0], elecs[ni,1], elecs[ni,2], str(n))
+            mayavi.mlab.text3d(elecs[ni,0]+offset, elecs[ni,1], elecs[ni,2], str(n), orient_to_camera=True)
 
     return points, mlab
