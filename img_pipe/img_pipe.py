@@ -609,9 +609,9 @@ class freeCoG:
             if len(num_empty_rows):
                 num_empty_rows = int(num_empty_rows)
                 short_name_prefix = raw_input('What is the short name prefix?\n')
-                short_names.extend([short_name_prefix+str(i) for i in range(1,num_empty_rows+1)])
+                short_names.extend([short_name_prefix for i in range(1,num_empty_rows+1)])
                 long_name_prefix = raw_input('What is the long name prefix?\n')
-                long_names.extend([long_name_prefix+str(i) for i in range(1,num_empty_rows+1)])
+                long_names.extend([long_name_prefix for i in range(1,num_empty_rows+1)])
                 elec_type = raw_input('What is the type of the device?\n')
                 elec_types.extend([elec_type for i in range(num_empty_rows)])
                 elecmatrix_all.append(np.ones((num_empty_rows,3))*np.nan)
@@ -624,8 +624,8 @@ class freeCoG:
                 elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
                 num_elecs = elecmatrix.shape[0]
                 elecmatrix_all.append(elecmatrix)
-                short_names.extend([short_name_prefix for i in range(1,num_elecs+1)])
-                long_names.extend([long_name_prefix for i in range(1,num_elecs+1)])
+                short_names.extend([short_name_prefix+str(i) for i in range(1,num_elecs+1)])
+                long_names.extend([long_name_prefix+str(i) for i in range(1,num_elecs+1)])
                 elec_types.extend([elec_type for i in range(num_elecs)])
             completed = raw_input('Finished entering devices? Enter \'y\' if finished.')
             if completed=='y':
@@ -1247,7 +1247,7 @@ class freeCoG:
             self.representation = representation
             self.gaussian = gaussian
 
-    def plot_brain(self, rois=[roi('pial',(0.8,0.8,0.8),1.0,'surface',False)], elecs=None, weights=None):
+    def plot_brain(self, rois=[roi('pial',(0.8,0.8,0.8),1.0,'surface',False)], elecs=None, weights=None, showfig=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
@@ -1309,14 +1309,25 @@ class freeCoG:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
         if not any_gaussian and elecs!=None:
             if weights==None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
-                elec_colors = np.ones((elecs.shape[0],3))
+                elec_colors = np.zeros((elecs.shape[0],3))
+                elec_colors[:,0] = 1. #defaults to red elecs if no weights specified
             else:
                 elec_colors = np.zeros((elecs.shape[0],3))
                 elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
             points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
+        else:
+            #if no elecs to add as points3D
+            points = None
 
-        mlab.show()
-        return mesh, mlab
+        if self.hem=='lh':
+            azimuth=180
+        elif self.hem=='rh':
+            azimuth=0
+        mlab.view(azimuth, elevation=90)
+
+        if showfig:
+            mlab.show()
+        return mesh, points, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
         import mayavi
@@ -1416,7 +1427,7 @@ class freeCoG:
 
         anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir,'TDT_elecs_all.mat'))['anatomy'][:,3]
 
-        mesh,mlab = self.plot_brain(rois=[('pial',None,1.0,None)])
+        mesh, points, mlab = self.plot_brain()
         elecmatrix = self.get_elecs()['elecmatrix']
         for c in range(erp_matrix.shape[1]):
             b = anatomy_labels[c]
@@ -1438,6 +1449,7 @@ class freeCoG:
             erp = erp_matrix[:,c]
             mlab.plot3d(np.array([elec_coord[0] for i in range(erp_matrix.shape[0])])-2.0, ((np.array([i for i in range(-50,55)]))*time_scale_factor+elec_coord[1])[::-1], erp*z_scale_factor+elec_coord[2],\
                             figure=mlab.gcf(),color=(el_color),tube_radius=0.15,tube_sides=3)
+
         mlab.show()
 
     def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',interactive=True, screenshot=False, alpha=1.0):
