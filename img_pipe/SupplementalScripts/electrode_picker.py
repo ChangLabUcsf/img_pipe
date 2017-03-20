@@ -669,7 +669,8 @@ class electrode_picker:
 			
 if __name__ == '__main__':
 	app = QtGui.QApplication([])
-	app.setWindowIcon(QtGui.QIcon(os.path.join('icons','leftbrain.png')))
+	path_to_this_func = os.path.dirname(os.path.realpath(__file__))
+	app.setWindowIcon(QtGui.QIcon(os.path.join(path_to_this_func, 'icons','leftbrain.png')))
 	subj_dir = sys.argv[1]
 	hem = sys.argv[2]
 	e = electrode_picker(subj_dir = subj_dir, hem = hem)
