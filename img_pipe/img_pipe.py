@@ -618,10 +618,15 @@ class freeCoG:
             else:
                 short_name_prefix = raw_input('What is the short name prefix of the device?\n')
                 long_name_prefix = raw_input('What is the long name prefix of the device?\n')
-                elec_type = raw_input('What is the type of the device?\n')
-                file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
-                indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
-                elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
+                elec_type = raw_input('What is the type of the device?\n')     
+                try:
+                    file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
+                    indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
+                    elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
+                except IOError:
+                    file_name = raw_input('Sorry, that file was not found. Please enter the correct filename of the device: \n ')
+                    indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
+                    elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
                 num_elecs = elecmatrix.shape[0]
                 elecmatrix_all.append(elecmatrix)
                 short_names.extend([short_name_prefix+str(i) for i in range(1,num_elecs+1)])
@@ -1430,6 +1435,7 @@ class freeCoG:
         mesh, points, mlab = self.plot_brain()
         elecmatrix = self.get_elecs()['elecmatrix']
         for c in range(erp_matrix.shape[1]):
+            print c
             b = anatomy_labels[c]
             if b != 'NaN':
                 this_label = b[0]
