@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import matplotlib
+from pyface.qt import QtGui, QtCore
 matplotlib.use('Qt4Agg') 
 from matplotlib import pyplot as plt
 plt.rcParams['keymap.save'] = '' # Unbind 's' key saving
@@ -13,11 +14,13 @@ import numpy as np
 import nibabel as nib
 import scipy.ndimage
 import sys
-from PyQt4 import QtCore, QtGui
+#from PyQt4 import QtCore, QtGui
 import matplotlib.patches as mpatches
 import scipy.io
 import os
 import warnings
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 warnings.filterwarnings('ignore')
 
@@ -303,7 +306,7 @@ class electrode_picker:
 
 		if event.key == 'h':
 			# Show help 
-			plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
+			plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface, '3': show 3D view\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
 
 		if event.key == 'e':
 			if self.device_name == '':
@@ -314,6 +317,9 @@ class electrode_picker:
 		if event.key == 'u':
 			self.remove_electrode()
 		
+		if event.key == '3':
+			self.launch_3D_viewer()
+
 		# Maximum intensity projection in another dimension
 		ct_slice = dict()
 		ct_slice['s'] = 0
@@ -666,7 +672,29 @@ class electrode_picker:
 			self.legend_handles.append(color_patch)
 			plt.legend(handles=self.legend_handles, loc='upper right', fontsize='x-small')
 
-			
+	def launch_3D_viewer(self):
+		'''
+		Launch 3D viewer showing position of identified electrodes in 3D space
+		'''
+		from plotting.ctmr_brain_plot import ctmr_gauss_plot as ctmr_gauss_plot
+		from plotting.ctmr_brain_plot import el_add as el_add
+		
+		# Get left and right hemisphere
+		lh = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', 'lh_pial_trivert.mat'))
+		ctmr_gauss_plot(lh['tri'], lh['vert'], opacity=0.8)
+		rh = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', 'rh_pial_trivert.mat'))
+		ctmr_gauss_plot(rh['tri'], rh['vert'], opacity=0.8, new_fig=False)
+
+		# Plot the electrodes we have so far
+		vmax = 17.
+		for i, dev in enumerate(self.devices):
+			elecfile = os.path.join(self.subj_dir, 'elecs', 'individual_elecs', dev+'.mat')
+			e = scipy.io.loadmat(elecfile)['elecmatrix']
+			num = self.devices.index(dev)
+			c = self.elec_colors(num/vmax)
+			el_add(e, color=tuple(c[:3]), msize=4)
+
+
 if __name__ == '__main__':
 	app = QtGui.QApplication([])
 	path_to_this_func = os.path.dirname(os.path.realpath(__file__))
