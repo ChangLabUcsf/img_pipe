@@ -692,7 +692,7 @@ class electrode_picker:
 			e = scipy.io.loadmat(elecfile)['elecmatrix']
 			num = self.devices.index(dev)
 			c = self.elec_colors(num/vmax)
-			el_add(e, color=tuple(c[:3]), msize=4)
+			el_add(e, color=tuple(c[:3]), msize=4, numbers=1+np.arange(e.shape[0]))
 
 
 if __name__ == '__main__':
