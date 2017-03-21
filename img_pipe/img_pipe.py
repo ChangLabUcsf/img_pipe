@@ -20,6 +20,7 @@ import scipy.io
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
 from surface_warping_scripts.project_electrodes_anydirection import *
@@ -1329,9 +1330,9 @@ class freeCoG:
                 elec_colors = np.zeros((elecs.shape[0],3))
                 elec_colors[:,0] = 1. #defaults to red elecs if no weights specified
             else:
-                elec_colors = np.zeros((elecs.shape[0],3))
-                elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
-            points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
+                # Map the weights onto the current colormap
+                elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
+            points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
         else:
             #if no elecs to add as points3D
             points = None
