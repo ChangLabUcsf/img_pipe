@@ -1252,7 +1252,7 @@ class freeCoG:
             self.representation = representation
             self.gaussian = gaussian
 
-    def plot_brain(self, rois=[roi('pial',(0.8,0.8,0.8),1.0,'surface',False)], elecs=None, weights=None, showfig=False):
+    def plot_brain(self, rois=[roi('pial',(0.8,0.8,0.8),1.0,'surface',False)], elecs=[], weights=[], showfig=True):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
@@ -1312,8 +1312,8 @@ class freeCoG:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
                 else:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
-        if not any_gaussian and elecs!=None:
-            if weights==None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
+        if not any_gaussian and elecs!=[]:
+            if weights==[]: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 elec_colors = np.zeros((elecs.shape[0],3))
                 elec_colors[:,0] = 1. #defaults to red elecs if no weights specified
             else:
