@@ -1348,7 +1348,7 @@ class freeCoG:
         e = self.get_elecs(elecfile_prefix = elecfile_prefix)
 
         # Plot the pial surface
-        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
+        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
 
         # Add the electrodes, colored by anatomical region
         elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
@@ -1399,9 +1399,6 @@ class freeCoG:
         elif self.hem=='rh':
             azimuth=0
         mlab.view(azimuth, elevation=90)
-
-        #adjust transparency of brain mesh
-        mesh.actor.property.opacity = opacity 
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
 
