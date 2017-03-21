@@ -1334,7 +1334,7 @@ class freeCoG:
             mlab.show()
         return mesh, points, mlab
 
-    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, alpha=1.0):
+    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, opacity=1.0):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
@@ -1401,7 +1401,7 @@ class freeCoG:
         mlab.view(azimuth, elevation=90)
 
         #adjust transparency of brain mesh
-        mesh.actor.property.opacity = alpha 
+        mesh.actor.property.opacity = opacity 
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
 
@@ -1458,7 +1458,7 @@ class freeCoG:
 
         mlab.show()
 
-    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',interactive=True, screenshot=False, alpha=1.0):
+    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',interactive=True, screenshot=False, opacity=1.0):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
@@ -1525,8 +1525,8 @@ class freeCoG:
         mlab.view(azimuth, elevation=90)
 
         #adjust transparency of brain mesh
-        subj_mesh.actor.property.opacity = alpha
-        template_mesh.actor.property.opacity = alpha 
+        subj_mesh.actor.property.opacity = opacity
+        template_mesh.actor.property.opacity = opacity 
 
         arr = mlab.screenshot(antialiased=True)
         if screenshot:
