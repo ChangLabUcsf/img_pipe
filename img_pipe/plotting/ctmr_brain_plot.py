@@ -78,7 +78,7 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
 
     #mesh2 = mlab.pipeline.set_active_attribute(mesh, cell_scalars = 'Cell data')
     #mlab.pipeline.surface(mesh)
-
+    
     # change OpenGL mesh properties for phong point light shading
     mesh.actor.property.ambient = 0.4225
     mesh.actor.property.specular = 0.333
@@ -86,6 +86,8 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
     mesh.actor.property.diffuse = 0.6995
     mesh.actor.property.interpolation = 'phong'
     mesh.scene.light_manager.light_mode = 'vtk'
+    if opacity < 1.0:
+        mesh.scene.renderer.set(use_depth_peeling=True) 
     return mesh, mlab
 
 
