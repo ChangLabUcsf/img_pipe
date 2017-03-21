@@ -28,7 +28,7 @@ After that, edit your ~/.bash_profile or ~/.bashrc and set the following environ
 
 ```
 export FREESURFER_HOME=/path/to/freesurfer/
-export SUBJECTS_DIR=/path/to/subjects/directory/
+export SUBJECTS_DIR=/path/to/freesurfer/subjects
 ```
 Note that you can set `SUBJECTS_DIR` to wherever you want to place your subjects' imaging data - for example, `/Applications/freesurfer/subjects`.
 
