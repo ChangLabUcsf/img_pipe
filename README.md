@@ -39,7 +39,17 @@ You should now be able to import img_pipe from python.
 >>> import img_pipe
 >>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
 >>> patient.prep_recon()
+>>> patient.plot_recon_anatomy()
 ```
+
+## ChangLab Specific: ##
+Download OSXFUse
+add to ~/.bash_profile 
+
+alias duramount='sshfs -p 7777 -o defer_permissions dchang@dura.cin.ucsf.edu:/ /Users/dlchang/dura'
+
+alias duraunmount='sudo umount /Users/dlchang/dura/'
+
 
 
 
