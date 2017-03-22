@@ -1221,20 +1221,30 @@ class freeCoG:
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
-    def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
-        '''utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region'''
+    def get_unique_anatomy(self, elecfile_prefix='TDT_elecs_all'):
+        ''' Get a list of all possible electrode anatomical labels for this subject '''
+        anat = self.get_elecs(elecfile_prefix=elecfile_prefix)['anatomy'][:,3]
+        return np.unique([a[0] for a in anat])
 
-        if roi==None:
-            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+    def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
+        '''
+        Utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region.
+        To get a list of the anatomical labels you can use, call patient.get_unique_anatomy()
+        '''
+
+        e = []
+        elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
+        if os.path.isfile(elecfile):
+            e = scipy.io.loadmat(elecfile)
+            if roi is not None:
+                roi_indices = np.where(e['anatomy'][:,3]==roi)[0]
+                elecmatrix = e['elecmatrix'][roi_indices,:]
+                anatomy = e['anatomy'][roi_indices,:]
+                e = {'elecmatrix': elecmatrix, 'anatomy': anatomy}
         else:
-            elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
-            roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
-            #anatomy = elecfile['anatomy'][roi_indices,:]
-            elecmatrix = elecfile['elecmatrix'][roi_indices,:]
-            anatomy = elecfile['anatomy'][roi_indices,:]
-            #eleclabels = elecfile['eleclabels'][roi_indices,:]
-            #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
-            return {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            print("%s does not exist"%(elecfile))
+
+        return e
 
     class roi:
 
