@@ -28,7 +28,7 @@ import numpy as np
 
 def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = [], 
                     opacity = 1.0, representation = 'surface', line_width=1.0, gsp = 10,
-                    cmap = 'RdBu', new_fig=True):
+                    cmap = 'RdBu', show_colorbar=True, new_fig=True):
     '''
     ctmr_gauss_plot(tri, vert)
     This function plots the 3D brain surface mesh
@@ -67,8 +67,7 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
                                 colormap = cmap, vmin=-np.abs(brain_color).max(), vmax=np.abs(brain_color).max())
     else:
         mesh = mlab.triangular_mesh(vert[:,0],vert[:,1],vert[:,2], tri, 
-                                color=color, 
-                                representation = representation, 
+                                color=color, representation = representation, 
                                 opacity = opacity, line_width = line_width)
 
     # cell_data = mesh.mlab_source.dataset.cell_data
@@ -78,6 +77,8 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
 
     #mesh2 = mlab.pipeline.set_active_attribute(mesh, cell_scalars = 'Cell data')
     #mlab.pipeline.surface(mesh)
+    if weights != []:
+        mlab.colorbar()
     
     # change OpenGL mesh properties for phong point light shading
     mesh.actor.property.ambient = 0.4225
@@ -87,7 +88,8 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
     mesh.actor.property.interpolation = 'phong'
     mesh.scene.light_manager.light_mode = 'vtk'
     if opacity < 1.0:
-        mesh.scene.renderer.set(use_depth_peeling=True) 
+        mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
+    
     return mesh, mlab
 
 

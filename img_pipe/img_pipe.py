@@ -20,6 +20,7 @@ import scipy.io
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
 from surface_warping_scripts.project_electrodes_anydirection import *
@@ -1252,7 +1253,15 @@ class freeCoG:
             self.representation = representation
             self.gaussian = gaussian
 
-    def plot_brain(self, rois=[roi('pial',(0.8,0.8,0.8),1.0,'surface',False)], elecs=[], weights=[], showfig=True):
+    def get_rois(self):
+        ''' Method to get the list of all available ROI names for plotting '''
+        rois = ['rAcumb', 'rAmgd', 'rCaud', 'rGP', 'rHipp', 'rPut', 'rThal',
+                    'rLatVent', 'rInfLatVent', 'rVentDienceph', 'lLatVent', 'lInfLatVent',
+                    'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
+                    'lThirdVent', 'lFourthVent', 'lBrainStem', 'pial', 'lh_pial', 'rh_pial']
+        return rois
+
+    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
@@ -1290,16 +1299,20 @@ class freeCoG:
                 any_gaussian = True
 
             #default roi_name of 'pial' plots both hemispheres' pial surfaces
-            if roi_name =='pial':
+            if roi_name =='pial' or roi_name == 'rh_pial' or roi_name == 'lh_pial':
                 #use pial surface of the entire hemisphere
                 lh_pial = scipy.io.loadmat(self.pial_surf_file['lh'])
                 rh_pial = scipy.io.loadmat(self.pial_surf_file['rh'])
                 if gaussian:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
-                else:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'],lh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False)
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'],rh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False)
+                    if roi_name == 'pial' or roi_name == 'lh_pial':
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
+                    if roi_name == 'pial' or roi_name == 'rh_pial': 
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
+                else: 
+                    if roi_name == 'pial' or roi_name == 'lh_pial': 
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
+                    if roi_name == 'pial' or roi_name == 'rh_pial': 
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
                     
             else: 
                 subcort_dir = os.path.join(self.mesh_dir,'subcortical')
@@ -1309,17 +1322,17 @@ class freeCoG:
                     roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'%s_trivert.mat'%(roi_name)))
 
                 if gaussian:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
                 else:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
         if not any_gaussian and elecs!=[]:
             if weights==[]: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 elec_colors = np.zeros((elecs.shape[0],3))
                 elec_colors[:,0] = 1. #defaults to red elecs if no weights specified
             else:
-                elec_colors = np.zeros((elecs.shape[0],3))
-                elec_colors[:,0] = weights #change this if you want a different colorscale for your weights
-            points, mlab = ctmr_brain_plot.el_add(elecs, color=elec_colors)
+                # Map the weights onto the current colormap
+                elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
+            points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
         else:
             #if no elecs to add as points3D
             points = None
@@ -1348,7 +1361,7 @@ class freeCoG:
         e = self.get_elecs(elecfile_prefix = elecfile_prefix)
 
         # Plot the pial surface
-        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
+        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
 
         # Add the electrodes, colored by anatomical region
         elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
@@ -1399,9 +1412,6 @@ class freeCoG:
         elif self.hem=='rh':
             azimuth=0
         mlab.view(azimuth, elevation=90)
-
-        #adjust transparency of brain mesh
-        mesh.actor.property.opacity = opacity 
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
 

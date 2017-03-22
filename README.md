@@ -1,7 +1,8 @@
 ## ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/leftbrain_blackbg.png "img_pipe") img_pipe: Image processing pipeline for ECoG data ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/rightbrain_blackbg.png "img_pipe") ##
 
 
-Developed by Liberty Hamilton, David Chang, Morgan Lee
+Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laborotory of Dr. Edward Chang, UC San Francisco
+(http://changlab.ucsf.edu)
 
 This contains the imaging pipeline as one importable python class for running a patient's
 brain surface reconstruction and electrode localization/labeling.
@@ -28,7 +29,7 @@ After that, edit your ~/.bash_profile or ~/.bashrc and set the following environ
 
 ```
 export FREESURFER_HOME=/path/to/freesurfer/
-export SUBJECTS_DIR=/path/to/subjects/directory/
+export SUBJECTS_DIR=/path/to/freesurfer/subjects
 ```
 Note that you can set `SUBJECTS_DIR` to wherever you want to place your subjects' imaging data - for example, `/Applications/freesurfer/subjects`.
 
@@ -39,7 +40,17 @@ You should now be able to import img_pipe from python.
 >>> import img_pipe
 >>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
 >>> patient.prep_recon()
+>>> patient.plot_recon_anatomy()
 ```
+
+## ChangLab Specific: ##
+Download OSXFUse
+add to ~/.bash_profile 
+
+alias duramount='sshfs -p 7777 -o defer_permissions dchang@dura.cin.ucsf.edu:/ /Users/dlchang/dura'
+
+alias duraunmount='sudo umount /Users/dlchang/dura/'
+
 
 
 

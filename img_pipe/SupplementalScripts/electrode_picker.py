@@ -679,11 +679,11 @@ class electrode_picker:
 		from plotting.ctmr_brain_plot import ctmr_gauss_plot as ctmr_gauss_plot
 		from plotting.ctmr_brain_plot import el_add as el_add
 		
-		# Get left and right hemisphere
-		lh = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', 'lh_pial_trivert.mat'))
-		ctmr_gauss_plot(lh['tri'], lh['vert'], opacity=0.8)
-		rh = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', 'rh_pial_trivert.mat'))
-		ctmr_gauss_plot(rh['tri'], rh['vert'], opacity=0.8, new_fig=False)
+		# Get appropriate hemisphere
+		pial = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', self.hem+'_pial_trivert.mat'))
+		ctmr_gauss_plot(pial['tri'], pial['vert'], opacity=0.8)
+		#rh = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', 'rh_pial_trivert.mat'))
+		#ctmr_gauss_plot(rh['tri'], rh['vert'], opacity=0.8, new_fig=False)
 
 		# Plot the electrodes we have so far
 		vmax = 17.
@@ -692,7 +692,7 @@ class electrode_picker:
 			e = scipy.io.loadmat(elecfile)['elecmatrix']
 			num = self.devices.index(dev)
 			c = self.elec_colors(num/vmax)
-			el_add(e, color=tuple(c[:3]), msize=4)
+			el_add(e, color=tuple(c[:3]), msize=4, numbers=1+np.arange(e.shape[0]))
 
 
 if __name__ == '__main__':
