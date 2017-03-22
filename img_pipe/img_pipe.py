@@ -1232,7 +1232,7 @@ class freeCoG:
         To get a list of the anatomical labels you can use, call patient.get_unique_anatomy()
         '''
 
-        e = []
+        e = {'elecmatrix': [], 'anatomy': []}
         elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
         if os.path.isfile(elecfile):
             e = scipy.io.loadmat(elecfile)
