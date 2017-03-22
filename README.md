@@ -1,7 +1,8 @@
 ## ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/leftbrain_blackbg.png "img_pipe") img_pipe: Image processing pipeline for ECoG data ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/rightbrain_blackbg.png "img_pipe") ##
 
 
-Developed by Liberty Hamilton, David Chang, Morgan Lee
+Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laborotory of Dr. Edward Chang, UC San Francisco
+(http://changlab.ucsf.edu)
 
 This contains the imaging pipeline as one importable python class for running a patient's
 brain surface reconstruction and electrode localization/labeling.
