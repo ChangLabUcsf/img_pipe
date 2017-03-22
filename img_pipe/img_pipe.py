@@ -1223,7 +1223,8 @@ class freeCoG:
 
     def get_unique_anatomy(self, elecfile_prefix='TDT_elecs_all'):
         ''' Get a list of all possible electrode anatomical labels for this subject '''
-        return np.unique(self.get_elecs(elecfile_prefix=elecfile_prefix)['anatomy'])
+        anat = self.get_elecs(elecfile_prefix=elecfile_prefix)['anatomy'][:,3]
+        return np.unique([a[0] for a in anat])
 
     def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
         '''
@@ -1242,7 +1243,7 @@ class freeCoG:
                 e = {'elecmatrix': elecmatrix, 'anatomy': anatomy}
         else:
             print("%s does not exist"%(elecfile))
-        
+
         return e
 
     class roi:
