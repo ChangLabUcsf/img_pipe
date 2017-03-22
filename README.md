@@ -1,7 +1,7 @@
 ## ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/leftbrain_blackbg.png "img_pipe") img_pipe: Image processing pipeline for ECoG data ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/rightbrain_blackbg.png "img_pipe") ##
 
 
-Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laborotory of Dr. Edward Chang, UC San Francisco
+Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laboratory of Dr. Edward Chang, UC San Francisco
 http://changlab.ucsf.edu
 
 This contains the imaging pipeline as one importable python class for running a patient's
@@ -48,9 +48,11 @@ You should now be able to import img_pipe from python.
 Download OSXFUse
 add to ~/.bash_profile 
 
+```
 alias duramount='sshfs -p 7777 -o defer_permissions dchang@dura.cin.ucsf.edu:/ /Users/dlchang/dura'
 
 alias duraunmount='sudo umount /Users/dlchang/dura/'
+```
 
 
 
