@@ -1338,8 +1338,12 @@ class freeCoG:
                 elec_colors[:,0] = 1. #defaults to red elecs if no weights specified
             else:
                 # Map the weights onto the current colormap
-                elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
-            points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
+                if weights!=[]:
+                    elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
+                    points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
+                else:
+                    points, mlab = ctmr_brain_plot.el_add(elecs)
+
         else:
             #if no elecs to add as points3D
             points = None
