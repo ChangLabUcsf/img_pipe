@@ -1236,7 +1236,7 @@ class freeCoG:
         elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
         if os.path.isfile(elecfile):
             e = scipy.io.loadmat(elecfile)
-            if roi is not None:
+            if roi != None:
                 roi_indices = np.where(e['anatomy'][:,3]==roi)[0]
                 elecmatrix = e['elecmatrix'][roi_indices,:]
                 anatomy = e['anatomy'][roi_indices,:]
