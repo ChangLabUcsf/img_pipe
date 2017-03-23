@@ -1221,30 +1221,20 @@ class freeCoG:
         depth_elecs = str_to_float(np.array([s.split(delim2) for s in elecs]))
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
-    def get_unique_anatomy(self, elecfile_prefix='TDT_elecs_all'):
-        ''' Get a list of all possible electrode anatomical labels for this subject '''
-        anat = self.get_elecs(elecfile_prefix=elecfile_prefix)['anatomy'][:,3]
-        return np.unique([a[0] for a in anat])
-
     def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
-        '''
-        Utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region.
-        To get a list of the anatomical labels you can use, call patient.get_unique_anatomy()
-        '''
+        '''utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region'''
 
-        e = {'elecmatrix': [], 'anatomy': []}
-        elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
-        if os.path.isfile(elecfile):
-            e = scipy.io.loadmat(elecfile)
-            if roi is not None:
-                roi_indices = np.where(e['anatomy'][:,3]==roi)[0]
-                elecmatrix = e['elecmatrix'][roi_indices,:]
-                anatomy = e['anatomy'][roi_indices,:]
-                e = {'elecmatrix': elecmatrix, 'anatomy': anatomy}
+        if roi==None:
+            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
         else:
-            print("%s does not exist"%(elecfile))
-
-        return e
+            elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+            roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
+            #anatomy = elecfile['anatomy'][roi_indices,:]
+            elecmatrix = elecfile['elecmatrix'][roi_indices,:]
+            anatomy = elecfile['anatomy'][roi_indices,:]
+            #eleclabels = elecfile['eleclabels'][roi_indices,:]
+            #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            return {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
 
     class roi:
 
@@ -1271,7 +1261,7 @@ class freeCoG:
                     'lThirdVent', 'lFourthVent', 'lBrainStem', 'pial', 'lh_pial', 'rh_pial']
         return rois
 
-    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True):
+    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True, screenshot=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
@@ -1353,11 +1343,19 @@ class freeCoG:
             azimuth=0
         mlab.view(azimuth, elevation=90)
 
+        if screenshot:
+            arr = mlab.screenshot(antialiased=True)
+            plt.figure(figsize=(20,10))
+            plt.imshow(arr, aspect='equal')
+            plt.axis('off')
+            plt.show()
+
         if showfig:
             mlab.show()
+
         return mesh, points, mlab
 
-    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, interactive=True, screenshot=False, opacity=1.0):
+    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
@@ -1431,13 +1429,11 @@ class freeCoG:
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
             plt.show()
-        if interactive:
+        if showfig:
             mlab.show()
-        else:
-            mlab.close()
         return mesh, mlab
 
-    def plot_erps(self, erp_matrix, time_scale_factor=0.03, z_scale_factor=3.0):
+    def plot_erps(self, erp_matrix, time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
@@ -1455,7 +1451,6 @@ class freeCoG:
         mesh, points, mlab = self.plot_brain(showfig=False)
         elecmatrix = self.get_elecs()['elecmatrix']
         for c in range(erp_matrix.shape[1]):
-            print c
             b = anatomy_labels[c]
             if b != 'NaN':
                 this_label = b[0]
@@ -1475,10 +1470,20 @@ class freeCoG:
             erp = erp_matrix[:,c]
             mlab.plot3d(np.array([elec_coord[0] for i in range(erp_matrix.shape[0])])-2.0, ((np.array([i for i in range(-50,55)]))*time_scale_factor+elec_coord[1])[::-1], erp*z_scale_factor+elec_coord[2],\
                             figure=mlab.gcf(),color=(el_color),tube_radius=0.15,tube_sides=3)
+        
+        arr = mlab.screenshot(antialiased=True)
+        if screenshot:
+            plt.figure(figsize=(20,10))
+            plt.imshow(arr, aspect='equal')
+            plt.axis('off')
+            plt.show()
 
-        mlab.show()
+        if showfig:
+            mlab.show()
+        
+        return mesh, points, mlab
 
-    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',interactive=True, screenshot=False, opacity=1.0):
+    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
@@ -1554,10 +1559,8 @@ class freeCoG:
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
             plt.show()
-        if interactive:
+        if showfig:
             mlab.show()
-        else:
-            mlab.close()
         return subj_mesh, template_mesh, mlab
 
     
