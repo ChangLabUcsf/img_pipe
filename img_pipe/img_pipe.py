@@ -325,11 +325,12 @@ class freeCoG:
         use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
         corner electrodes) as the projection direction
         surf_type: 'dural' or 'pial'
-        projection_method: 'convex_hull','none','alphavol'
         num_iter: how many smoothing iterations when creating the dural surface
+        grid: whether the electrodes to project are from a grid that was interpolated using interp_grid()
         
-        Projects the electrodes of a grid based on the mean normal vector of the four grid
-        corner electrodes that were manually localized from the registered CT.'''
+        By default, projects the electrodes of a grid based on the mean normal vector of the four grid
+        corner electrodes that were manually localized from the registered CT. Can also project strips
+        and individual electrodes if a projection direction is provided.'''
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
                Surface Type: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
@@ -418,8 +419,8 @@ class freeCoG:
             roi = 'ofc_'
 
         print('::: Loading Mesh data :::')
-        print os.path.join(self.subj_dir, self.subj, Meshes, '%s_%s_trivert.mat'%(self.hem, surf_type))
-        cortex = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, Meshes, '%s_%s_trivert.mat'%(self.hem, surf_type)))
+        print os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type))
+        cortex = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
         tri, vert = cortex['tri'], cortex['vert']
 
         print('::: Projecting electrodes to mesh :::')
