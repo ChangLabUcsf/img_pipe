@@ -1326,7 +1326,7 @@ class freeCoG:
                     
             else: 
                 subcort_dir = os.path.join(self.mesh_dir,'subcortical')
-                if '%s_subcort_trivert.mat'%(roi_name) in os.listdir(subcort_dir):
+                if os.path.isdir(subcort_dir) and '%s_subcort_trivert.mat'%(roi_name) in os.listdir(subcort_dir):
                     roi_mesh = scipy.io.loadmat(os.path.join(subcort_dir,'%s_subcort_trivert.mat'%(roi_name)))
                 else:
                     roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'%s_trivert.mat'%(roi_name)))
@@ -1452,7 +1452,7 @@ class freeCoG:
 
         anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir,'TDT_elecs_all.mat'))['anatomy'][:,3]
 
-        mesh, points, mlab = self.plot_brain()
+        mesh, points, mlab = self.plot_brain(showfig=False)
         elecmatrix = self.get_elecs()['elecmatrix']
         for c in range(erp_matrix.shape[1]):
             print c
