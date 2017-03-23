@@ -1224,8 +1224,15 @@ class freeCoG:
     def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
         '''utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region'''
 
-        if roi==None:
-            return scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+        e = {'elecmatrix': [], 'anatomy': []}
+        elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
+        if os.path.isfile(elecfile):
+            e = scipy.io.loadmat(elecfile)
+            if roi != None:
+                roi_indices = np.where(e['anatomy'][:,3]==roi)[0]
+                elecmatrix = e['elecmatrix'][roi_indices,:]
+                anatomy = e['anatomy'][roi_indices,:]
+                e = {'elecmatrix': elecmatrix, 'anatomy': anatomy}
         else:
             elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
             roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
