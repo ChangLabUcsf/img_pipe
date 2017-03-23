@@ -1233,16 +1233,16 @@ class freeCoG:
                 roi_indices = np.where(e['anatomy'][:,3]==roi)[0]
                 elecmatrix = e['elecmatrix'][roi_indices,:]
                 anatomy = e['anatomy'][roi_indices,:]
-                e = {'elecmatrix': elecmatrix, 'anatomy': anatomy}
-        else:
-            elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
-            roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
-            #anatomy = elecfile['anatomy'][roi_indices,:]
-            elecmatrix = elecfile['elecmatrix'][roi_indices,:]
-            anatomy = elecfile['anatomy'][roi_indices,:]
-            #eleclabels = elecfile['eleclabels'][roi_indices,:]
-            #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
-            return {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            else:
+                elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
+                roi_indices = np.where(elecfile['anatomy'][:,3]==roi)[0]
+                #anatomy = elecfile['anatomy'][roi_indices,:]
+                elecmatrix = elecfile['elecmatrix'][roi_indices,:]
+                anatomy = elecfile['anatomy'][roi_indices,:]
+                #eleclabels = elecfile['eleclabels'][roi_indices,:]
+                #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+            e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+        return e
 
     class roi:
 
