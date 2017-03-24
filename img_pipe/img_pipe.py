@@ -1243,6 +1243,8 @@ class freeCoG:
                 #eleclabels = elecfile['eleclabels'][roi_indices,:]
                 #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
             e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+        else:
+            print 'File not found: %s'%(elecfile)
         return e
 
     def get_surf(self, hem=''):
@@ -1590,7 +1592,7 @@ class freeCoG:
             mlab.show()
         return subj_mesh, template_mesh, mlab
 
-    def make_roi_mesh(self, roi_name, label_list, hem=None):
+    def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False):
 
         '''bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
         caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
@@ -1599,9 +1601,6 @@ class freeCoG:
         entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
         frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
         fusiform                lingual                 parstriangularis        rostralmiddlefrontal'''
-
-        # import plotting.ctmr_brain_plot as ctmr_brain_plot   
-        # import mayavi
 
         if hem==None:
             hem = self.hem
@@ -1635,8 +1634,11 @@ class freeCoG:
 
         roi_mesh['tri'] = tri_list_reindexed
 
-        # mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
-        # mlab.show()
+        if showfig:
+            import plotting.ctmr_brain_plot as ctmr_brain_plot   
+            import mayavi
+            mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
+            mlab.show()
 
         scipy.io.savemat(os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name)), roi_mesh)
         
