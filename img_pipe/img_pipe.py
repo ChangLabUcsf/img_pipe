@@ -67,6 +67,7 @@ class freeCoG:
         
         self.subj = subj
         self.subj_dir = subj_dir
+        self.patient_dir = os.path.join(self.subj_dir, self.subj)
         self.hem = hem
         self.img_pipe_dir = os.path.dirname(os.path.realpath(__file__))
         self.zero_indexed_electrodes = True
@@ -1581,5 +1582,57 @@ class freeCoG:
         if showfig:
             mlab.show()
         return subj_mesh, template_mesh, mlab
+
+    def make_roi_mesh(self, roi_name, label_list, hem=''):
+
+        '''bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
+        caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
+        caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
+        cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
+        entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
+        frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
+        fusiform                lingual                 parstriangularis        rostralmiddlefrontal'''
+
+        import plotting.ctmr_brain_plot as ctmr_brain_plot   
+        import mayavi
+
+        if not hem:
+            hem = self.hem
+
+        outfile = os.path.join(self.mesh_dir, '%s_%s_%s.mat'%(self.subj, hem, roi_name))
+        cortex = self.get_surf(hem=hem)
+
+        roi_mesh = {}
+        vertnums = []
+
+        for label in label_list:
+            this_label = os.path.join(self.patient_dir, 'label', 'gyri', '%s.%s.label'%(hem, label))
+            f = open(this_label, 'r')
+            all_lines_str = [x.split() for x in f.read().split('\n')[2:][:-1]]
+            all_lines_float = []
+            for line in range(len(all_lines_str)):
+                all_lines_float.append([float(x) for x in all_lines_str[line]])
+            verts = np.array(all_lines_float)
+            vertnums.extend(verts[:,0].tolist())
+        vertnums = sorted(vertnums)
+        roi_mesh['vert'] = cortex['vert'][vertnums,:]
+        
+        # Find the triangles for these vertex numbers
+        tri_row_inds = np.sort(np.array(list(set(np.where(np.in1d(cortex['tri'][:,0],vertnums))[0]) & set(np.where(np.in1d(cortex['tri'][:,1],vertnums))[0]) & set(np.where(np.in1d(cortex['tri'][:,2],vertnums))[0]))))
+        tri_list = cortex['tri'][tri_row_inds,:]
+        lookup = {vertnums[i]:i for i in range(len(vertnums))}
+       
+        tri_list_reindexed = np.copy(tri_list)
+        for k, v in lookup.iteritems():
+            tri_list_reindexed[tri_list==k] = v
+
+        roi_mesh['tri'] = tri_list_reindexed
+
+        mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
+        mlab.show()
+
+        scipy.io.savemat(os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name)), roi_mesh)
+        
+ 
 
     
