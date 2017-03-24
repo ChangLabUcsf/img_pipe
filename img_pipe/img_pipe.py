@@ -1274,7 +1274,14 @@ class freeCoG:
         rois = ['rAcumb', 'rAmgd', 'rCaud', 'rGP', 'rHipp', 'rPut', 'rThal',
                     'rLatVent', 'rInfLatVent', 'rVentDienceph', 'lLatVent', 'lInfLatVent',
                     'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
-                    'lThirdVent', 'lFourthVent', 'lBrainStem', 'pial', 'lh_pial', 'rh_pial']
+                    'lThirdVent', 'lFourthVent', 'lBrainStem', 'pial', 'lh_pial', 'rh_pial', 'bankssts',
+                    'inferiorparietal', 'medialorbitofrontal', 'pericalcarine', 'superiorfrontal',
+                    'caudalanteriorcingulate', 'inferiortemporal', 'middletemporal','postcentral', 
+                    'superiorparietal', 'caudalmiddlefrontal', 'insula', 'paracentral', 'posteriorcingulate',
+                    'superiortemporal', 'cuneus', 'isthmuscingulate', 'parahippocampal', 'precentral',
+                    'supramarginal', 'entorhinal', 'lateraloccipital', 'parsopercularis', 'precuneus',
+                    'temporalpole', 'frontalpole', 'lateralorbitofrontal', 'parsorbitalis', 'rostralanteriorcingulate', 
+                    'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal']
         return rois
 
     def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True, screenshot=False):
@@ -1583,7 +1590,7 @@ class freeCoG:
             mlab.show()
         return subj_mesh, template_mesh, mlab
 
-    def make_roi_mesh(self, roi_name, label_list, hem=''):
+    def make_roi_mesh(self, roi_name, label_list, hem=None):
 
         '''bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
         caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
@@ -1593,10 +1600,10 @@ class freeCoG:
         frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
         fusiform                lingual                 parstriangularis        rostralmiddlefrontal'''
 
-        import plotting.ctmr_brain_plot as ctmr_brain_plot   
-        import mayavi
+        # import plotting.ctmr_brain_plot as ctmr_brain_plot   
+        # import mayavi
 
-        if not hem:
+        if hem==None:
             hem = self.hem
 
         outfile = os.path.join(self.mesh_dir, '%s_%s_%s.mat'%(self.subj, hem, roi_name))
@@ -1628,8 +1635,8 @@ class freeCoG:
 
         roi_mesh['tri'] = tri_list_reindexed
 
-        mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
-        mlab.show()
+        # mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
+        # mlab.show()
 
         scipy.io.savemat(os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name)), roi_mesh)
         
