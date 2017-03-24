@@ -1246,10 +1246,8 @@ class freeCoG:
             print 'File not found: %s'%(elecfile)
         return e
 
-    def get_surf(self, hem=''):
+    def get_surf(self, hem=hem):
         ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') '''
-        if hem == '':
-            hem = self.hem
         cortex = scipy.io.loadmat(self.pial_surf_file[hem])
         return cortex
 
