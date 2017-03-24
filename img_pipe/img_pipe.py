@@ -1244,6 +1244,11 @@ class freeCoG:
             e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
         return e
 
+    def get_surf(self, hem=self.hem):
+        ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') '''
+        cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+        return cortex
+
     class roi:
 
         def __init__(self, name, color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False):
