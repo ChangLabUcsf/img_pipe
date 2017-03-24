@@ -1351,15 +1351,11 @@ class freeCoG:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
         if not any_gaussian and elecs!=[]:
             if weights==[]: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
-                elec_colors = np.zeros((elecs.shape[0],3))
-                elec_colors[:,0] = 1. #defaults to red elecs if no weights specified
+                points, mlab = ctmr_brain_plot.el_add(elecs)
             else:
                 # Map the weights onto the current colormap
-                if weights!=[]:
-                    elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
-                    points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
-                else:
-                    points, mlab = ctmr_brain_plot.el_add(elecs)
+                elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
+                points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
 
         else:
             #if no elecs to add as points3D
