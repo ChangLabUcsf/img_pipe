@@ -1025,7 +1025,7 @@ class freeCoG:
             print("Surface warp file exists")
         else:
             print("Computing surface warp")
-            cortex_src = scipy.io.loadmat(self.pial_surf_file[self.hem])
+            cortex_src = self.get_surf()
             atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
             if not os.path.isfile(atlas_file):
                 atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
@@ -1316,8 +1316,8 @@ class freeCoG:
             #default roi_name of 'pial' plots both hemispheres' pial surfaces
             if roi_name =='pial' or roi_name == 'rh_pial' or roi_name == 'lh_pial':
                 #use pial surface of the entire hemisphere
-                lh_pial = scipy.io.loadmat(self.pial_surf_file['lh'])
-                rh_pial = scipy.io.loadmat(self.pial_surf_file['rh'])
+                lh_pial = self.get_surf(hem='lh')
+                rh_pial = self.get_surf(hem='rh')
                 if gaussian:
                     if roi_name == 'pial' or roi_name == 'lh_pial':
                         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
@@ -1380,7 +1380,7 @@ class freeCoG:
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
         if template == None:
-            a = scipy.io.loadmat(self.pial_surf_file[self.hem])
+            a = self.get_surf()
         else:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
@@ -1507,7 +1507,7 @@ class freeCoG:
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
-        subj_brain = scipy.io.loadmat(self.pial_surf_file[self.hem])
+        subj_brain = self.get_surf()
         template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
         template_brain = scipy.io.loadmat(template_pial_surf_file)
 
