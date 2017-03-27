@@ -683,7 +683,7 @@ class freeCoG:
 
         return vert_inds, nearest_verts
 
-    def label_elecs(self, elecfile_prefix='TDT_elecs_all', atlas_surf='desikan-killiany', atlas_depth='destrieux'):
+    def label_elecs(self, elecfile_prefix='TDT_elecs_all', atlas_surf='desikan-killiany', atlas_depth='destrieux', elecs_all=True):
         ''' Automatically labels electrodes based on the freesurfer annotation file.
         Assumes TDT_elecs_all.mat or clinical_elecs_all.mat files
         Uses both the Desikan-Killiany Atlas and the Destrieux Atlas, as described 
@@ -713,7 +713,7 @@ class freeCoG:
         isnotdepth = []
         
         # Choose only the surface or grid electrodes (if not using hd_grid.mat)
-        if elecfile_prefix == 'TDT_elecs_all' or elecfile_prefix == 'clinical_elecs_all':
+        if elecfile_prefix == 'TDT_elecs_all' or elecfile_prefix == 'clinical_elecs_all' or elecs_all:
             elecmontage = scipy.io.loadmat(elecfile)['eleclabels']
             # Make the cell array into something more usable by python
             short_label = []
@@ -788,7 +788,7 @@ class freeCoG:
             else:
                 elec_labels_notdepth.append('Unknown')
 
-        if elecfile_prefix == 'TDT_elecs_all' or elecfile_prefix == 'clinical_elecs_all':
+        if elecfile_prefix == 'TDT_elecs_all' or elecfile_prefix == 'clinical_elecs_all' or elecs_all:
             elec_labels[isnotdepth,3] = elec_labels_notdepth
             elec_labels[np.invert(isnotdepth),3] = '' # Set these to an empty string instead of None type
         else:
