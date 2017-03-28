@@ -83,7 +83,10 @@ class freeCoG:
 
         # Meshes directory for matlab/python meshes
         self.mesh_dir = os.path.join(self.subj_dir, self.subj, 'Meshes')
-        surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+        if self.hem == 'stereo':
+            surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
+        else:
+            surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
         if os.path.isfile(surf_file):
             self.pial_surf_file = dict()
             self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
@@ -1400,6 +1403,8 @@ class freeCoG:
             azimuth=180
         elif self.hem=='rh':
             azimuth=0
+        else:
+            azimuth=90
         mlab.view(azimuth, elevation=90)
 
         if screenshot:
@@ -1627,6 +1632,7 @@ class freeCoG:
         ''' This function makes a mesh for the cortical ROI you are interested in. Here are the list of labels you can put in your label_list.
         roi_name: what you want to call your mesh, note that the hemisphere will be prepended to this name
         label_list: list of labels, selected from the list below
+
         [bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
         caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
         caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
@@ -1636,7 +1642,11 @@ class freeCoG:
         fusiform                lingual                 parstriangularis        rostralmiddlefrontal]'''
 
         if hem==None:
-            hem = self.hem
+            if self.hem != 'lh' and self.hem != 'rh':
+                print 'You need to specify which hemisphere this ROI is in. Please try again and specify the hemisphere in the hem argument.'
+                return
+            else:
+                hem = self.hem
 
         outfile = os.path.join(self.mesh_dir, '%s_%s_%s.mat'%(self.subj, hem, roi_name))
         cortex = self.get_surf(hem=hem)
