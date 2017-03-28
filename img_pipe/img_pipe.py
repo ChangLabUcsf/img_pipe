@@ -150,7 +150,9 @@ class freeCoG:
             os.mkdir(gyri_labels_dir)
             # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
             os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
-                %(self.subj, self.hem, gyri_labels_dir))
+                %(self.subj, 'lh', gyri_labels_dir))
+            os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
+                %(self.subj, 'rh', gyri_labels_dir))
 
     def check_pial(self):
         '''Opens Freeview with the orig.mgz MRI loaded along with the pial surface. 
