@@ -1592,13 +1592,16 @@ class freeCoG:
 
     def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False):
 
-        '''bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
+        ''' This function makes a mesh for the cortical ROI you are interested in. Here are the list of labels you can put in your label_list.
+        roi_name: what you want to call your mesh, note that the hemisphere will be prepended to this name
+        label_list: list of labels, selected from the list below
+        [bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
         caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
         caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
         cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
         entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
         frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
-        fusiform                lingual                 parstriangularis        rostralmiddlefrontal'''
+        fusiform                lingual                 parstriangularis        rostralmiddlefrontal]'''
 
         if hem==None:
             hem = self.hem
