@@ -603,44 +603,76 @@ class freeCoG:
         cortex = {'tri': subcort_tri+1, 'vert': subcort_vert}
         scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
-    def make_elecs_all(self):
+    def make_elecs_all(self, input_list=None, outfile=None):
         '''Interactively creates a .mat file with the montage and coordinates of 
         all the elecs files in the /elecs_individual folder.
+
+        input_list: default is None which leads to the interactive prompts to create the elecs_all file, but you can
+                    input your own list of devices as a list of tuples, where each tuple is in the format
+                    (short_name, long_name, elec_type, filename). The filename is the elecmatrix .mat file of the 
+                    device, and should be in the elecs/individual_elecs folder. If you want to add NaN rows, 
+                    enter ('Nan','Nan','Nan',number_of_nan_rows), where in the fourth element you specify how many empty rows
+                    you'd like to add. 
+        outfile: the name of the file you want to save to, specify this if not using the interactive version
+
+        Example usage:
+        >>> patient.make_elecs_all(input_list=[('AD','AmygDepth','depth','amygdala_depth.mat'),('G','Grid','grid','hd_grid.mat'),('nan','nan','nan',5)], outfile='test_elecs_all_list')
         '''
-        done = False
         short_names,long_names, elec_types, elecmatrix_all = [],[],[], []
-        while done == False:
-            num_empty_rows = raw_input('Are you adding a row that will be NaN in the elecmatrix? If not, press enter. If so, enter the number of empty rows to add: \n')
-            if len(num_empty_rows):
-                num_empty_rows = int(num_empty_rows)
-                short_name_prefix = raw_input('What is the short name prefix?\n')
-                short_names.extend([short_name_prefix for i in range(1,num_empty_rows+1)])
-                long_name_prefix = raw_input('What is the long name prefix?\n')
-                long_names.extend([long_name_prefix for i in range(1,num_empty_rows+1)])
-                elec_type = raw_input('What is the type of the device?\n')
-                elec_types.extend([elec_type for i in range(num_empty_rows)])
-                elecmatrix_all.append(np.ones((num_empty_rows,3))*np.nan)
-            else:
-                short_name_prefix = raw_input('What is the short name prefix of the device?\n')
-                long_name_prefix = raw_input('What is the long name prefix of the device?\n')
-                elec_type = raw_input('What is the type of the device?\n')     
-                try:
-                    file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
+
+        #non-interactive version, with input_list and outfile specified
+        if input_list != None:
+            for device in input_list:
+                short_name_prefix, long_name_prefix, elec_type, file_name = device[0], device[1], device[2], device[3]
+                if short_name_prefix.lower() == 'nan' or long_name_prefix.lower() == 'nan' or elec_type.lower() == 'nan' or file_name == 'nan':
+                    num_empty_rows = file_name
+                    elecmatrix_all.append(np.ones((num_empty_rows,3))*np.nan)
+                    short_names.extend([short_name_prefix for i in range(num_empty_rows)])
+                    long_names.extend([long_name_prefix for i in range(num_empty_rows)])
+                    elec_types.extend([elec_type for i in range(num_empty_rows)])
+                else:
                     indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
                     elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
-                except IOError:
-                    file_name = raw_input('Sorry, that file was not found. Please enter the correct filename of the device: \n ')
-                    indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
-                    elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
-                num_elecs = elecmatrix.shape[0]
-                elecmatrix_all.append(elecmatrix)
-                short_names.extend([short_name_prefix+str(i) for i in range(1,num_elecs+1)])
-                long_names.extend([long_name_prefix+str(i) for i in range(1,num_elecs+1)])
-                elec_types.extend([elec_type for i in range(num_elecs)])
-            completed = raw_input('Finished entering devices? Enter \'y\' if finished.')
-            if completed=='y':
-                done = True 
-        outfile = raw_input('What filename would you like to save out to?\n')
+                    num_elecs = elecmatrix.shape[0]
+                    elecmatrix_all.append(elecmatrix)
+
+                    short_names.extend([short_name_prefix+str(i) for i in range(1, num_elecs+1)])
+                    long_names.extend([long_name_prefix+str(i) for i in range(1, num_elecs+1)])
+                    elec_types.extend([elec_type for i in range(num_elecs)])
+        else: #interactive
+            done = False
+            while done == False:
+                num_empty_rows = raw_input('Are you adding a row that will be NaN in the elecmatrix? If not, press enter. If so, enter the number of empty rows to add: \n')
+                if len(num_empty_rows):
+                    num_empty_rows = int(num_empty_rows)
+                    short_name_prefix = raw_input('What is the short name prefix?\n')
+                    short_names.extend([short_name_prefix for i in range(1,num_empty_rows+1)])
+                    long_name_prefix = raw_input('What is the long name prefix?\n')
+                    long_names.extend([long_name_prefix for i in range(1,num_empty_rows+1)])
+                    elec_type = raw_input('What is the type of the device?\n')
+                    elec_types.extend([elec_type for i in range(num_empty_rows)])
+                    elecmatrix_all.append(np.ones((num_empty_rows,3))*np.nan)
+                else:
+                    short_name_prefix = raw_input('What is the short name prefix of the device?\n')
+                    long_name_prefix = raw_input('What is the long name prefix of the device?\n')
+                    elec_type = raw_input('What is the type of the device?\n')     
+                    try:
+                        file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
+                        indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
+                        elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
+                    except IOError:
+                        file_name = raw_input('Sorry, that file was not found. Please enter the correct filename of the device: \n ')
+                        indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
+                        elecmatrix = scipy.io.loadmat(indiv_file)['elecmatrix']
+                    num_elecs = elecmatrix.shape[0]
+                    elecmatrix_all.append(elecmatrix)
+                    short_names.extend([short_name_prefix+str(i) for i in range(1,num_elecs+1)])
+                    long_names.extend([long_name_prefix+str(i) for i in range(1,num_elecs+1)])
+                    elec_types.extend([elec_type for i in range(num_elecs)])
+                completed = raw_input('Finished entering devices? Enter \'y\' if finished.')
+                if completed=='y':
+                    done = True 
+            outfile = raw_input('What filename would you like to save out to?\n')
         elecmatrix_all = np.vstack(elecmatrix_all)
         eleclabels = np.ones(elecmatrix_all.shape,dtype=np.object)
         eleclabels[:,0] = short_names
