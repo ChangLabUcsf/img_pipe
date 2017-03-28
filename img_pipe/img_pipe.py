@@ -1237,8 +1237,9 @@ class freeCoG:
             else:
                 elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
                 #anatomy = elecfile['anatomy'][roi_indices,:]
-                elecmatrix = elecfile['elecmatrix']
-                anatomy = elecfile['anatomy']
+                return elecfile
+                #elecmatrix = elecfile['elecmatrix']
+                #anatomy = elecfile['anatomy']
                 #eleclabels = elecfile['eleclabels'][roi_indices,:]
                 #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
             e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
