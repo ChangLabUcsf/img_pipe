@@ -428,13 +428,13 @@ class freeCoG:
             roi = 'ofc_'
 
         print('::: Loading Mesh data :::')
-        print os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type))
+        print(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
         cortex = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
         tri, vert = cortex['tri'], cortex['vert']
 
         print('::: Projecting electrodes to mesh :::')
         elecmatrix = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, 'elecs', 'individual_elecs', '%s_orig.mat'%(elecfile_prefix)))['elecmatrix']
-        print direction
+        print(direction)
         elecs_proj = project_electrodes_anydirection(tri, vert, elecmatrix, direction)
         scipy.io.savemat(os.path.join(self.subj_dir, self.subj, 'elecs', 'individual_elecs', '%s.mat'%(elecfile_prefix)),{'elecmatrix':elecs_proj})
         print('::: Done :::')
@@ -941,8 +941,8 @@ class freeCoG:
             if not os.path.isfile(elecfile_nearest_warped):
                 self.apply_cvsWarp(elecfile_prefix,template)
             else:
-                print "Depth warping has already been applied to the depth electrodes of %s and are in %s"\
-                    %(elecfile, elecfile_nearest_warped)
+                print("Depth warping has already been applied to the depth electrodes of %s and are in %s"\
+                    %(elecfile, elecfile_nearest_warped))
             elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
             elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
@@ -1284,7 +1284,7 @@ class freeCoG:
                 #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
             e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
         else:
-            print 'File not found: %s'%(elecfile)
+            print('File not found: %s'%(elecfile))
         return e
 
     def get_surf(self, hem=''):
@@ -1646,7 +1646,7 @@ class freeCoG:
 
         if hem==None:
             if self.hem != 'lh' and self.hem != 'rh':
-                print 'You need to specify which hemisphere this ROI is in. Please try again and specify the hemisphere in the hem argument.'
+                print('You need to specify which hemisphere this ROI is in. Please try again and specify the hemisphere in the hem argument.')
                 return
             else:
                 hem = self.hem
