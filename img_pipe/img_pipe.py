@@ -1562,6 +1562,8 @@ class freeCoG:
         return mesh, points, mlab
 
     def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
+        ''' This plots two brains, one in native space, one in the template space, showing
+        the native space and warped electrodes for ease of comparison/quality control.'''
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
