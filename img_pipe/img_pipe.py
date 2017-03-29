@@ -1068,7 +1068,8 @@ class freeCoG:
 
     # Method to perform surface warps
     def get_surface_warp(self, basename='TDT_elecs_all', template='cvs_avg35_inMNI152'):
-        ''' Perform surface warps on [basename].mat file '''               
+        ''' Perform surface warps on [basename].mat file, warping to template [template]
+        which should also be present in the freesurfer $SUBJECTS_DIR'''               
         
         elecfile = os.path.join(self.elecs_dir,'%s_surface_warped.mat'%(basename))
 
