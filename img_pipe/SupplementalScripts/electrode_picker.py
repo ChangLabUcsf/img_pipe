@@ -103,9 +103,11 @@ class electrode_picker:
 		if self.ct.shape != voxsz:
 			print("Resizing voxels in CT")
 			ct_data = scipy.ndimage.zoom(ct_data, [voxsz[0]/cx, voxsz[1]/cy, voxsz[2]/cz])
+			print(ct_data.shape)
 		if self.img.shape != voxsz:
 			print("Resizing voxels in MRI")
 			img_data = scipy.ndimage.zoom(img_data, [voxsz[0]/nx, voxsz[1]/ny, voxsz[2]/nz])
+			print(img_data.shape)
 		
 		self.ct_data = ct_data
 		self.img_data = img_data
@@ -121,7 +123,7 @@ class electrode_picker:
 
 		self.imsz = [256, 256, 256]
 		self.ctsz = [256, 256, 256]
-
+		
 		self.current_slice = np.array([self.imsz[0]/2, self.imsz[1]/2, self.imsz[2]/2], dtype=np.float)
 		
 		self.fig=plt.figure(figsize=(12,10))
