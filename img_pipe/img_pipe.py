@@ -242,7 +242,7 @@ class freeCoG:
 
         setattr(self, mesh_name+'_surf_file', out_file)
   
-    def reg_img(self, source='CT.nii', target='orig.mgz'):
+    def reg_img(self, source='CT.nii', target='orig.mgz', smooth=0.):
         '''Runs nmi coregistration between two images.
         Usually run as patient.reg_img('CT.nii','orig.mgz').'''
 
@@ -257,7 +257,7 @@ class freeCoG:
         mri_cmap = mriimg.coordmap
 
         # Compute registration
-        ct_to_mri_reg = nipy.algorithms.registration.histogram_registration.HistogramRegistration(ctimg, mriimg, similarity='nmi')
+        ct_to_mri_reg = nipy.algorithms.registration.histogram_registration.HistogramRegistration(ctimg, mriimg, similarity='nmi', interp='tri', smooth=smooth)
         aff = ct_to_mri_reg.optimize('affine').as_affine()   
 
         ct_to_mri = AffineTransform(ct_cmap.function_range, mri_cmap.function_range, aff)  
