@@ -245,11 +245,20 @@ class freeCoG:
 
         setattr(self, mesh_name+'_surf_file', out_file)
   
-    def reg_img(self, source='CT.nii', target='orig.mgz', smooth=0.):
+    def reg_img(self, source='CT.nii', target='orig.mgz', smooth=0., reg_type='rigid', interp='pv', xtol=0.0001, ftol=0.0001):
         '''Runs nmi coregistration between two images.
-        Usually run as patient.reg_img('CT.nii','orig.mgz').
-        You may also add a smoothing parameter (in mm) with the keyword argument smooth,
-        which will be passed to nipy.algorithms.registration.histogram_registration.HistogramRegistration
+        Usually run as patient.reg_img() 
+        You can also specify the source (usually a CT scan, assumed to be in $SUBJECTS_DIR/subj/CT)
+        and the target (usually T1 MRI, assumed to be in $SUBJECTS_DIR/subj/mri)
+
+        Arguments to nipy.algorithms.registration.histogram_registration.HistogramRegistration
+        include:
+            smooth: a smoothing parameter in mm
+            reg_type: parameter which can be either 'rigid' (the default) or 'affine'
+            interp: changes the interpolation method for resampling (default='pv', could also be 'tri')
+            xtol: tolerance parameter for function minimization
+            ftol: tolerance parmater for function minimization
+            (for more information, see help for nipy.algorithms.registration.optimizer)
         '''
 
         source_file = os.path.join(self.CT_dir, source)
@@ -263,8 +272,8 @@ class freeCoG:
         mri_cmap = mriimg.coordmap
 
         # Compute registration
-        ct_to_mri_reg = nipy.algorithms.registration.histogram_registration.HistogramRegistration(ctimg, mriimg, similarity='nmi', interp='tri', smooth=smooth)
-        aff = ct_to_mri_reg.optimize('affine').as_affine()   
+        ct_to_mri_reg = nipy.algorithms.registration.histogram_registration.HistogramRegistration(ctimg, mriimg, similarity='nmi', smooth=smooth, interp=interp)
+        aff = ct_to_mri_reg.optimize(reg_type).as_affine()   
 
         ct_to_mri = AffineTransform(ct_cmap.function_range, mri_cmap.function_range, aff)  
         reg_CT = nipy.algorithms.resample.resample(ctimg, mri_cmap, ct_to_mri.inverse(), mriimg.shape)    
