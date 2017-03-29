@@ -247,7 +247,10 @@ class freeCoG:
   
     def reg_img(self, source='CT.nii', target='orig.mgz', smooth=0.):
         '''Runs nmi coregistration between two images.
-        Usually run as patient.reg_img('CT.nii','orig.mgz').'''
+        Usually run as patient.reg_img('CT.nii','orig.mgz').
+        You may also add a smoothing parameter (in mm) with the keyword argument smooth,
+        which will be passed to nipy.algorithms.registration.histogram_registration.HistogramRegistration
+        '''
 
         source_file = os.path.join(self.CT_dir, source)
         target_file = os.path.join(self.mri_dir, target)
