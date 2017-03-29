@@ -989,14 +989,15 @@ class freeCoG:
             if os.path.isfile(elecfile_RAS_text):
                 os.system('mv %s %s'%(elecfile_RAS_text, preproc_dir))
 
-    def get_cvsWarp(self,template='cvs_avg35_inMNI152'):
-        '''Method for obtaining freesurfer mni coords using mri_cvs_normalize'''
+    def get_cvsWarp(self, template='cvs_avg35_inMNI152', openmp_threads=4):
+        '''Method for obtaining nonlinearly warped MNI coordinates using 
+        freesurfer's mri_cvs_register'''
 
         # run cvs register
         orig = self.subj  # orig is mri in fs orig space
 
         print('::: Computing Non-linear warping from patient native T1 to fs CVS MNI152 :::')
-        os.system('mri_cvs_register --mov %s --template %s --nocleanup --openmp 4' % (orig, template))
+        os.system('mri_cvs_register --mov %s --template %s --nocleanup --openmp %d' % (orig, template, openmp_threads))
         print('cvsWarp COMPUTED')
 
     def apply_cvsWarp(self, elecfile_prefix='TDT_elecs_all',template_brain='cvs_avg35_inMNI152'):
