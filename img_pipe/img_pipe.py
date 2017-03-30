@@ -1337,12 +1337,16 @@ class freeCoG:
                     'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal']
         return rois
 
-    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True, screenshot=False):
+    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
         elecs: electrode coordinate matrix
         weights: weight matrix associated with the electrode coordinate matrix
+        cmap: string specifying what colormap to use
+        showfig: boolean - whether to show the figure in an interactive window
+        screenshot: boolean - whether to save a screenshot and show using matplotlib (usually inline a notebook)
+        helper_call: boolean - if plot_brain being used as a helper subcall, don't close the mlab instance
 
         Example: 
         >>> pial, hipp = patient.roi('pial',(0.6,0.3,0.6),0.1,'wireframe',True), patient.roi('lHipp',(0.5,0.1,0.8),1.0,'surface',True)
@@ -1431,6 +1435,9 @@ class freeCoG:
         if showfig:
             mlab.show()
 
+        if not helper_call:
+            mlab.close()
+
         return mesh, points, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
@@ -1509,9 +1516,10 @@ class freeCoG:
             plt.show()
         if showfig:
             mlab.show()
+        mlab.close()
         return mesh, mlab
 
-    def plot_erps(self, erp_matrix, time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False):
+    def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False, anat_colored=True):
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
@@ -1524,31 +1532,49 @@ class freeCoG:
 
         cmap = FS_colorLUT.get_lut()
 
-        anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir,'TDT_elecs_all.mat'))['anatomy'][:,3]
+        num_timepoints = erp_matrix.shape[1]
+        num_channels = erp_matrix.shape[0]
 
-        mesh, points, mlab = self.plot_brain(showfig=False)
+        mesh, points, mlab = self.plot_brain(showfig=False, helper_call=True)
         elecmatrix = self.get_elecs()['elecmatrix']
-        for c in range(erp_matrix.shape[1]):
-            b = anatomy_labels[c]
-            if b != 'NaN':
-                this_label = b[0]
-                if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
-                    this_label = 'ctx-%s-%s'%('lh', b[0])
+        if anat_colored:
+            anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy'][:,3]
 
-                if this_label != '':
-                    if this_label not in cmap:
-                        #in case the label was manually assigned, and not found in the LUT colormap dictionary
-                        el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
-                    else:
-                        el_color = np.array(cmap[this_label])/255.
+        for c in range(num_channels):
+            if anat_colored:
+                b = anatomy_labels[c]
+                if b != 'NaN':
+                    this_label = b[0]
+                    if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
+                        this_label = 'ctx-%s-%s'%('lh', b[0])
 
-            el_color = tuple(el_color)
+                    if this_label != '':
+                        if this_label not in cmap:
+                            #in case the label was manually assigned, and not found in the LUT colormap dictionary
+                            erp_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
+                        else:
+                            erp_color = np.array(cmap[this_label])/255.
+            else:
+                erp_color = (1., 0., 0.)
+            erp_color = tuple(erp_color)
             elec_coord = elecmatrix[c,:]
-            mlab.points3d(elec_coord[0],elec_coord[1],elec_coord[2], scale_factor = 0.25, color = (1.0, 0.0, 0.0), resolution=25)
-            erp = erp_matrix[:,c]
-            mlab.plot3d(np.array([elec_coord[0] for i in range(erp_matrix.shape[0])])-2.0, ((np.array([i for i in range(-50,55)]))*time_scale_factor+elec_coord[1])[::-1], erp*z_scale_factor+elec_coord[2],\
-                            figure=mlab.gcf(),color=(el_color),tube_radius=0.15,tube_sides=3)
+            #mlab.points3d(elec_coord[0],elec_coord[1],elec_coord[2], scale_factor = 0.25, color = (1.0, 0.0, 0.0), resolution=25)
+            erp = erp_matrix[c,:]
+
+            if self.hem == 'lh':
+                label_offset = -2.0
+                y_array = ((np.array([i for i in range(num_timepoints/2-num_timepoints,num_timepoints/2)]))*time_scale_factor+elec_coord[1])[::-1]
+            elif self.hem == 'rh':
+                label_offset = 2.0
+                y_array = ((np.array([i for i in range(num_timepoints/2-num_timepoints,num_timepoints/2)]))*time_scale_factor+elec_coord[1])
+
+            x_array = np.array([elec_coord[0] for i in range(num_timepoints)])+label_offset
+            
+            z_array = erp*z_scale_factor+elec_coord[2]
+            mlab.plot3d(x_array, y_array, z_array, figure=mlab.gcf(),color=(erp_color),tube_radius=0.15,tube_sides=3)
         
+        mlab.view(distance=300)
+
         arr = mlab.screenshot(antialiased=True)
         if screenshot:
             plt.figure(figsize=(20,10))
@@ -1558,7 +1584,7 @@ class freeCoG:
 
         if showfig:
             mlab.show()
-        
+        mlab.close()
         return mesh, points, mlab
 
     def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
