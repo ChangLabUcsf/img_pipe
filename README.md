@@ -36,6 +36,11 @@ Note that you can set `SUBJECTS_DIR` to wherever you want to place your subjects
 
 Then in terminal, run `source ~/.bash_profile` or `source ~/.bashrc` to activate these environment variables.
 
+To run `img_pipe`, you will need a high quality non-contrast T1 scan and a non-contrast CT scan. The T1 scan should ideally be 
+AC-PC aligned before you start. Name the T1 scan T1.nii and place in `$SUBJECTS_DIR/your_subj/acpc`.  Name the CT scan CT.nii 
+and place in `$SUBJECTS_DIR/your_subj/CT`.
+
+
 You should now be able to import img_pipe from python. 
 ```python
 >>> import img_pipe
