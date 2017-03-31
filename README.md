@@ -52,3 +52,5 @@ You should now be able to import img_pipe from python.
 >>> patient.prep_recon()
 >>> patient.get_recon()
 ```
+
+If you find any bugs, please post in the Issues tab. 
