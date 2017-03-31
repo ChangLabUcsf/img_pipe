@@ -52,17 +52,3 @@ You should now be able to import img_pipe from python.
 >>> patient.prep_recon()
 >>> patient.get_recon()
 ```
-
-## ChangLab Specific: ##
-Download OSXFUse
-add to ~/.bash_profile 
-
-```
-alias duramount='sshfs -p 7777 -o defer_permissions dchang@dura.cin.ucsf.edu:/ /Users/dlchang/dura'
-
-alias duraunmount='sudo umount /Users/dlchang/dura/'
-```
-
-
-
-
