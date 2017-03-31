@@ -8,7 +8,7 @@ This contains the imaging pipeline as one importable python class for running a 
 brain surface reconstruction and electrode localization/labeling.
 
 ## About ##
-Show end results and capabilities, workflow diagram.
+`img_pipe` is an open source python package for preprocessing of imaging data for use in intracranial electrocorticography (ECoG) and intracranial stereo-EEG analyses. This python package aims to provide a standardized interface for electrode localization, labeling, and warping to an atlas, as well as code to plot and display results on 3D cortical surface meshes. It gives the user an easy interface to create anatomically labeled electrodes that can also be warped to an atlas brain, starting with only a preoperative T1 MRI scan and a postoperative CT scan.
 
 ## Setup and Installation ##
 
