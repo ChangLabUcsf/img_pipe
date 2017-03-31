@@ -53,4 +53,8 @@ You should now be able to import img_pipe from python.
 >>> patient.get_recon()
 ```
 
+The full workflow is shown as a flowchart below:
+
+![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalFiles/workflow.png "img_pipe")
+
 If you find any bugs, please post in the Issues tab. 
