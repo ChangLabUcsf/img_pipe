@@ -1435,7 +1435,7 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-        if not helper_call:
+        if not helper_call and not showfig:
             mlab.close()
 
         return mesh, points, mlab
@@ -1516,7 +1516,8 @@ class freeCoG:
             plt.show()
         if showfig:
             mlab.show()
-        mlab.close()
+        else: 
+            mlab.close()
         return mesh, mlab
 
     def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False, anat_colored=True):
