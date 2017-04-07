@@ -1,4 +1,4 @@
-function [c_h] = ctmr_gauss_plot(cortex,electrodes,weights,v, use_light)
+function [c_h] = ctmr_gauss_plot(cortex,electrodes,weights,hemi,do_lighting)
 % function [electrodes]=ctmr_gauss_plot(cortex,electrodes,weights)
 % projects electrode locations onto their cortical spots in the
 % left hemisphere and plots about them using a gaussian kernel
@@ -25,44 +25,44 @@ function [c_h] = ctmr_gauss_plot(cortex,electrodes,weights,v, use_light)
 
 %   Version 1.1.0, released 26-11-2009
 
+if nargin<4
+    hemi = 'lh';
+end
+if nargin<5
+    do_lighting=1;
+end
+
 %load in colormap
-if nargin < 4
-    v='l';
-end
-if nargin < 5
-    use_light = 1;
-end
-load('loc_colormap');
-cm(31:34,:) = repmat([0.9 0.9 0.9],4,1);
+% load('loc_colormap')
+load('loc_colormap_thresh')
+% load('BlWhRdYl_colormap')
+% load('BlGyOrCp_colormap')
+% cm = flipud(cbrewer('div','RdGy',64));
 
 brain=cortex.vert;
-
-%v='l';
- %view from which side?
- temp=1;
- %while temp==1
- %    disp('---------------------------------------')
- %%    disp('to view from right press ''r''')
-  %   disp('to view from left press ''l''');
-  %   v=input('','s');
-  %   if v=='l'
-  %       temp=0;
-  %   elseif v=='r'
-  %       temp=0;
-  %   else
-  %       disp('you didn''t press r, or l try again (is caps on?)')
-  %   end
- %end
+v='l';
+% %view from which side?
+% temp=1;
+% while temp==1
+%     disp('---------------------------------------')
+%     disp('to view from right press ''r''')
+%     disp('to view from left press ''l''');
+%     v=input('','s');
+%     if v=='l'
+%         temp=0;
+%     elseif v=='r'
+%         temp=0;
+%     else
+%         disp('you didn''t press r, or l try again (is caps on?)')
+%     end
+% end
 
 if length(weights)~=length(electrodes(:,1))
     error('you sent a different number of weights than electrodes (perhaps a whole matrix instead of vector)')
 end
 %gaussian "cortical" spreading parameter - in mm, so if set at 10, its 1 cm
 %- distance between adjacent electrodes
-%gsp=45; %zg edited from 50
-gsp=20;
-%gsp=3;
-%gsp=4;
+gsp=10; %zg edited from 50
 
 c=zeros(length(cortex(:,1)),1);
 for i=1:length(electrodes(:,1))
@@ -75,47 +75,41 @@ for i=1:length(electrodes(:,1))
 end
 
 % c=(c/max(c));
-c_h=tripatch(cortex, 'nofigure','auto', c');
+c_h=tripatch(cortex, 'nofigure', c');
 shading interp;
-
-%set(gca,'CLim',[0.3 5.0]);% this is for custom limits
 a=get(gca);
+%%NOTE: MAY WANT TO MAKE AXIS THE SAME MAGNITUDE ACROSS ALL COMPONENTS TO REFLECT
+%%RELEVANCE OF CHANNEL FOR COMPARISON's ACROSS CORTICES
 d=a.CLim;
 set(gca,'CLim',[-max(abs(d)) max(abs(d))])
-%%NOTE: MAY WANT TO MAKE AXIS THE SAME MAGNITUDE ACROSS ALL COMPONENTS TO REFLECT
-%%RELEVANCE OF CHANNEL FOR COMPARISONS ACROSS CORTICES
-
-if use_light
-    l=light;
-    %m = light;
-    %n = light;
-    if v=='l'
-        view(270, 0);
-        set(l,'Position',[-1 0 1])
-        %set(m,'Position',[-1 0 -1])
-        %set(n,'Position',[1 0 1])
-    elseif v=='r'
-        view(90, 0);
-        set(l,'Position',[1 0 1])
-        %set(m,'Position',[-1 0 -1])
-    end
-end
 colormap(cm)
-%colormap(flipud(lbmap(256,'redblue')));
 %colormap(jet)
-%lighting phong; %play with lighting...
-lighting gouraud
-
-%lighting phong;
+lighting phong; %play with lighting...
 %material shiny;
-% material dull;
-material([.3 .8 .1 10 1]);
-%material([.186 1 128 0.186 .2481]);
-%    material([.2 .9 .2 50 1]); % LH %  BF: editing mesh viewing attributes
-%material dull;
+material dull;
+%material([.3 .8 .1 10 1]);
+%     material([.2 .9 .2 50 1]); %  BF: editing mesh viewing attributes
 axis off
 
+%set(gcf,'Renderer', 'zbuffer','Position',[500 500 900 900]); % BF: added for lateral. view
+%set(gcf,'Renderer', 'zbuffer','Position',[400 400 500 900]); % BF: added for inf. view
+%set(gcf,'Renderer', 'zbuffer','Position',[400 400 950 550]); % BF: added figure size for movie
 
+% if v=='l'
+if do_lighting
+    l=light;
+    
+    if strcmp(hemi,'lh')
+        view(270, 0);
+        % set(l,'Position',[-1 0 1])
+        set(l,'Position',[-1 0 0],'Color',[0.8 0.8 0.8]);
+        % elseif v=='r'
+    elseif strcmp(hemi,'rh')
+        view(90, 0);
+        % set(l,'Position',[1 0 1])
+        set(l,'Position',[1 0 0],'Color',[0.8 0.8 0.8]);
+    end
+end
 % %exportfig
 % exportfig(gcf, strcat(cd,'\figout.png'), 'format', 'png', 'Renderer', 'painters', 'Color', 'cmyk', 'Resolution', 600, 'Width', 4, 'Height', 3);
 % disp('figure saved as "figout"');
