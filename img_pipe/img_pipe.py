@@ -2,7 +2,7 @@
 # Authors: Liberty Hamilton, Morgan Lee, David Chang, Zachary Greenberg
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: March 9, 2017
+# Date Last Edited: April 12, 2017
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
