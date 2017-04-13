@@ -37,6 +37,14 @@ def project_electrodes_anydirection(tri, vert, elecmatrix, proj_direction):
     	# wish to intersect
     elif proj_direction=='rh':
     	direction = [-1000, 0, 0]
+    elif proj_direction=='top':
+        direction = [0, 0, -1000]
+    elif proj_direction=='bottom':
+        direction = [0, 0, 1000]
+    elif proj_direction=='front':
+        direction = [0, 1000, 0]
+    elif proj_direction=='back':
+        direction = [0, -1000, 0]
 
     vert1 = vert[tri[:,0],:]
     vert2 = vert[tri[:,1],:]
