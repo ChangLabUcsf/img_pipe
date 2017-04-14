@@ -28,7 +28,7 @@ import numpy as np
 
 def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = [], 
                     opacity = 1.0, representation = 'surface', line_width=1.0, gsp = 10,
-                    cmap = 'RdBu', show_colorbar=True, new_fig=True):
+                    cmap = 'RdBu', show_colorbar=True, new_fig=True, vmin=None, vmax=None):
     '''
     ctmr_gauss_plot(tri, vert)
     This function plots the 3D brain surface mesh
@@ -56,6 +56,10 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
             gauss_wt = np.nan_to_num(weights[i] * np.exp((-(b_x**2+b_z**2+b_y**2))/gsp)) #gaussian
             brain_color = brain_color + gauss_wt
 
+            brain_color = brain_color * (np.abs(weights).max()/np.abs(brain_color).max())
+            if vmin==None and vmax==None:
+                vmin, vmax = -np.abs(brain_color).max(), np.abs(brain_color).max()
+
     # plot cortex and begin display
     if new_fig:
         mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
@@ -64,7 +68,7 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
         mesh = mlab.triangular_mesh(vert[:,0],vert[:,1],vert[:,2], tri, 
                                 representation = representation, 
                                 opacity = opacity, line_width = line_width, scalars=brain_color,
-                                colormap = cmap, vmin=-np.abs(brain_color).max(), vmax=np.abs(brain_color).max())
+                                colormap = cmap, vmin=vmin, vmax=vmax)
     else:
         mesh = mlab.triangular_mesh(vert[:,0],vert[:,1],vert[:,2], tri, 
                                 color=color, representation = representation, 
