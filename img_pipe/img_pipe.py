@@ -1298,11 +1298,14 @@ class freeCoG:
             print('File not found: %s'%(elecfile))
         return e
 
-    def get_surf(self, hem=''):
+    def get_surf(self, hem='', roi='pial'):
         ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') '''
         if hem == '':
             hem = self.hem
-        cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+        if roi == 'pial':
+            cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+        else: 
+            cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + 'trivert.mat'))
         return cortex
 
     class roi:
