@@ -1202,7 +1202,7 @@ class freeCoG:
         '''
 
         fs_lut = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLUTRGBValues.npy')
-        cmap = matplotlib.colors.ListedColormap(np.load()[:cvs_dat.max()+1,:])
+        cmap = matplotlib.colors.ListedColormap(np.load(fs_lut)[:cvs_dat.max()+1,:])
 
         lookupTable = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLookupTable')
         lookup_dict = pickle.load(open(lookupTable,'r'))
@@ -1598,7 +1598,7 @@ class freeCoG:
         mlab.close()
         return mesh, points, mlab
 
-    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
+    def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
         the native space and warped electrodes for ease of comparison/quality control.'''
         import mayavi
