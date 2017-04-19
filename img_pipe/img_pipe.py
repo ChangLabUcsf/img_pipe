@@ -166,6 +166,14 @@ class freeCoG:
         rh_pial = os.path.join(self.subj_dir, self.subj, 'surf', 'rh.pial')
         os.system("freeview --volume %s --surface %s --surface %s --viewport 'coronal'" % (brain_mri, lh_pial, rh_pial))
 
+    def check_anatomy_freeview(self):
+        '''Opens Freeview with the orig.mgz MRI loaded along with the rCT and aparc.a2009s+aseg.mgz. 
+        User should scroll through to check that the anatomical labels assigned to depths are correct.'''
+        brain_mri = os.path.join(self.subj_dir, self.subj, 'mri', 'orig.mgz')
+        elecs_CT = os.path.join(self.subj_dir, self.subj, 'CT', 'rCT.nii')
+        aparc_aseg = os.path.join(self.subj_dir, self.subj, 'mri', 'aparc.a2009s+aseg.mgz')
+        os.system("freeview --volume %s:opacity=0.8 --volume %s:opacity=0.6 --volume %s:colormap=lut:opacity=0.5:visible=0 --viewport 'coronal'" % (brain_mri, elecs_CT, aparc_aseg))
+
     def make_dural_surf(self, radius=3, num_iter=30, dilate=0.0):
         '''
         Create smoothed dural surface for projecting electrodes to.
