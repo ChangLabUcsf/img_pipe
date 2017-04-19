@@ -2,7 +2,7 @@
 # Authors: Liberty Hamilton, Morgan Lee, David Chang, Zachary Greenberg
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: March 9, 2017
+# Date Last Edited: April 12, 2017
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
@@ -1098,8 +1098,8 @@ class freeCoG:
                 # Open label file for writing
                 if anatomy[chan,2] != 'depth':
                     labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
-		    labelpath = os.path.join(self.subj_dir, self.subj, 'label', 'labels_to_warp')
-		    if not os.path.isdir(labelpath):
+                    labelpath = os.path.join(self.subj_dir, self.subj, 'label', 'labels_to_warp')
+                    if not os.path.isdir(labelpath):
                         os.mkdir(labelpath)
                     labelname = os.path.join(labelpath, labelname_nopath)
                     
@@ -1113,9 +1113,9 @@ class freeCoG:
                     fid.close()
 
                     print("Warping ch %d"%(chan))
-		    warped_labels_dir = os.path.join(self.subj_dir, template, 'label', 'warped_labels')
-		    if not os.path.isdir(warped_labels_dir):
-		        os.mkdir(warped_labels_dir)
+                    warped_labels_dir = os.path.join(self.subj_dir, template, 'label', 'warped_labels')
+                    if not os.path.isdir(warped_labels_dir):
+                        os.mkdir(warped_labels_dir)
                     trglabel = os.path.join(warped_labels_dir, '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
                     os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
                               ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
@@ -1127,9 +1127,9 @@ class freeCoG:
                     fid2.close()
 
                     elecs_warped.append([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
-                else:
-                    print("Channel %d is a depth electrode, not warping"%(chan))
-                    elecs_warped.append([np.nan, np.nan, np.nan])
+                # else:
+                #     print("Channel %d is a depth electrode, not warping"%(chan))
+                #     elecs_warped.append([np.nan, np.nan, np.nan])
 
                 #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
                 
@@ -1202,7 +1202,7 @@ class freeCoG:
         '''
 
         fs_lut = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLUTRGBValues.npy')
-        cmap = matplotlib.colors.ListedColormap(np.load()[:cvs_dat.max()+1,:])
+        cmap = matplotlib.colors.ListedColormap(np.load(fs_lut)[:cvs_dat.max()+1,:])
 
         lookupTable = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLookupTable')
         lookup_dict = pickle.load(open(lookupTable,'r'))
@@ -1298,11 +1298,14 @@ class freeCoG:
             print('File not found: %s'%(elecfile))
         return e
 
-    def get_surf(self, hem=''):
+    def get_surf(self, hem='', roi='pial'):
         ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') '''
         if hem == '':
             hem = self.hem
-        cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+        if roi == 'pial':
+            cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+        else: 
+            cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + 'trivert.mat'))
         return cortex
 
     class roi:
@@ -1337,7 +1340,8 @@ class freeCoG:
                     'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal']
         return rois
 
-    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], weights=[], cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False):
+    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], 
+                    weights=[], cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
@@ -1385,14 +1389,18 @@ class freeCoG:
                 rh_pial = self.get_surf(hem='rh')
                 if gaussian:
                     if roi_name == 'pial' or roi_name == 'lh_pial':
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights,
+                                                                         representation=representation, new_fig=False, cmap=cmap, vmin=vmin, vmax=vmax)
                     if roi_name == 'pial' or roi_name == 'rh_pial': 
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, 
+                                                                         representation=representation, new_fig=False, cmap=cmap, vmin=vmin, vmax=vmax)
                 else: 
                     if roi_name == 'pial' or roi_name == 'lh_pial': 
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, representation=representation, 
+                                                                    new_fig=False, cmap=cmap)
                     if roi_name == 'pial' or roi_name == 'rh_pial': 
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
+                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, representation=representation, 
+                                                                    new_fig=False, cmap=cmap)
                     
             else: 
                 subcort_dir = os.path.join(self.mesh_dir,'subcortical')
@@ -1402,9 +1410,11 @@ class freeCoG:
                     roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'%s_trivert.mat'%(roi_name)))
 
                 if gaussian:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, representation=representation, new_fig=False, cmap=cmap)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, 
+                                                                    representation=representation, new_fig=False, cmap=cmap, vmin=vmin, vmax=vmax)
                 else:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, 
+                                                                    new_fig=False, cmap=cmap)
         if not any_gaussian and elecs!=[]:
             if weights==[]: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 points, mlab = ctmr_brain_plot.el_add(elecs)
@@ -1588,7 +1598,7 @@ class freeCoG:
         mlab.close()
         return mesh, points, mlab
 
-    def plot_recon_anatomy_compare_warped(self, template, elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
+    def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
         the native space and warped electrodes for ease of comparison/quality control.'''
         import mayavi
