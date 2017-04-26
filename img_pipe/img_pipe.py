@@ -956,8 +956,10 @@ class freeCoG:
             elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
             depth_indices = np.where(orig_elecs['anatomy'][:,2]=='depth')[0]
-            orig_elecs['elecmatrix'][depth_indices] = depth_warps['elecmatrix']
-            self.check_depth_warps(elecfile_prefix,template)
+            if depth_warps['elecmatrix'].size > 0:
+                orig_elecs['elecmatrix'][depth_indices] = depth_warps['elecmatrix']
+            if not os.path.isfile(os.path.join(self.elecs_dir,'depthWarpsQC.pdf')):
+                self.check_depth_warps(elecfile_prefix,template)
         
         if warp_surface:
             #if surface warp already run, don't run again
@@ -967,14 +969,15 @@ class freeCoG:
                 print('Found %s, not running surface warp again'%(os.path.join(self.subj_dir,self.subj,'elecs', elecfile_prefix + '_surface_warped.mat')))
             elecfile_surface_warped = os.path.join(self.elecs_dir, elecfile_prefix+'_surface_warped.mat')
             surface_warps = scipy.io.loadmat(elecfile_surface_warped)
-            surface_indices = np.where(orig_elecs['anatomy'][:,2]!='depth')[0]
-            orig_elecs['elecmatrix'][surface_indices] = surface_warps['elecmatrix']
+            surface_indices = np.array(list(set(np.where(orig_elecs['anatomy'][:,2]!='depth')[0]) & set(np.where(np.all(~np.isnan(orig_elecs['elecmatrix']),axis=1))[0])),dtype='int64')
+            if surface_warps['elecmatrix'].size > 0:
+                orig_elecs['elecmatrix'][surface_indices,:] = surface_warps['elecmatrix']
 
         #if both depth and surface warping have been done, create the combined warp .mat file
         if warp_depths and warp_surface:
             scipy.io.savemat(elecfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
-
-            self.plot_recon_anatomy_compare_warp()
+            
+            self.plot_recon_anatomy_compare_warped(elecfile_prefix=elecfile_prefix)
 
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
                 print('Making preproc directory')
@@ -1088,51 +1091,54 @@ class freeCoG:
             elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
             anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
 
+            surface_indices = np.array(list(set(np.where(anatomy[:,2]!='depth')[0]) & set(np.where(np.all(~np.isnan(elecmatrix),axis=1))[0])),dtype='int64')
+
             print("Finding nearest surface vertex for each electrode")
-            vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix)
+            vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix[surface_indices,:])
             elecmatrix = nearest_verts
 
             print('Warping each electrode separately:')
-            elecs_warped = []
-            for chan in np.arange(elecmatrix.shape[0]):
+            elecs_warped = np.nan * np.ones((surface_indices.shape[0],3))
+
+            for c in np.arange(surface_indices.shape[0]):
+                chan = surface_indices[c]
                 # Open label file for writing
-                if anatomy[chan,2] != 'depth':
-                    labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
-                    labelpath = os.path.join(self.subj_dir, self.subj, 'label', 'labels_to_warp')
-                    if not os.path.isdir(labelpath):
-                        os.mkdir(labelpath)
-                    labelname = os.path.join(labelpath, labelname_nopath)
-                    
-                    fid = open(labelname,'w')
-                    fid.write('%s\n'%(labelname))
-                    
-                    # Print header of label file
-                    fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
-                    fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
-                                                            elecmatrix[chan,1], elecmatrix[chan,2]))
-                    fid.close()
+                labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
+                labelpath = os.path.join(self.subj_dir, self.subj, 'label', 'labels_to_warp')
+                if not os.path.isdir(labelpath):
+                    os.mkdir(labelpath)
+                labelname = os.path.join(labelpath, labelname_nopath)
+                
+                fid = open(labelname,'w')
+                fid.write('%s\n'%(labelname))
+                
+                # Print header of label file
+                fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
+                fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
+                                                        elecmatrix[chan,1], elecmatrix[chan,2]))
+                fid.close()
 
-                    print("Warping ch %d"%(chan))
-                    warped_labels_dir = os.path.join(self.subj_dir, template, 'label', 'warped_labels')
-                    if not os.path.isdir(warped_labels_dir):
-                        os.mkdir(warped_labels_dir)
-                    trglabel = os.path.join(warped_labels_dir, '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
-                    os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
-                              ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
-                              ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
+                print("Warping ch %d"%(chan))
+                warped_labels_dir = os.path.join(self.subj_dir, template, 'label', 'warped_labels')
+                if not os.path.isdir(warped_labels_dir):
+                    os.mkdir(warped_labels_dir)
+                trglabel = os.path.join(warped_labels_dir, '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
+                os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
+                          ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
+                          ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
 
-                    # Get the electrode coordinate from the label file
-                    fid2 = open(trglabel,'r')
-                    coord = fid2.readlines()[2].split() # Get the third line
-                    fid2.close()
+                # Get the electrode coordinate from the label file
+                fid2 = open(trglabel,'r')
+                coord = fid2.readlines()[2].split() # Get the third line
+                fid2.close()
 
-                    elecs_warped.append([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
+                elecs_warped[c,:] = ([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
                 # else:
                 #     print("Channel %d is a depth electrode, not warping"%(chan))
                 #     elecs_warped.append([np.nan, np.nan, np.nan])
 
                 #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
-                
+            
             scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
 
             print("Surface warp for %s complete. Warped coordinates in %s"%(self.subj, elecfile))
@@ -1478,9 +1484,9 @@ class freeCoG:
         else:
             elec_numbers = np.arange(e['elecmatrix'].shape[0])+1
         if self.hem=='lh':
-            label_offset=-1.0
+            label_offset=-1.5
         elif self.hem=='rh':
-            label_offset=1.0
+            label_offset=1.5
 
         # Find all the unique brain areas in this subject
         brain_areas = np.unique(e['anatomy'][:,3])
@@ -1488,13 +1494,13 @@ class freeCoG:
         # Loop through unique brain areas and find the appropriate color for each brain area from the color LUT dictionary
         for b in brain_areas:
             # Add relevant extra information to the label if needed for the color LUT
-            if b != 'NaN':
+            if b[0][0] != 'NaN':
                 this_label = b[0]
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
                     this_label = 'ctx-%s-%s'%(self.hem, b[0])
                     print(this_label)
                 
-                if this_label != '':
+                if this_label != '' and this_label != 'NaN':
                     if this_label not in cmap:
                         #in case the label was manually assigned, and not found in the LUT colormap dictionary
                         el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
