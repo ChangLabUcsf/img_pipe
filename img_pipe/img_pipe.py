@@ -1751,7 +1751,24 @@ class freeCoG:
             mlab.show()
 
         scipy.io.savemat(os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name)), roi_mesh)
-        
+
+    def write_to_obj(self, hem=None, roi_name='pial'):
+        '''This function writes the mesh for a given roi to .obj format.'''
+        if hem==None:
+            hem = self.hem
+        cortex = self.get_surf(roi=roi_name, hem=hem)
+        tri, vert = cortex['tri'], cortex['vert']
+
+        f = open(os.path.join(self.mesh_dir,'%s_%s.obj'%(hem, roi_name)),'w+')
+
+        for row in vert:
+            f.write('v %f %f %f\n'%(row[0], row[1], row[2]))
+
+        for row in tri:
+            f.write('f %d %d %d\n'%(row[0]+1, row[1]+1, row[2]+1))
+
+        f.close()
+                
  
 
     
