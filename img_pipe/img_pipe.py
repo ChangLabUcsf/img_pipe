@@ -424,25 +424,29 @@ class freeCoG:
                 direction = self.hem
 
         #if the grid is placed on the OFC, should create an ROI mesh with only frontal areas 
-        roi = ''
+        # roi = ''
+        # if elecfile_prefix == 'OFC_grid':
+        #     pial_file = os.path.join(self.mesh_dir, self.subj+'_'+self.hem+'_pial.mat')
+        #     orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_orig.mat')
+        #     surface_warp_scripts_dir = os.path.join(self.img_pipe_dir, 'surface_warping_scripts')
+        #     gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
+        #     if not os.path.isdir(gyri_labels_dir):
+        #         os.mkdir(gyri_labels_dir)
+        #         # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
+        #         os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
+        #             %(self.subj, self.hem, gyri_labels_dir))
+        #     create_roi = matlab.MatlabCommand()
+        #     create_roi.inputs.script = "addpath(genpath('%s'));\
+        #                                 load('%s'); load('%s'); \
+        #                                 make_ofc_roi('%s', '%s',cortex,0); "\
+        #                                 %(surface_warp_scripts_dir, orig_elec_file, \
+        #                                   pial_file, self.subj, self.hem)
+        #     create_roi.run()
+        #     roi = 'ofc_'
+
         if elecfile_prefix == 'OFC_grid':
-            pial_file = os.path.join(self.mesh_dir, self.subj+'_'+self.hem+'_pial.mat')
-            orig_elec_file = os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'_orig.mat')
-            surface_warp_scripts_dir = os.path.join(self.img_pipe_dir, 'surface_warping_scripts')
-            gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
-            if not os.path.isdir(gyri_labels_dir):
-                os.mkdir(gyri_labels_dir)
-                # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
-                os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
-                    %(self.subj, self.hem, gyri_labels_dir))
-            create_roi = matlab.MatlabCommand()
-            create_roi.inputs.script = "addpath(genpath('%s'));\
-                                        load('%s'); load('%s'); \
-                                        make_ofc_roi('%s', '%s',cortex,0); "\
-                                        %(surface_warp_scripts_dir, orig_elec_file, \
-                                          pial_file, self.subj, self.hem)
-            create_roi.run()
-            roi = 'ofc_'
+            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal'], hem=None, showfig=False)
+            surf_type = 'OFC'
 
         print('::: Loading Mesh data :::')
         print(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
