@@ -17,6 +17,7 @@ import nibabel as nib
 import numpy as np
 import scipy
 import scipy.io
+import scipy.spatial
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
@@ -323,6 +324,10 @@ class freeCoG:
             corner_nums = [0, 6, 49, 55]
             nrows = 7
             ncols = 8
+        elif nchans == 48:
+            corner_nums = [0,7,40,47]
+            nrows = 8
+            ncols = 6
 
         # Add the electrode coordinates for the corners
         for i in np.arange(4):
@@ -346,7 +351,8 @@ class freeCoG:
 
     def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
                                  surf_type='dural', \
-                                 num_iter=30, dilate=0.0, grid=True):
+                                 num_iter=30, dilate=0.0, grid=True,
+                                 convex_hull=False):
         '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
         use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
         corner electrodes) as the projection direction
@@ -424,13 +430,16 @@ class freeCoG:
                 direction = self.hem
 
         if elecfile_prefix == 'OFC_grid':
-            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal'], hem=None, showfig=False)
+            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis','parstriangularis','superiorfrontal','rostralanteriorcingulate','caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
             surf_type = 'OFC'
 
         print('::: Loading Mesh data :::')
         print(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
         cortex = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
         tri, vert = cortex['tri'], cortex['vert']
+
+        if convex_hull:
+            tri = scipy.spatial.Delaunay(vert).convex_hull
 
         print('::: Projecting electrodes to mesh :::')
         elecmatrix = scipy.io.loadmat(os.path.join(self.subj_dir, self.subj, 'elecs', 'individual_elecs', '%s_orig.mat'%(elecfile_prefix)))['elecmatrix']
