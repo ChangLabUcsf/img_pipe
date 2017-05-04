@@ -149,6 +149,7 @@ class electrode_picker:
 		self.ax = []
 		self.contour = [False, False, False]
 		self.pial_surf_on = True # Whether pial surface is visible or not
+		self.T1_on = True # Whether T1 is visible or not
 		
 		# This is the current slice for indexing (as integers so python doesnt complain)
 		cs = np.round(self.current_slice).astype(np.int)
@@ -273,6 +274,10 @@ class electrode_picker:
 			# Toggle pial surface outline on and off
 			self.pial_surf_on = not self.pial_surf_on
 
+		if event.key == 'b':
+			# Toggle T1 scan on and off
+			self.T1_on = not self.T1_on
+
 		if event.key == 'n':
 			plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
 			plt.gcf().canvas.draw()
@@ -308,7 +313,7 @@ class electrode_picker:
 
 		if event.key == 'h':
 			# Show help 
-			plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface, '3': show 3D view\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
+			plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface, 'b': toggle brain, '3': show 3D view\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
 
 		if event.key == 'e':
 			if self.device_name == '':
@@ -455,6 +460,7 @@ class electrode_picker:
 		specified view, which is sagittal by default)
 		'''
 		cs = np.round(self.current_slice).astype(np.int) # Make integer for indexing the volume
+
 		self.im[0].set_data(self.img_data[cs[0],:,:].T)
 		self.im[1].set_data(self.img_data[:,cs[1],:].T)
 		self.im[2].set_data(self.img_data[:,:,cs[2]].T)
@@ -500,6 +506,11 @@ class electrode_picker:
 				self.contour[2] = True
 			else:
 				self.contour[2] = False
+	        # Turn off T1 image if toggled	
+		if not self.T1_on:
+			self.im[0].set_data(np.zeros((self.img_data.shape[1], self.img_data.shape[2])))
+			self.im[1].set_data(np.zeros((self.img_data.shape[0], self.img_data.shape[2])))
+			self.im[2].set_data(np.zeros((self.img_data.shape[0], self.img_data.shape[1])))
 		
 		# Show the electrode volume data in the sagittal, coronal, and axial views
 		self.elec_im[0].set_data(self.elec_data[cs[0],:,:].T)
