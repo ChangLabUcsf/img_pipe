@@ -23,8 +23,6 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
-from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
-from surface_warping_scripts.project_electrodes_anydirection import *
 
 # For CT to MRI registration
 from nipy.core.api import AffineTransform
@@ -179,6 +177,7 @@ class freeCoG:
         '''
         Create smoothed dural surface for projecting electrodes to.
         '''
+        from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
         # Create mask of pial surface
         hems = ['lh', 'rh']
         for hem in hems:
@@ -363,6 +362,8 @@ class freeCoG:
         By default, projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT. Can also project strips
         and individual electrodes if a projection direction is provided.'''
+        
+	from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
                Surface Type: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
