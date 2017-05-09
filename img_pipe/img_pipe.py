@@ -1347,8 +1347,8 @@ class freeCoG:
                     'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal']
         return rois
 
-    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=[], 
-                    weights=[], cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None):
+    def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=None, 
+                    weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         rois: list of roi objects (create an roi object like so:
               hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
@@ -1422,8 +1422,8 @@ class freeCoG:
                 else:
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, 
                                                                     new_fig=False, cmap=cmap)
-        if not any_gaussian and elecs!=[]:
-            if weights==[]: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
+        if not any_gaussian and elecs is not None:
+            if weights is None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 points, mlab = ctmr_brain_plot.el_add(elecs)
             else:
                 # Map the weights onto the current colormap
