@@ -1,4 +1,4 @@
-# ctmr_brain_plot.py                                                                                                 
+# ctmr_brain_plot.py
 ''' This module contains a function (ctmr_brain_plot) that takes as 
  input a 3d coordinate set of triangular mesh vertices (vert) and 
  an ordered list of their indices (tri), to produce a 3d surface 
@@ -25,10 +25,12 @@ import scipy.io
 import mayavi
 from mayavi import mlab
 import numpy as np
+import matplotlib as mpl
+import pdb
 
-def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = [], 
-                    opacity = 1.0, representation = 'surface', line_width=1.0, gsp = 10,
-                    cmap = 'RdBu', show_colorbar=True, new_fig=True, vmin=None, vmax=None):
+def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
+                    opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
+                    cmap='RdBu', show_colorbar=True, new_fig=True, vmin=None, vmax=None):
     '''
     ctmr_gauss_plot(tri, vert)
     This function plots the 3D brain surface mesh
@@ -38,7 +40,8 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
         weights: [nchans x 1] - if [elecs] is also given, this will color the brain vertices according to these weights
         msize: size of the electrode.  default = 2
         opacity: opacity of the brain surface (value from 0.0 - 1.0)
-        cmap: [str], colormap to use when plotting gaussian weights with [elecs] and [weights]
+        cmap: [str or mpl.colors.LinearSegmentedColormap], colormap to use when plotting gaussian weights with [elecs]
+        and [weights]
         representation: 'surface' (default), or 'wireframe'
         line_width: [float]
         gsp: [int], gaussian smoothing parameter
@@ -47,33 +50,40 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
     brain_color = []
     #c = np.zeros(vert.shape[0],)
 
-    if elecs!=[]:
+    if elecs is not None:
         brain_color = np.zeros(vert.shape[0],)
         for i in np.arange(elecs.shape[0]):
-            b_z = np.abs(vert[:,2] - elecs[i,2])
-            b_y = np.abs(vert[:,1] - elecs[i,1])
-            b_x = np.abs(vert[:,0] - elecs[i,0])
+            b_z = np.abs(vert[:, 2] - elecs[i, 2])
+            b_y = np.abs(vert[:, 1] - elecs[i, 1])
+            b_x = np.abs(vert[:, 0] - elecs[i, 0])
             gauss_wt = np.nan_to_num(weights[i] * np.exp((-(b_x**2+b_z**2+b_y**2))/gsp)) #gaussian
             brain_color = brain_color + gauss_wt
 
-            #scale the colors so that it matches the weights that were passed in 
-            brain_color = brain_color * (np.abs(weights).max()/np.abs(brain_color).max())
-            if vmin==None and vmax==None:
-                vmin, vmax = -np.abs(brain_color).max(), np.abs(brain_color).max()
+            #scale the colors so that it matches the weights that were passed in
+        brain_color = brain_color * (np.abs(weights).max()/np.abs(brain_color).max())
+        if vmin==None and vmax==None:
+            vmin, vmax = -np.abs(brain_color).max(), np.abs(brain_color).max()
 
     # plot cortex and begin display
     if new_fig:
         mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
 
-    if elecs!=[]:
-        mesh = mlab.triangular_mesh(vert[:,0],vert[:,1],vert[:,2], tri, 
-                                representation = representation, 
-                                opacity = opacity, line_width = line_width, scalars=brain_color,
-                                colormap = cmap, vmin=vmin, vmax=vmax)
+    if elecs is not None:
+        kwargs = {}
+        if type(cmap) == str:
+            kwargs.update(colormap=cmap)
+
+        mesh = mlab.triangular_mesh(vert[:, 0], vert[:, 1], vert[:, 2], tri,
+                                    representation=representation, opacity=opacity,
+                                    line_width=line_width, scalars=brain_color,
+                                    vmin=vmin, vmax=vmax, **kwargs)
+
+        if type(cmap) == mpl.colors.LinearSegmentedColormap:
+            mesh.module_manager.scalar_lut_manager.lut.table = (cmap(np.linspace(0, 1, 255)) * 255).astype('int')
     else:
-        mesh = mlab.triangular_mesh(vert[:,0],vert[:,1],vert[:,2], tri, 
-                                color=color, representation = representation, 
-                                opacity = opacity, line_width = line_width)
+        mesh = mlab.triangular_mesh(vert[:, 0], vert[:, 1], vert[:, 2], tri,
+                                color=color, representation=representation,
+                                opacity=opacity, line_width=line_width)
 
     # cell_data = mesh.mlab_source.dataset.cell_data
     # cell_data.scalars = brain_color
@@ -82,9 +92,9 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
 
     #mesh2 = mlab.pipeline.set_active_attribute(mesh, cell_scalars = 'Cell data')
     #mlab.pipeline.surface(mesh)
-    if weights != []:
+    if weights is not None and show_colorbar:
         mlab.colorbar()
-    
+
     # change OpenGL mesh properties for phong point light shading
     mesh.actor.property.ambient = 0.4225
     mesh.actor.property.specular = 0.333
@@ -94,15 +104,15 @@ def ctmr_gauss_plot(tri, vert, color = (0.8, 0.8, 0.8), elecs = [], weights = []
     mesh.scene.light_manager.light_mode = 'vtk'
     if opacity < 1.0:
         mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
-    
+
     return mesh, mlab
 
 
 def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0):
     '''
     el_add(elecs, color = (1., 0., 0.), msize = 2)
-    This function adds the electrode matrix [elecs] (nchans x 3) to 
-    the scene.  
+    This function adds the electrode matrix [elecs] (nchans x 3) to
+    the scene.
     Inputs:
         elecs: [nchans x 3] matrix of electrode coordinate values in 3D
         color: Electrode color is either a triplet (r, g, b),
@@ -110,13 +120,13 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
         msize: size of the electrode.  default = 2
         label_offset: how much to move the number labels out by (so not blocked by electrodes)
     '''
-    
+
     # plot the electrodes as spheres
     # If we have one color for each electrode, color them separately
     if type(color) is np.ndarray:
-        if color.shape[0] == elecs.shape[0]: 
+        if color.shape[0] == elecs.shape[0]:
             # for e in np.arange(elecs.shape[0]):
-            #     points = mlab.points3d(elecs[e,0], elecs[e,1], elecs[e,2], scale_factor = msize, 
+            #     points = mlab.points3d(elecs[e,0], elecs[e,1], elecs[e,2], scale_factor = msize,
             #                        color = tuple( color[e,:] ) , resolution=25)
             unique_colors = np.array(list(set([tuple(row) for row in color])))
             for individual_color in unique_colors:
@@ -128,7 +138,7 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
     # Otherwise, use the same color for all electrodes
     else:
         points = mlab.points3d(elecs[:,0],elecs[:,1], elecs[:,2], scale_factor = msize, color = color, resolution=25)
-    
+
     # Set display properties
     points.actor.property.ambient = 0.3261
     points.actor.property.specular = 1
