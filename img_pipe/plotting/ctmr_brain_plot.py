@@ -26,7 +26,6 @@ import mayavi
 from mayavi import mlab
 import numpy as np
 import matplotlib as mpl
-import pdb
 
 def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
                     opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
@@ -59,7 +58,7 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
             gauss_wt = np.nan_to_num(weights[i] * np.exp((-(b_x**2+b_z**2+b_y**2))/gsp)) #gaussian
             brain_color = brain_color + gauss_wt
 
-            #scale the colors so that it matches the weights that were passed in
+        #scale the colors so that it matches the weights that were passed in
         brain_color = brain_color * (np.abs(weights).max()/np.abs(brain_color).max())
         if vmin==None and vmax==None:
             vmin, vmax = -np.abs(brain_color).max(), np.abs(brain_color).max()
