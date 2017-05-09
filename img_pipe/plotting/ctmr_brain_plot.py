@@ -29,7 +29,7 @@ import matplotlib as mpl
 
 def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
                     opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
-                    cmap='RdBu', show_colorbar=True, new_fig=True, vmin=None, vmax=None):
+                    cmap=mpl.cm.get_cmap('RdBu_r'), show_colorbar=True, new_fig=True, vmin=None, vmax=None):
     '''
     ctmr_gauss_plot(tri, vert)
     This function plots the 3D brain surface mesh
