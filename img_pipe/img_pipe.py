@@ -429,6 +429,8 @@ class freeCoG:
                 direction = [float(x),float(y),float(z)]
             elif proj_direction not in ['lh','rh','top','bottom','front','back','custom']:
                 direction = self.hem
+            else:
+                direction = proj_direction
 
         if elecfile_prefix == 'OFC_grid':
             self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis','parstriangularis','superiorfrontal','rostralanteriorcingulate','caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
