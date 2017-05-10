@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 import matplotlib
-from pyface.qt import QtGui, QtCore
 matplotlib.use('Qt4Agg') 
+from pyface.qt import QtGui, QtCore
 from matplotlib import pyplot as plt
 plt.rcParams['keymap.save'] = '' # Unbind 's' key saving
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.sans-serif'] = ['Helvetica','Verdana','Bitstream Vera Sans','sans-serif']
+print(plt.get_backend())
 
 from matplotlib import cm
 import matplotlib.colors as mcolors
@@ -120,6 +121,7 @@ class electrode_picker:
 		self.elec_num = dict()
 		self.elecmatrix = dict()# This will be the electrode coordinates 
 		self.legend_handles = [] # This will hold legend entries
+		self.elec_added = False # Whether we're in an electrode added state
 
 		self.imsz = [256, 256, 256]
 		self.ctsz = [256, 256, 256]
@@ -447,6 +449,7 @@ class electrode_picker:
 				self.current_slice[1] = event.ydata
 			ax_num = 3
 
+		self.elec_added = False
 		self.update_figure_data(ax_clicked=ax_num)
 
 		#print("Current slice: %3.2f %3.2f %3.2f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
@@ -563,12 +566,18 @@ class electrode_picker:
 				self.cursor[a][0].set_ydata ([self.ax[a].get_ylim()]) 
 				self.cursor2[a][0].set_xdata([self.ax[a].get_xlim()])
 
+		if not self.elec_added:
+			current_RAS = self.slice_to_surfaceRAS()
+			plt.gcf().suptitle('Surface RAS = [%3.3f, %3.3f, %3.3f]'%(current_RAS[0], current_RAS[1], current_RAS[2]), fontsize=14)
+		
+
 	def add_electrode(self, add_to_file = True):
 		'''
 		Add an electrode at the current crosshair point. 
 		'''
 
 		# Make the current slice into an integer for indexing the volume
+
 		cs = np.round(self.current_slice).astype(np.int) 
 
 		# Create a sphere centered around the current point as a binary matrix
@@ -613,6 +622,7 @@ class electrode_picker:
 		plt.gcf().suptitle('%s e%d surface RAS = [%3.3f, %3.3f, %3.3f]'%(self.device_name, self.elec_num[self.device_name], elec[0], elec[1], elec[2]), fontsize=14)
 		
 		self.elec_num[self.device_name] += 1
+		self.elec_added = True
 		#print("Voxel CRS: %3.3f, %3.3f, %3.3f"%(self.current_slice[0], self.current_slice[1], self.current_slice[2]))
 		#print("RAS coordinate: %3.3f, %3.3f, %3.3f"%(elec[0], elec[1], elec[2]))
 
