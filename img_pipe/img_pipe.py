@@ -937,6 +937,8 @@ class freeCoG:
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         elecfile_warped = os.path.join(self.elecs_dir, '%s_warped.mat'%(elecfile_prefix))
         elecfile_nearest_warped = os.path.join(self.elecs_dir, '%s_nearest_warped.mat'%(elecfile_prefix))
+        elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
+        elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
         
         if os.path.isfile(elecfile_warped):
             print("The electrodes in %s have already been warped and are in %s"%(elecfile, elecfile_warped))
@@ -955,8 +957,7 @@ class freeCoG:
             else:
                 print("Depth warping has already been applied to the depth electrodes of %s and are in %s"\
                     %(elecfile, elecfile_nearest_warped))
-            elecfile_nearest_warped_text = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
-            elecfile_RAS_text = os.path.join(self.elecs_dir, elecfile_prefix+'_RAS.txt')
+
             depth_warps = scipy.io.loadmat(elecfile_nearest_warped)
             depth_indices = np.where(orig_elecs['anatomy'][:,2]=='depth')[0]
             if depth_warps['elecmatrix'].size > 0:
