@@ -1315,7 +1315,7 @@ class freeCoG:
         if roi == 'pial':
             cortex = scipy.io.loadmat(self.pial_surf_file[hem])
         else: 
-            cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + 'trivert.mat'))
+            cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + '_trivert.mat'))
         return cortex
 
     class roi:
