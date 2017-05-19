@@ -1350,6 +1350,19 @@ class freeCoG:
                     'transversetemporal', 'fusiform', 'lingual', 'parstriangularis', 'rostralmiddlefrontal']
         return rois
 
+    def run_annotation2label(self):
+        ''' Create the labels from the Desikan-Killiany Atlas, which can be used for labeling or for 
+        making ROIs. '''
+        #create gyri labels directory
+        gyri_labels_dir = os.path.join(self.subj_dir, self.subj, 'label', 'gyri')
+        if not os.path.isdir(gyri_labels_dir):
+            os.mkdir(gyri_labels_dir)
+            # This version of mri_annotation2label uses the coarse labels from the Desikan-Killiany Atlas
+            os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
+                %(self.subj, 'lh', gyri_labels_dir))
+            os.system('mri_annotation2label --subject %s --hemi %s --surface pial --outdir %s'\
+                %(self.subj, 'rh', gyri_labels_dir))
+
     def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=None, 
                     weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None):
         '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
