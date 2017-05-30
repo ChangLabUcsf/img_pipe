@@ -655,8 +655,8 @@ class electrode_picker:
 		if coord is None:
 			coord = self.current_slice
                 
-		elec_CRS = np.hstack((self.imsz[0] - coord[0] + 1.,
-							  self.imsz[2] - coord[2] + 1.,
+		elec_CRS = np.hstack((self.imsz[0] - coord[0] - 1.,
+							  self.imsz[2] - coord[2] - 1.,
 							  coord[1], 1))
 		
 		# Convert CRS to RAS
