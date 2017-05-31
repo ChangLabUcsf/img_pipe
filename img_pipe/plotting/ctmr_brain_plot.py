@@ -18,7 +18,10 @@
 
  usage: elecs = scipy.io.loadmat('/path/to/hd_grid.mat')['elecmatrix'];
         points = el_add(elecs, color = (1, 0, 0), msize = 2.5);
-        mlab.show()                                                     
+        mlab.show()  
+
+Modified for use in python from MATLAB code originally written by 
+Kai Miller (ctmr_gui)
 '''
 
 import scipy.io
@@ -29,7 +32,8 @@ import matplotlib as mpl
 
 def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
                     opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
-                    cmap=mpl.cm.get_cmap('RdBu_r'), show_colorbar=True, new_fig=True, vmin=None, vmax=None):
+                    cmap=mpl.cm.get_cmap('RdBu_r'), show_colorbar=True, new_fig=True, vmin=None, vmax=None,
+                    ambient=0.4225, specular = 0.333, specular_power = 66, diffuse = 0.6995, interpolation='phong'):
     '''
     ctmr_gauss_plot(tri, vert)
     This function plots the 3D brain surface mesh
@@ -95,11 +99,11 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
         mlab.colorbar()
 
     # change OpenGL mesh properties for phong point light shading
-    mesh.actor.property.ambient = 0.4225
-    mesh.actor.property.specular = 0.333
-    mesh.actor.property.specular_power = 66
-    mesh.actor.property.diffuse = 0.6995
-    mesh.actor.property.interpolation = 'phong'
+    mesh.actor.property.ambient = ambient
+    mesh.actor.property.specular = specular
+    mesh.actor.property.specular_power = specular_power
+    mesh.actor.property.diffuse = diffuse
+    mesh.actor.property.interpolation = interpolation
     mesh.scene.light_manager.light_mode = 'vtk'
     if opacity < 1.0:
         mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
@@ -107,7 +111,7 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
     return mesh, mlab
 
 
-def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0):
+def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0, ambient = 0.3261, specular = 1, specular_power = 16, diffuse = 0.6995, interpolation = 'phong'):
     '''
     el_add(elecs, color = (1., 0., 0.), msize = 2)
     This function adds the electrode matrix [elecs] (nchans x 3) to
@@ -139,11 +143,11 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
         points = mlab.points3d(elecs[:,0],elecs[:,1], elecs[:,2], scale_factor = msize, color = color, resolution=25)
 
     # Set display properties
-    points.actor.property.ambient = 0.3261
-    points.actor.property.specular = 1
-    points.actor.property.specular_power = 16
-    points.actor.property.diffuse = 0.6995
-    points.actor.property.interpolation = 'phong'
+    points.actor.property.ambient = ambient
+    points.actor.property.specular = specular
+    points.actor.property.specular_power = specular_power
+    points.actor.property.diffuse = diffuse
+    points.actor.property.interpolation = interpolation
     points.scene.light_manager.light_mode = 'vtk'
 
     if numbers is not None:
