@@ -1703,7 +1703,7 @@ class freeCoG:
             mlab.show()
         return subj_mesh, template_mesh, mlab
 
-    def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False):
+    def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False, save=True):
 
         ''' This function makes a mesh for the cortical ROI you are interested in. Here are the list of labels you can put in your label_list.
         roi_name: what you want to call your mesh, note that the hemisphere will be prepended to this name
@@ -1715,7 +1715,13 @@ class freeCoG:
         cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
         entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
         frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
-        fusiform                lingual                 parstriangularis        rostralmiddlefrontal]'''
+        fusiform                lingual                 parstriangularis        rostralmiddlefrontal]
+        
+        If save=True, this mesh is saved to the $SUBJECTS_DIR/Meshes/. 
+        This function returns the roi_mesh dictionary, which contains roi_mesh['tri'] and roi_mesh['vert']
+        and can be used in plotting commands.
+
+        '''
 
         if hem==None:
             if self.hem != 'lh' and self.hem != 'rh':
@@ -1737,7 +1743,7 @@ class freeCoG:
             all_lines_float = []
             for line in range(len(all_lines_str)):
                 all_lines_float.append([float(x) for x in all_lines_str[line]])
-            verts = np.array(all_lines_float)
+            verts = np.array(all_lines_float, dtype=np.int)
             vertnums.extend(verts[:,0].tolist())
         vertnums = sorted(vertnums)
         roi_mesh['vert'] = cortex['vert'][vertnums,:]
@@ -1759,7 +1765,12 @@ class freeCoG:
             mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
             mlab.show()
 
-        scipy.io.savemat(os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name)), roi_mesh)
+        if save:
+            output_mesh = os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name))
+            print("Saving this mesh to %s"%(output_mesh))
+            scipy.io.savemat(output_mesh, roi_mesh)
+        
+        return roi_mesh
 
     def write_to_obj(self, hem=None, roi_name='pial'):
         '''This function writes the mesh for a given roi to .obj format.'''
