@@ -1787,14 +1787,17 @@ class freeCoG:
     def plot_all_surface_rois(self, bgcolor=(0, 0, 0), size=(1200, 900), color_dict=None, screenshot=False, showfig=True,
                               **kwargs):
         """
-        plots all of the surface rios for a given subject.
-        :param bgcolor (tuple):
+        Plots all of the surface rois for a given subject. Uses colors from the Freesurfer Color lookup table (LUT)
+	by default.
+        
+	:param bgcolor (tuple):
         :param size (tuple):
         :param color_dict: freesurfer roi name -> color (tuple)
         :param screenshot (bool):
         :param showfig (bool):
         :param kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
-        """
+        
+	"""
         from mayavi import mlab
         from plotting.ctmr_brain_plot import ctmr_gauss_plot
 
