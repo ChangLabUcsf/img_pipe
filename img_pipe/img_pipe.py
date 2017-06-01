@@ -13,6 +13,7 @@ import glob
 import pickle
 
 import nibabel as nib
+from tqdm import tqdm
 
 import numpy as np
 import scipy
@@ -1167,17 +1168,17 @@ class freeCoG:
             depth_atlas_nm = '.a2009s'
 
         #template brain (cvs)
-        cvs_img=nib.freesurfer.load(os.path.join(self.subj_dir, template, 'mri','aparc.a2009s+aseg.mgz'))
+        cvs_img=nib.freesurfer.load(os.path.join(self.subj_dir, template, 'mri', 'aparc' + depth_atlas_nm + '+aseg.mgz'))
         cvs_dat=cvs_img.get_data()
 
         #subj brain 
-        subj_img=nib.freesurfer.load(os.path.join(self.mri_dir,'aparc.a2009s+aseg.mgz'))
+        subj_img=nib.freesurfer.load(os.path.join(self.mri_dir, 'aparc' + depth_atlas_nm + '+aseg.mgz'))
         subj_dat=subj_img.get_data()
 
         pdf = PdfPages(os.path.join(self.elecs_dir, 'depthWarpsQC.pdf'))
         for i in range(len(subj_elecnums)): 
             if subj_elecs[i][0] != 0 and subj_elecs[i][0] != 10000:
-                self.plot_elec(subj_elecs[i],warped_elecs[i],subj_dat,cvs_dat,subj_elecnums[i],pdf)
+                self.plot_elec(subj_elecs[i], warped_elecs[i], subj_dat, cvs_dat, subj_elecnums[i], pdf)
         pdf.close()
 
     def apply_transform(self, elecfile_prefix, reorient_file):
@@ -1554,8 +1555,6 @@ class freeCoG:
         return mesh, mlab
 
     def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False, anat_colored=True):
-        import mayavi
-        import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
         #use mean normal vector
         #no anat color map option
@@ -1648,9 +1647,6 @@ class freeCoG:
         # Plot the pial surface
         subj_mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(subj_brain['tri'], subj_brain['vert'], color=(0.8, 0.8, 0.8))
         template_mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(template_brain['tri'], template_brain['vert'], color=(0.8, 0.8, 0.8),new_fig=False)
-        
-        # Add the electrodes, colored by anatomical region
-        elec_colors = np.zeros((subj_e['elecmatrix'].shape[0], subj_e['elecmatrix'].shape[1]))
 
         # Import freesurfer color lookup table as a dictionary
         cmap = FS_colorLUT.get_lut()
@@ -1668,7 +1664,6 @@ class freeCoG:
         for b in brain_areas:
             # Add relevant extra information to the label if needed for the color LUT
             if b != 'NaN':
-                this_label = b[0]
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
                     this_label = 'ctx-%s-%s'%(self.hem, b[0])
                     print(this_label)
@@ -1683,10 +1678,10 @@ class freeCoG:
 
                     ctmr_brain_plot.el_add(np.atleast_2d(template_e['elecmatrix'][subj_e['anatomy'][:,3]==b,:]), 
                                            color=tuple(el_color), numbers=elec_numbers[subj_e['anatomy'][:,3]==b])
-        if self.hem=='lh':
-            azimuth=180
-        elif self.hem=='rh':
-            azimuth=0
+        if self.hem == 'lh':
+            azimuth = 180
+        elif self.hem == 'rh':
+            azimuth = 0
         mlab.view(azimuth, elevation=90)
 
         #adjust transparency of brain mesh
@@ -1788,7 +1783,50 @@ class freeCoG:
             f.write('f %d %d %d\n'%(row[0]+1, row[1]+1, row[2]+1))
 
         f.close()
-                
- 
 
-    
+    def plot_all_surface_rois(self, bgcolor=(0, 0, 0), size=(1200, 900), color_dict=None, screenshot=False, showfig=True,
+                              **kwargs):
+        """
+        Plots all of the surface rois for a given subject. Uses colors from the Freesurfer Color lookup table (LUT)
+	by default.
+        
+	:param bgcolor (tuple):
+        :param size (tuple):
+        :param color_dict: freesurfer roi name -> color (tuple)
+        :param screenshot (bool):
+        :param showfig (bool):
+        :param kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
+        
+	"""
+        from mayavi import mlab
+        from plotting.ctmr_brain_plot import ctmr_gauss_plot
+
+        if color_dict is None:
+            from SupplementalFiles import FS_colorLUT
+            color_dict = FS_colorLUT.get_lut()
+
+        mlab.figure(fgcolor=(0, 0, 0), bgcolor=bgcolor, size=size)
+        rois = self.get_rois()
+        for roi in tqdm(rois):
+            if 'ctx-' + self.hem + '-' + roi in color_dict:
+                mesh = self.make_roi_mesh(roi, [roi], save=False)
+                color = np.array(color_dict['ctx-' + self.hem + '-' + roi]) / 255.
+                ctmr_gauss_plot(mesh['tri'], mesh['vert'], color=color, new_fig=False, **kwargs)
+
+        if self.hem == 'lh':
+            azimuth = 180
+        elif self.hem == 'rh':
+            azimuth = 0
+        else:
+            azimuth = 90
+        mlab.view(azimuth, elevation=90)
+
+        if screenshot:
+            arr = mlab.screenshot(antialiased=True)
+            plt.figure(figsize=(20, 10))
+            plt.imshow(arr, aspect='equal')
+            plt.axis('off')
+            plt.show()
+
+        if showfig:
+            mlab.show()
