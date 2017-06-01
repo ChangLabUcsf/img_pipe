@@ -11,6 +11,7 @@
 import os
 import glob
 import pickle
+import shutil
 
 import nibabel as nib
 
@@ -1084,68 +1085,96 @@ class freeCoG:
             print("Surface warp file exists")
         else:
             print("Computing surface warp")
-            cortex_src = self.get_surf()
-            atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
-            if not os.path.isfile(atlas_file):
-                atlas_patient = freeCoG(subj = template, subj_dir = self.subj_dir, hem = self.hem)
-                print("Creating mesh %s"%(atlas_file))
-                atlas_patient.convert_fsmesh2mlab()
+            elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename + '.mat'))['elecmatrix']
+            anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename + '.mat'))['anatomy']
+            labelpath = os.path.join(self.subj_dir, self.subj, 'label')
+            elecs_warped = self.compute_surface_warp(elecmatrix, anatomy, labelpath, basename, template)
 
-            cortex_targ = scipy.io.loadmat(atlas_file)
-            elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
-            anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
-
-            surface_indices = np.array(list(set(np.where(anatomy[:,2]!='depth')[0]) & set(np.where(np.all(~np.isnan(elecmatrix),axis=1))[0])),dtype='int64')
-
-            print("Finding nearest surface vertex for each electrode")
-            vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix[surface_indices,:])
-            elecmatrix = nearest_verts
-
-            print('Warping each electrode separately:')
-            elecs_warped = np.nan * np.ones((surface_indices.shape[0],3))
-
-            for c in np.arange(surface_indices.shape[0]):
-                chan = surface_indices[c]
-                # Open label file for writing
-                labelname_nopath = '%s.%s.chan%03d.label'%(self.hem, basename, chan)
-                labelpath = os.path.join(self.subj_dir, self.subj, 'label', 'labels_to_warp')
-                if not os.path.isdir(labelpath):
-                    os.mkdir(labelpath)
-                labelname = os.path.join(labelpath, labelname_nopath)
-                
-                fid = open(labelname,'w')
-                fid.write('%s\n'%(labelname))
-                
-                # Print header of label file
-                fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n'%(self.subj))
-                fid.write('%i %.9f %.9f %.9f 0.0000000'%(vert_inds[chan], elecmatrix[chan,0], \
-                                                        elecmatrix[chan,1], elecmatrix[chan,2]))
-                fid.close()
-
-                print("Warping ch %d"%(chan))
-                warped_labels_dir = os.path.join(self.subj_dir, template, 'label', 'warped_labels')
-                if not os.path.isdir(warped_labels_dir):
-                    os.mkdir(warped_labels_dir)
-                trglabel = os.path.join(warped_labels_dir, '%s.to.%s.%s'%(self.subj, template, labelname_nopath))
-                os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
-                          ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
-                          ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
-
-                # Get the electrode coordinate from the label file
-                fid2 = open(trglabel,'r')
-                coord = fid2.readlines()[2].split() # Get the third line
-                fid2.close()
-
-                elecs_warped[c,:] = ([np.float(coord[1]),np.float(coord[2]),np.float(coord[3])])
-                # else:
-                #     print("Channel %d is a depth electrode, not warping"%(chan))
-                #     elecs_warped.append([np.nan, np.nan, np.nan])
-
-                #intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
-            
             scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
 
-            print("Surface warp for %s complete. Warped coordinates in %s"%(self.subj, elecfile))
+            print("Surface warp for %s complete. Warped coordinates in %s" % (self.subj, elecfile))
+
+
+    def compute_surface_warp(self, elecmatrix, anatomy=None, labelpath='tmp/', basename='',
+                             template='cvs_avg35_inMNI152'):
+        """
+        wrapper that uses freesurfer's label_mri2mri to warp electrodes from one cortical surface to another.
+        :param elecmatrix: n x 3 np.array
+        :param anatomy: np.array from TDT_elecs_all
+        :param labelpath: can be os.path.join(self.subj_dir, self.subj, 'label') or any other directory if you do not
+        have write permissions there. Default is 'tmp/', which is deleted when function finishes.
+        :param basename: str default = ''
+        :param template: str default='cvs_avg35_inMNI152'
+        :return: warped_elecs (n x 3 np.array)
+        """
+
+        labels_to_warp_path = os.path.join(labelpath, 'labels_to_warp')
+        warped_labels_dir = os.path.join(labelpath, 'warped_labels')
+
+        if not os.path.isdir(labelpath):
+            os.mkdir(labelpath)
+        if not os.path.isdir(warped_labels_dir):
+            os.mkdir(warped_labels_dir)
+        if not os.path.isdir(labels_to_warp_path):
+            os.mkdir(labels_to_warp_path)
+
+        cortex_src = self.get_surf()
+        atlas_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem + '_pial_trivert.mat')
+        if not os.path.isfile(atlas_file):
+            atlas_patient = freeCoG(subj=template, subj_dir=self.subj_dir, hem=self.hem)
+            print("Creating mesh %s" % (atlas_file))
+            atlas_patient.convert_fsmesh2mlab()
+
+        if anatomy is not None:
+            surface_indices = np.array(
+                list(set(np.where(anatomy[:, 2] != 'depth')[0]) & set(np.where(np.all(~np.isnan(elecmatrix), axis=1))[0])),
+                dtype='int64')
+        else:
+            surface_indices = range(len(elecmatrix))
+
+        print("Finding nearest surface vertex for each electrode")
+        vert_inds, nearest_verts = self.nearest_electrode_vert(cortex_src['vert'], elecmatrix[surface_indices, :])
+        elecmatrix = nearest_verts
+
+        print('Warping each electrode separately:')
+        elecs_warped = np.nan * np.ones((len(surface_indices), 3))
+
+        for c in np.arange(len(surface_indices)):
+            chan = surface_indices[c]
+            # Open label file for writing
+            labelname_nopath = '%s.%s.chan%03d.label' % (self.hem, basename, chan)
+            labelname = os.path.join(labels_to_warp_path, labelname_nopath)
+
+            with open(labelname, 'w') as fid:
+                fid.write('%s\n' % (labelname))
+                # Print header of label file
+                fid.write('#!ascii label  , from subject %s vox2ras=TkReg\n1\n' % (self.subj))
+                fid.write('%i %.9f %.9f %.9f 0.0000000' % (vert_inds[chan], elecmatrix[chan, 0],
+                                                           elecmatrix[chan, 1], elecmatrix[chan, 2]))
+
+            print("Warping ch %d" % (chan))
+            trglabel = os.path.join(warped_labels_dir, '%s.to.%s.%s' % (self.subj, template, labelname_nopath))
+            os.system('mri_label2label --srclabel ' + labelname + ' --srcsubject ' + self.subj + \
+                      ' --trgsubject ' + template + ' --trglabel ' + trglabel + ' --regmethod surface --hemi ' + self.hem + \
+                      ' --trgsurf pial --paint 6 pial --sd ' + self.subj_dir)
+
+            # Get the electrode coordinate from the label file
+            with open(trglabel, 'r') as fid2:
+                coord = fid2.readlines()[2].split()  # Get the third line
+
+            elecs_warped[c, :] = ([np.float(coord[1]), np.float(coord[2]), np.float(coord[3])])
+            # else:
+            #     print("Channel %d is a depth electrode, not warping"%(chan))
+            #     elecs_warped.append([np.nan, np.nan, np.nan])
+
+            # intersect, t, u, v, xcoor = TriangleRayIntersection(elec, [1000, 0, 0], vert1,vert2,vert3, fullReturn=True)
+
+        if labelpath == 'tmp/':
+            shutil.rmtree(labels_to_warp_path)
+            shutil.rmtree(warped_labels_dir)
+
+        return elecs_warped
+
 
     def check_depth_warps(self, elecfile_prefix='TDT_elecs_all',template='cvs_avg35_inMNI152',atlas_depth='destrieux'):
         ''' Function to check whether warping of depths in mri_cvs_register worked properly. 
