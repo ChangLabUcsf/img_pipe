@@ -49,6 +49,8 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
         line_width: [float]
         gsp: [int], gaussian smoothing parameter
     '''
+    # if color is another iterable, make it a tuple.
+    color = tuple(color)
 
     brain_color = []
     #c = np.zeros(vert.shape[0],)
