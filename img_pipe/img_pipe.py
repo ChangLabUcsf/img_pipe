@@ -349,10 +349,8 @@ class freeCoG:
         orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
-    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
-                                 surf_type='dural', \
-                                 num_iter=30, dilate=0.0, grid=True,
-                                 convex_hull=False):
+    def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, surf_type='dural', num_iter=30,
+                           dilate=0.0, grid=True, convex_hull=False):
         '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
         use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
         corner electrodes) as the projection direction
@@ -1424,7 +1422,7 @@ class freeCoG:
 
             #if color or opacity == None, then use default values 
             if color == None:
-                color = (0.8,0.8,0.8)
+                color = (0.8, 0.8, 0.8)
             if opacity == None:
                 opacity = 1.0
             if representation == None:
@@ -1434,62 +1432,56 @@ class freeCoG:
             if gaussian == True:
                 any_gaussian = True
 
+            # setup kwargs for ctmr_brain_plot.ctmr_gauss_plot()
+            kwargs = {}
+            kwargs.update(color=color, opacity=opacity, representation=representation, new_fig=False, cmap=cmap)
+            if gaussian:
+                kwargs.update(elecs=elecs, weights=weights, vmin=vmin, vmax=vmax)
+
             #default roi_name of 'pial' plots both hemispheres' pial surfaces
-            if roi_name =='pial' or roi_name == 'rh_pial' or roi_name == 'lh_pial':
+            if roi_name  in ('pial', 'rh_pial', 'lh_pial'):
                 #use pial surface of the entire hemisphere
-                lh_pial = self.get_surf(hem='lh')
-                rh_pial = self.get_surf(hem='rh')
-                if gaussian:
-                    if roi_name == 'pial' or roi_name == 'lh_pial':
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights,
-                                                                         representation=representation, new_fig=False, cmap=cmap, vmin=vmin, vmax=vmax)
-                    if roi_name == 'pial' or roi_name == 'rh_pial': 
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights, 
-                                                                         representation=representation, new_fig=False, cmap=cmap, vmin=vmin, vmax=vmax)
-                else: 
-                    if roi_name == 'pial' or roi_name == 'lh_pial': 
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, representation=representation, 
-                                                                    new_fig=False, cmap=cmap)
-                    if roi_name == 'pial' or roi_name == 'rh_pial': 
-                        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], color=color, opacity=opacity, representation=representation, 
-                                                                    new_fig=False, cmap=cmap)
+
+                if roi_name in ('pial', 'lh_pial'):
+                    lh_pial = self.get_surf(hem='lh')
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], **kwargs)
+
+                if roi_name in ('pial', 'rh_pial'):
+                    rh_pial = self.get_surf(hem='rh')
+                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], **kwargs)
                     
-            else: 
+            else:
                 subcort_dir = os.path.join(self.mesh_dir,'subcortical')
                 if os.path.isdir(subcort_dir) and '%s_subcort_trivert.mat'%(roi_name) in os.listdir(subcort_dir):
                     roi_mesh = scipy.io.loadmat(os.path.join(subcort_dir,'%s_subcort_trivert.mat'%(roi_name)))
                 else:
                     roi_mesh = scipy.io.loadmat(os.path.join(self.mesh_dir,'%s_trivert.mat'%(roi_name)))
 
-                if gaussian:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, elecs=elecs, weights=weights, 
-                                                                    representation=representation, new_fig=False, cmap=cmap, vmin=vmin, vmax=vmax)
-                else:
-                    mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'],color=(color), opacity=opacity, representation=representation, 
-                                                                    new_fig=False, cmap=cmap)
+                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'], roi_mesh['vert'], **kwargs)
+
         if not any_gaussian and elecs is not None:
             if weights is None: #if elecmatrix passed in but no weights specified, default to all ones for the electrode color weights
                 points, mlab = ctmr_brain_plot.el_add(elecs)
             else:
                 # Map the weights onto the current colormap
-                elec_colors = cm.get_cmap(cmap)(weights)[:,:3] 
+                elec_colors = cm.get_cmap(cmap)(weights)[:, :3]
                 points, mlab = ctmr_brain_plot.el_add(elecs, color = elec_colors)
 
         else:
             #if no elecs to add as points3D
             points = None
 
-        if self.hem=='lh':
-            azimuth=180
-        elif self.hem=='rh':
-            azimuth=0
+        if self.hem == 'lh':
+            azimuth = 180
+        elif self.hem == 'rh':
+            azimuth = 0
         else:
-            azimuth=90
+            azimuth = 90
         mlab.view(azimuth, elevation=90)
 
         if screenshot:
             arr = mlab.screenshot(antialiased=True)
-            plt.figure(figsize=(20,10))
+            plt.figure(figsize=(20, 10))
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
             plt.show()
@@ -1503,7 +1495,6 @@ class freeCoG:
         return mesh, points, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
-        import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
@@ -1524,11 +1515,6 @@ class freeCoG:
         # Import freesurfer color lookup table as a dictionary
         cmap = FS_colorLUT.get_lut()
 
-        # Make a list of electrode numbers
-        if self.zero_indexed_electrodes:
-            elec_numbers = np.arange(e['elecmatrix'].shape[0])
-        else:
-            elec_numbers = np.arange(e['elecmatrix'].shape[0])+1
         if self.hem=='lh':
             label_offset=-1.5
         elif self.hem=='rh':
@@ -1653,7 +1639,6 @@ class freeCoG:
     def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
         the native space and warped electrodes for ease of comparison/quality control.'''
-        import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
@@ -1769,7 +1754,7 @@ class freeCoG:
             verts = np.array(all_lines_float)
             vertnums.extend(verts[:,0].tolist())
         vertnums = sorted(vertnums)
-        roi_mesh['vert'] = cortex['vert'][vertnums,:]
+        roi_mesh['vert'] = cortex['vert'][vertnums, :]
         
         # Find the triangles for these vertex numbers
         tri_row_inds = np.sort(np.array(list(set(np.where(np.in1d(cortex['tri'][:,0],vertnums))[0]) & set(np.where(np.in1d(cortex['tri'][:,1],vertnums))[0]) & set(np.where(np.in1d(cortex['tri'][:,2],vertnums))[0]))))
@@ -1785,10 +1770,10 @@ class freeCoG:
         if showfig:
             import plotting.ctmr_brain_plot as ctmr_brain_plot   
             import mayavi
-            mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
             mlab.show()
 
-        scipy.io.savemat(os.path.join(self.mesh_dir,'%s_%s_trivert.mat'%(hem, roi_name)), roi_mesh)
+        scipy.io.savemat(outfile, roi_mesh)
 
     def write_to_obj(self, hem=None, roi_name='pial'):
         '''This function writes the mesh for a given roi to .obj format.'''
