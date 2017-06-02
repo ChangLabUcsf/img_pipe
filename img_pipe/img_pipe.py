@@ -982,6 +982,8 @@ class freeCoG:
         if warp_depths and warp_surface:
             scipy.io.savemat(elecfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
             
+            # Use 1-indexed electrodes
+            self.zero_indexed_electrodes = False
             self.plot_recon_anatomy_compare_warped(elecfile_prefix=elecfile_prefix)
 
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
