@@ -1485,7 +1485,7 @@ class freeCoG:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
 
-        e = self.get_elecs(elecfile_prefix = elecfile_prefix)
+        e = self.get_elecs(elecfile_prefix=elecfile_prefix)
 
         # Plot the pial surface
         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
@@ -1787,13 +1787,19 @@ class freeCoG:
     def plot_all_surface_rois(self, bgcolor=(0, 0, 0), size=(1200, 900), color_dict=None, screenshot=False, showfig=True,
                               **kwargs):
         """
-        plots all of the surface rios for a given subject.
-        :param bgcolor (tuple):
-        :param size (tuple):
-        :param color_dict: freesurfer roi name -> color (tuple)
-        :param screenshot (bool):
-        :param showfig (bool):
-        :param kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
+        Plots all of the surface rios for a given subject.
+
+        Parameters
+        ----------
+        bgcolor: tuple
+        size: tuple
+            size of mlab figure
+        color_dict: dict
+            freesurfer roi name -> color (tuple)
+        screenshot: bool
+        showfig: bool
+        kwargs: dict
+            goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
         """
         from mayavi import mlab
         from plotting.ctmr_brain_plot import ctmr_gauss_plot
@@ -1827,3 +1833,4 @@ class freeCoG:
 
         if showfig:
             mlab.show()
+
