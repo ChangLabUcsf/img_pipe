@@ -1037,9 +1037,9 @@ class freeCoG:
         orig_file = os.path.join(self.mri_dir, 'orig.mgz')
         affine_file = os.path.join(self.mri_dir, 'affine_subj.txt')
         os.system('mri_info --vox2ras %s > %s'%(orig_file, affine_file))
-        affine_subj = np.loadtxt(affine_file)
+        #affine_subj = np.loadtxt(affine_file)
 
-        affine_template = np.loadtxt(os.path.join(self.subj_dir, '%s_affine_subj.txt'%(template_brain)))
+        #affine_template = np.loadtxt(os.path.join(self.subj_dir, '%s_affine_subj.txt'%(template_brain)))
 
         elec = VoxCRS
         elec = elec[:,0:3]
@@ -1094,7 +1094,6 @@ class freeCoG:
                 print("Creating mesh %s"%(atlas_file))
                 atlas_patient.convert_fsmesh2mlab()
 
-            cortex_targ = scipy.io.loadmat(atlas_file)
             elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['elecmatrix']
             anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename+'.mat'))['anatomy']
 
@@ -1477,7 +1476,6 @@ class freeCoG:
         return mesh, points, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
-        import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
@@ -1498,11 +1496,6 @@ class freeCoG:
         # Import freesurfer color lookup table as a dictionary
         cmap = FS_colorLUT.get_lut()
 
-        # Make a list of electrode numbers
-        if self.zero_indexed_electrodes:
-            elec_numbers = np.arange(e['elecmatrix'].shape[0])
-        else:
-            elec_numbers = np.arange(e['elecmatrix'].shape[0])+1
         if self.hem=='lh':
             label_offset=-1.5
         elif self.hem=='rh':
@@ -1530,11 +1523,11 @@ class freeCoG:
             elec_colors[elec_indices,:] = el_color
 
         if self.zero_indexed_electrodes:
-            elec_nums = range(e['elecmatrix'].shape[0])
+            elec_numbers = range(e['elecmatrix'].shape[0])
         else:
-            elec_nums = range(1,e['elecmatrix'].shape[0]+1)
+            elec_numbers = range(1,e['elecmatrix'].shape[0]+1)
 
-        ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_nums, label_offset=label_offset)
+        ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_numbers, label_offset=label_offset)
 
         if self.hem=='lh':
             azimuth=180
@@ -1625,7 +1618,6 @@ class freeCoG:
     def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
         the native space and warped electrodes for ease of comparison/quality control.'''
-        import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
@@ -1727,7 +1719,6 @@ class freeCoG:
             else:
                 hem = self.hem
 
-        outfile = os.path.join(self.mesh_dir, '%s_%s_%s.mat'%(self.subj, hem, roi_name))
         cortex = self.get_surf(hem=hem)
 
         roi_mesh = {}
@@ -1758,7 +1749,6 @@ class freeCoG:
 
         if showfig:
             import plotting.ctmr_brain_plot as ctmr_brain_plot   
-            import mayavi
             mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
             mlab.show()
 
