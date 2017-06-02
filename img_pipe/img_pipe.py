@@ -70,7 +70,7 @@ class freeCoG:
         self.patient_dir = os.path.join(self.subj_dir, self.subj)
         self.hem = hem
         self.img_pipe_dir = os.path.dirname(os.path.realpath(__file__))
-        self.zero_indexed_electrodes = True
+        self.zero_indexed_electrodes = zero_indexed_electrodes
 
         #Freesurfer home directory
         self.fs_dir = fs_dir
@@ -982,8 +982,6 @@ class freeCoG:
         if warp_depths and warp_surface:
             scipy.io.savemat(elecfile_warped,{'elecmatrix':orig_elecs['elecmatrix'],'anatomy':orig_elecs['anatomy']})
             
-            # Use 1-indexed electrodes
-            self.zero_indexed_electrodes = False
             self.plot_recon_anatomy_compare_warped(elecfile_prefix=elecfile_prefix)
 
             if not os.path.isdir(os.path.join(self.elecs_dir, 'warps_preproc')):
@@ -1647,8 +1645,10 @@ class freeCoG:
 
         # Make a list of electrode numbers
         if self.zero_indexed_electrodes:
+            print("Using zero indexed electrodes")
             elec_numbers = np.arange(subj_e['elecmatrix'].shape[0])
         else:
+            print("Using one indexed electrodes")
             elec_numbers = np.arange(subj_e['elecmatrix'].shape[0])+1
 
         # Find all the unique brain areas in this subject
