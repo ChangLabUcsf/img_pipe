@@ -21,7 +21,8 @@
         mlab.show()  
 
 Modified for use in python from MATLAB code originally written by 
-Kai Miller (ctmr_gui)
+Kai Miller and Dora Hermes (ctmr_gui, see https://github.com/dorahermes/Paper_Hermes_2010_JNeuroMeth)
+
 '''
 
 import scipy.io
