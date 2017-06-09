@@ -848,8 +848,24 @@ class freeCoG:
 
     def edit_elecs_all(self, revision_dict, elecfile_prefix='TDT_elecs_all'):
         '''Edit the anatomy matrix of the elecfile_prefix. 
-        In each entry of the revision_dict, the key is the anatomical label you'd like to impose on the value, which is a list of 0-indexed electrode numbers.
-        For example, edit_elecs_all({'superiortemporal':[3,4,5],'precentral':[23,25,36]}).
+        
+        Parameters
+        ----------
+        revision_dict : dict
+                        In each entry of the revision_dict, the key is the anatomical label 
+                        you'd like to impose on the value, which is a list of 0-indexed electrode numbers.
+                        For example, revision_dict = {'superiortemporal':[3,4,5],'precentral':[23,25,36]}
+                        would change electrodes 3, 4, and 5 to superiortemporal and 23, 25, and 36 to 
+                        precentral.
+        elecfile_prefix : str, optional
+                          prefix of the .mat file with the electrode coordinates matrix
+
+        Returns
+        -------
+        elecs_all : dict
+                    Dictionary with keys 'elecmatrix' (list of coordinates) and 'anatomy'
+                    (anatomical labels for each electrode)
+
         '''
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
         elecs_all = scipy.io.loadmat(elecfile)
@@ -862,9 +878,27 @@ class freeCoG:
         elecs_all['anatomy'] = anatomy
         scipy.io.savemat(elecfile, elecs_all)
 
+        return elecs_all
+
     def nearest_electrode_vert(self, cortex_verts, elecmatrix):
         ''' Find the vertex on a mesh that is closest to the given electrode
-        coordinates.'''
+        coordinates.
+        
+        Parameters
+        ----------
+        cortex_verts : array-like
+                       [nvertices x 3] matrix of vertices on the cortical surface mesh
+        elecmatrix : array-like
+                     [nchans x 3] matrix of 3D electrode coordinates 
+
+        Returns
+        -------
+        vert_inds : array-like
+                    Array of vertex indices that are closest to each of the 
+                    electrode 
+        nearest_verts : array-like
+                        Coordinates for the nearest cortical vertices
+        '''
 
         nchans = elecmatrix.shape[0]
         d = np.zeros((nchans, cortex_verts.shape[0]))
@@ -886,7 +920,25 @@ class freeCoG:
         ''' Automatically labels electrodes based on the freesurfer annotation file.
         Assumes TDT_elecs_all.mat or clinical_elecs_all.mat files
         Uses both the Desikan-Killiany Atlas and the Destrieux Atlas, as described 
-        here: https://surfer.nmr.mgh.harvard.edu/fswiki/CorticalParcellation'''
+        here: https://surfer.nmr.mgh.harvard.edu/fswiki/CorticalParcellation
+        
+        Parameters
+        ----------
+        elecfile_prefix : str, optional
+                          prefix of the .mat file with the electrode coordinates matrix
+        atlas_surf : {'desikan-killiany', 'destrieux'}
+                     The atlas to use for labeling of surface electrodes.
+        atlas_depth : {'destrieux', 'desikan-killiany'}
+                      The atlas to use for labeling of depth electrodes.
+        elecs_all : bool
+                    Label all electrodes
+        
+        Returns
+        -------
+        elec_labels : array-like
+                      [nchans x 4] matrix of electrode labels. Columns include short name,
+                      long name, 'grid'/'depth'/'strip' label, and assigned anatomical label.
+        '''
 
         if atlas_surf == 'desikan-killiany':
             surf_atlas_flag = ''
@@ -1073,10 +1125,23 @@ class freeCoG:
 
     def warp_all(self, elecfile_prefix='TDT_elecs_all', warp_depths=True, warp_surface=True, template='cvs_avg35_inMNI152'):
         ''' Warps surface and depth electrodes and runs quality checking functions for them. 
-        elecfile_prefix: the name of the .mat file with the electrode coordinates in elecmatrix
-        warp_depths: whether to warp depth electrodes
-        warp_surface: whether to warp surface electrodes 
-        template: which atlas brain to use 
+
+        Parameters
+        ----------
+        elecfile_prefix : str, optional
+                          the name of the .mat file with the electrode coordinates in elecmatrix
+        warp_depths : bool, optional
+                      whether to warp depth electrodes
+        warp_surface : bool, optional
+                       whether to warp surface electrodes 
+        template : str, optional
+                   which atlas brain to use (default: 'cvs_avg35_inMNI152').  Must be an atlas
+                   in the freesurfer subjects directory.
+
+        Returns
+        -------
+        Creates the file depthWarpsQC.pdf in patient.elecs_dir, which can be used for depth warping
+        quality checking. 
         '''
 
         print("Using %s as the template for warps"%(template))
@@ -1145,7 +1210,20 @@ class freeCoG:
 
     def get_cvsWarp(self, template='cvs_avg35_inMNI152', openmp_threads=4):
         '''Method for obtaining nonlinearly warped MNI coordinates using 
-        freesurfer's mri_cvs_register'''
+        freesurfer's mri_cvs_register
+        
+        Parameters
+        ----------
+        template : str, optional
+                   Template brain for nonlinear warp (default is 'cvs_avg35_inMNI152')
+        openmp_threads : int, optional
+                         Number of openmp threads for parallelization of mri_cvs_register
+
+        Returns
+        -------
+        None.
+
+        '''
 
         # run cvs register
         orig = self.subj  # orig is mri in fs orig space
@@ -1155,7 +1233,20 @@ class freeCoG:
         print('cvsWarp COMPUTED')
 
     def apply_cvsWarp(self, elecfile_prefix='TDT_elecs_all',template_brain='cvs_avg35_inMNI152'):
-        ''' Apply the CVS warp from mri_cvs_register to the electrode file of your choice. '''
+        ''' Apply the CVS warp from mri_cvs_register to the electrode file of your choice. 
+        
+        Parameters
+        ----------
+        elecfile_prefix : str, optional
+                          the name of the .mat file with the electrode coordinates in elecmatrix
+        template_brain : str, optional
+                        Template brain for nonlinear warp (default is 'cvs_avg35_inMNI152')
+    
+        Returns
+        -------
+        elecmatrix : array-like
+                     [nchans x 3] electrode matrix after nonlinear warping
+        '''
 
         elecmatrix = np.empty((0, 4), int)
 
@@ -1220,10 +1311,22 @@ class freeCoG:
         nearest_warped_matfile = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.mat')
         scipy.io.savemat(nearest_warped_matfile, {'elecmatrix': elecmatrix, 'anatomy': anatomy})
 
+        return elecmatrix
+
     # Method to perform surface warps
     def get_surface_warp(self, basename='TDT_elecs_all', template='cvs_avg35_inMNI152'):
         ''' Perform surface warps on [basename].mat file, warping to template [template]
-        which should also be present in the freesurfer $SUBJECTS_DIR'''               
+        which should also be present in the freesurfer $SUBJECTS_DIR
+        
+        Parameters
+        ----------
+        basename : str, optional
+                   prefix of the .mat file with the electrode coordinates matrix 
+        template : str, optional
+                   Name of the template atlas for performing the surface warp 
+                   (default: 'cvs_avg35_inMNI152')
+
+        '''               
         
         elecfile = os.path.join(self.elecs_dir,'%s_surface_warped.mat'%(basename))
 
@@ -1296,7 +1399,24 @@ class freeCoG:
     def check_depth_warps(self, elecfile_prefix='TDT_elecs_all',template='cvs_avg35_inMNI152',atlas_depth='destrieux'):
         ''' Function to check whether warping of depths in mri_cvs_register worked properly. 
         Generates a pdf file with one page for each depth electrode, showing that electrode
-        in the original surface space as well as in warped CVS space.  '''
+        in the original surface space as well as in warped CVS space.  
+        
+        Parameters
+        ----------
+        elecfile_prefix : str, optional
+                          prefix of the .mat file with the electrode coordinates matrix 
+        template : str
+                   Name of the atlas template to use
+        atlas_depth : {'destrieux', 'desikan-killiany'}
+                      Which atlas to use for depth labeling. Destrieux is more detailed 
+                      so is usually a good choice for depth electrodes.
+
+        Returns
+        -------
+        Creates depthWarpsQC.pdf in patient.elecs_dir, which can be used to do quality
+        checking on the depth warping.
+
+        '''
         #get all subj elecs
         RAS_file = os.path.join(self.elecs_dir, '%s_RAS.txt'%(elecfile_prefix))
         subj_elecs,subj_elecnums = self.get_depth_elecs(RAS_file,'\n','\t',elecfile_prefix)
@@ -1327,8 +1447,17 @@ class freeCoG:
         pdf.close()
 
     def apply_transform(self, elecfile_prefix, reorient_file):
-        ''' Apply an affine transform to an electrode file.  
-        for example:
+        ''' Apply an affine transform (from SPM) to an electrode file.  
+
+        Parameters
+        ----------
+        elecfile_prefix : str
+                          prefix of the .mat file with the electrode coordinates matrix 
+        reorient_file : str
+                        Name of the mat file containing an SPM reorient matrix.
+
+        Example
+        -------
              patient.apply_transform(elecfile_prefix = 'TDT_elecs_all', reorient_file = 'T1_reorient')
         assumes transform is located in the subject's acpc directory
         '''
@@ -1620,6 +1749,24 @@ class freeCoG:
         return mesh, points, mlab
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
+        '''
+        Plot the brain along with all of the anatomically labeled electrodes, colored by location using freesurfer
+        color lookup table.
+
+        Parameters
+        ----------
+        elecfile_prefix : str, optional
+                        prefix of the .mat file with the electrode coordinates matrix 
+        template : str, optional
+                   Name of the template to use if plotting electrodes on an atlas brain
+        showfig : bool
+                  Whether to show the figure or not
+        screenshot : bool
+                     Whether to take a 2D screenshot or not
+        opacity : float (from 0.0 to 1.0)
+                  opacity of the brain surface mesh.
+
+        '''
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
@@ -1694,6 +1841,19 @@ class freeCoG:
         return mesh, mlab
 
     def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False, anat_colored=True):
+        ''' Plot ERPs as traces on the brain surface.
+
+        Parameters
+        ----------
+        erp_matrix : array like
+        elecfile_prefix : str, optional
+                          prefix of the .mat file with the electrode coordinates matrix 
+        time_scale_factor : float
+        z_scale_factor : float
+        showfig : bool
+        screenshot : bool
+        anat_colored : bool
+        '''
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
         #use mean normal vector
         #no anat color map option
@@ -1761,7 +1921,23 @@ class freeCoG:
 
     def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
-        the native space and warped electrodes for ease of comparison/quality control.'''
+        the native space and warped electrodes for ease of comparison/quality control.
+        
+        Parameters
+        ----------
+        template : str, optional
+                   which atlas brain to use (default: 'cvs_avg35_inMNI152').  Must be an atlas
+                   in the freesurfer subjects directory.
+        elecfile_prefix : str, optional
+                          prefix of the .mat file with the electrode coordinates matrix 
+        showfig : bool
+                  Whether to show the figure
+        screenshot : bool
+                     Whether to take a 2D screenshot
+        opacity : float (must be between 0.0 and 1.0)
+                  Opacity of surface meshes
+
+        '''
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
@@ -1841,20 +2017,34 @@ class freeCoG:
     def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False, save=True):
 
         ''' This function makes a mesh for the cortical ROI you are interested in. Here are the list of labels you can put in your label_list.
-        roi_name: what you want to call your mesh, note that the hemisphere will be prepended to this name
-        label_list: list of labels, selected from the list below
-
-        [bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
-        caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
-        caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
-        cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
-        entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
-        frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
-        fusiform                lingual                 parstriangularis        rostralmiddlefrontal]
         
-        If save=True, this mesh is saved to the $SUBJECTS_DIR/Meshes/. 
-        This function returns the roi_mesh dictionary, which contains roi_mesh['tri'] and roi_mesh['vert']
-        and can be used in plotting commands.
+        Parameters
+        ----------
+        roi_name : str
+                   what you want to call your mesh, note that the hemisphere will be prepended to this name
+        label_list : list 
+                     A list of labels, selected from the list below
+
+                    [bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
+                    caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
+                    caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
+                    cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
+                    entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
+                    frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
+                    fusiform                lingual                 parstriangularis        rostralmiddlefrontal]
+        
+        hem : {None, 'lh', 'rh'}
+              If None, defaults to the implantation hemisphere.  Otherwise uses the hemisphere specified by the user.
+        showfig : bool
+                  Show figure or not.
+        save : bool
+               If save=True, this mesh is saved to the $SUBJECTS_DIR/Meshes/.  Otherwise it is not saved.
+
+        Returns
+        -------
+        roi_mesh : dict
+                   A dictionary that contains roi_mesh['tri'] and roi_mesh['vert']
+                   and can be used in plotting commands for the region of interest triangle-vertex mesh.
 
         '''
 
@@ -1906,7 +2096,16 @@ class freeCoG:
         return roi_mesh
 
     def write_to_obj(self, hem=None, roi_name='pial'):
-        '''This function writes the mesh for a given roi to .obj format.'''
+        '''This function writes the mesh for a given roi to .obj format.
+        
+        Parameters
+        ----------
+        hem : str, optional
+              The hemisphere of the region of interest (ROI)
+        roi_name : str, optional
+                   The name of the ROI mesh.
+
+        '''
         if hem==None:
             hem = self.hem
         cortex = self.get_surf(roi=roi_name, hem=hem)
@@ -1926,16 +2125,24 @@ class freeCoG:
                               **kwargs):
         """
         Plots all of the surface rois for a given subject. Uses colors from the Freesurfer Color lookup table (LUT)
-	by default.
+	    by default.
         
-	:param bgcolor (tuple):
-        :param size (tuple):
-        :param color_dict: freesurfer roi name -> color (tuple)
-        :param screenshot (bool):
-        :param showfig (bool):
-        :param kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
+        Parameters
+        ----------
+	    bgcolor : tuple
+                  background color
+        size : tuple
+               figure size
+        color_dict: tuple
+                    freesurfer roi name -> color 
+        screenshot : bool
+                     Whether or not to take a screenshot of the mayavi plot
+        showfig : bool
+                  show figure or not.
+        kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
+
+        """
         
-	"""
         from mayavi import mlab
         from plotting.ctmr_brain_plot import ctmr_gauss_plot
 
