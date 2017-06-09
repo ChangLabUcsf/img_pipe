@@ -66,40 +66,39 @@ class freeCoG:
     Attributes
     ----------
     subj : str
-           The subject ID.
+        The subject ID.
     subj_dir : str
-               The subjects directory where the data live.
+        The subjects directory where the data live.
     patient_dir : str
-                  The directory containing data for this particular patient.
-                  Usually [subj_dir]/[subj]
+        The directory containing data for this particular patient.
+        Usually [subj_dir]/[subj]
     hem : str
-          The hemisphere of implantation
+        The hemisphere of implantation
     img_pipe_dir : str
-                   The path to img_pipe code.
+        The path to img_pipe code.
     zero_indexed_electrodes : bool
-                              Whether zero-indexed electrode numbers are used (True)
-                              or not (False)
+        Whether zero-indexed electrode numbers are used (True)
+        or not (False)
     fs_dir : str
-             Path to the freesurfer installation
+        Path to the freesurfer installation
     CT_dir : str
-             Path to the CT scan
+        Path to the CT scan
     elecs_dir : str
-                Path to the marked electrode file locations
+        Path to the marked electrode file locations
     mesh_dir : str
-               Path to the generated triangle-mesh surfaces (pial, subcortical, etc.)
+        Path to the generated triangle-mesh surfaces (pial, subcortical, etc.)
     pial_surf_file : dict
-                     Dictionary containing full file with path for the left and right pial surfaces.
-                     Left pial surface is pial_surf_file['lh'] and right pial surface is
-                     pial_surf_file['rh']
+        Dictionary containing full file with path for the left and right pial surfaces.
+        Left pial surface is pial_surf_file['lh'] and right pial surface is
+        pial_surf_file['rh']
     surf_dir : str
-               The freesurfer surf directory for this patient.
+        The freesurfer surf directory for this patient.
     mri_dir : str
-              The freesurfer MRI directory for this patient.
-
+        The freesurfer MRI directory for this patient.
 
     Returns
     ----------
-    patient
+    patient : <img_pipe.freeCoG instance>
         patient object, including information about subject ID, hemisphere, where data live, 
         and related functions for creating surface reconstructions and/or plotting.    
 
@@ -112,17 +111,17 @@ class freeCoG:
         Parameters
         ----------       
         subj : str 
-               The subject ID (e.g. 'SUBJ_25')     
+            The subject ID (e.g. 'SUBJ_25')     
         hem : {'lh', 'rh', 'stereo'}
-              The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.        
+            The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.        
         zero_indexed_electrodes: bool, optional
-                                 Whether or not to use zero-indexing for the electrode numbers (default: True)
+            Whether or not to use zero-indexing for the electrode numbers (default: True)
         fs_dir : str, optional
-                 Path to the freesurfer install (default is $FREESURFER_HOME environmental variable) 
+            Path to the freesurfer install (default is $FREESURFER_HOME environmental variable) 
     
         Returns
         ----------   
-        patient
+        patient : <img_pipe.freeCoG instance>
             patient object, including information about subject ID, hemisphere, where data live, 
             and related functions for creating surface reconstructions and/or plotting.    
         '''
@@ -200,11 +199,19 @@ class freeCoG:
 
     def get_recon(self, flag_T3 = '-3T', openmp_flag='-openmp 12', gpu_flag=''):        
         '''Runs freesurfer recon-all for surface reconstruction.                
-        Use flag_T3 = '-3T' if using scans from a 3T scanner, otherwise set flag_T3=''             
-        openmp_flag = '-openmp 12' uses 12 cores and multithreading         
-        to make recon-all faster. Otherwise use openmp_flag = ''        
-        gpu_flag = '-use-gpu' if you want to run code on the GPU (some steps run faster)        
-            otherwise use gpu_flag='' '''       
+        
+        Parameters
+        ----------
+        flag_T3 : {'-3T', ''}
+            Choose '-3T' if using scans from a 3T scanner, otherwise set flag_T3=''             
+        openmp_flag : {'-openmp 12', ''}
+            First option uses 12 cores and multithreading to make recon-all faster. 
+            Otherwise use openmp_flag = ''        
+        gpu_flag : {'-use-gpu', ''}
+            Use flag '-use-gpu' if you want to run code on the GPU (some steps run faster)        
+            otherwise use gpu_flag='' 
+
+        '''       
         os.system('recon-all -subjid %s -sd %s -all %s %s %s' % (self.subj, self.subj_dir, flag_T3, openmp_flag, gpu_flag))
 
         self.pial_surf_file = dict()
@@ -245,11 +252,11 @@ class freeCoG:
         Parameters
         ----------  
         radius : float 
-                 radius for smoothing (currently ignored)
+            radius for smoothing (currently ignored)
         num_iter : int
-                Number of iterations for mris_smooth
+            Number of iterations for mris_smooth
         dilate : float
-                 Amount of dilation for dural surface (argument to mris_expand)
+            Amount of dilation for dural surface (argument to mris_expand)
 
         Returns
         ----------
@@ -349,16 +356,16 @@ class freeCoG:
 
         Parameters
         ----------
-            smooth : float
-                     a smoothing parameter in mm
-            reg_type : {'rigid', 'affine'}
-                       Registration type
-            interp : {'pv','tri'} 
-                     changes the interpolation method for resampling
-            xtol : float
-                   tolerance parameter for function minimization
-            ftol : float
-                   tolerance parmater for function minimization
+        smooth : float
+            a smoothing parameter in mm
+        reg_type : {'rigid', 'affine'}
+            Registration type
+        interp : {'pv','tri'} 
+            changes the interpolation method for resampling
+        xtol : float
+            tolerance parameter for function minimization
+        ftol : float
+            tolerance parmater for function minimization
 
             
         '''
@@ -392,11 +399,11 @@ class freeCoG:
         Parameters
         ----------
         nchans : {256, 20, 64}
-                 Number of channels in your grid. By default these include a 16 x 16 grid (256 channels),
-                 a 5 x 4 grid (20 channels), or an 8 x 8 grid (64 channels).
+            Number of channels in your grid. By default these include a 16 x 16 grid (256 channels),
+            a 5 x 4 grid (20 channels), or an 8 x 8 grid (64 channels).
         grid_basename : str
-                        The base name of the grid (e.g. 'hd_grid' if you have a corners file
-                        called hd_grid_corners.mat)
+            The base name of the grid (e.g. 'hd_grid' if you have a corners file
+            called hd_grid_corners.mat)
 
         '''
 
@@ -467,24 +474,24 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str, optional
-                          prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix 
         use_mean_normal : bool, optional
-                          whether to use mean normal vector (mean of the 4 normal vectors from the grids 
-                          corner electrodes) as the projection direction
+            whether to use mean normal vector (mean of the 4 normal vectors from the grids 
+            corner electrodes) as the projection direction
         surf_type : {'dural','pial','OFC'}, optional
-                    Which surface to project to.  In the case of the orbitofrontal cortex (OFC),
-                    it often works better to create a separate ROI of those brain structures and
-                    project to that, rather than to the pial or dural surface
+            Which surface to project to.  In the case of the orbitofrontal cortex (OFC),
+            it often works better to create a separate ROI of those brain structures and
+            project to that, rather than to the pial or dural surface
         num_iter : int, optional
-                   Number of iterations for dural surface creation
+            Number of iterations for dural surface creation
         dilate : float, optional
-                 Amount to dilate the dural surface
+            Amount to dilate the dural surface
         grid : bool, optional
-               whether the electrodes to project are from a grid that was interpolated using interp_grid()
+            Whether the electrodes to project are from a grid that was interpolated using interp_grid()
         convex_hull : bool, optional
-                      Whether to use the convex hull of the relevant surface or not.  Often
-                      this can result in a smoother looking projection rather than a "wavy"
-                      looking grid.
+            Whether to use the convex hull of the relevant surface or not.  Often
+            this can result in a smoother looking projection rather than a "wavy"
+            looking grid.
 
         Returns
         ---------
@@ -666,10 +673,10 @@ class freeCoG:
         Parameters
         ----------
         subcort : str
-                  Name of the subcortical mesh ascii file (e.g. aseg_058.asc).
-                  See get_subcort().
+            Name of the subcortical mesh ascii file (e.g. aseg_058.asc).
+            See get_subcort().
         nuc : str
-              Name of the subcortical nucleus (e.g. 'rAcumb')
+            Name of the subcortical nucleus (e.g. 'rAcumb')
         
         '''
 
@@ -768,14 +775,14 @@ class freeCoG:
         Parameters
         ----------
         input_list : list of tuples
-                     default is None which leads to the interactive prompts to create the elecs_all file, but you can
-                     input your own list of devices as a list of tuples, where each tuple is in the format
-                     (short_name, long_name, elec_type, filename). The filename is the elecmatrix .mat file of the 
-                     device, and should be in the elecs/individual_elecs folder. If you want to add NaN rows, 
-                     enter ('Nan','Nan','Nan',number_of_nan_rows), where in the fourth element you specify how many empty rows
-                     you'd like to add. 
+            default is None which leads to the interactive prompts to create the elecs_all file, but you can
+            input your own list of devices as a list of tuples, where each tuple is in the format
+            (short_name, long_name, elec_type, filename). The filename is the elecmatrix .mat file of the 
+            device, and should be in the elecs/individual_elecs folder. If you want to add NaN rows, 
+            enter ('Nan','Nan','Nan',number_of_nan_rows), where in the fourth element you specify how many empty rows
+            you'd like to add. 
         outfile : str
-                  the name of the file you want to save to, specify this if not using the interactive version
+            the name of the file you want to save to, specify this if not using the interactive version
 
         Usage
         -----
@@ -852,19 +859,19 @@ class freeCoG:
         Parameters
         ----------
         revision_dict : dict
-                        In each entry of the revision_dict, the key is the anatomical label 
-                        you'd like to impose on the value, which is a list of 0-indexed electrode numbers.
-                        For example, revision_dict = {'superiortemporal':[3,4,5],'precentral':[23,25,36]}
-                        would change electrodes 3, 4, and 5 to superiortemporal and 23, 25, and 36 to 
-                        precentral.
+            In each entry of the revision_dict, the key is the anatomical label 
+            you'd like to impose on the value, which is a list of 0-indexed electrode numbers.
+            For example, revision_dict = {'superiortemporal':[3,4,5],'precentral':[23,25,36]}
+            would change electrodes 3, 4, and 5 to superiortemporal and 23, 25, and 36 to 
+            precentral.
         elecfile_prefix : str, optional
-                          prefix of the .mat file with the electrode coordinates matrix
+            prefix of the .mat file with the electrode coordinates matrix
 
         Returns
         -------
         elecs_all : dict
-                    Dictionary with keys 'elecmatrix' (list of coordinates) and 'anatomy'
-                    (anatomical labels for each electrode)
+            Dictionary with keys 'elecmatrix' (list of coordinates) and 'anatomy'
+            (anatomical labels for each electrode)
 
         '''
         elecfile = os.path.join(self.elecs_dir, elecfile_prefix+'.mat')
@@ -887,17 +894,17 @@ class freeCoG:
         Parameters
         ----------
         cortex_verts : array-like
-                       [nvertices x 3] matrix of vertices on the cortical surface mesh
+            [nvertices x 3] matrix of vertices on the cortical surface mesh
         elecmatrix : array-like
-                     [nchans x 3] matrix of 3D electrode coordinates 
+            [nchans x 3] matrix of 3D electrode coordinates 
 
         Returns
         -------
         vert_inds : array-like
-                    Array of vertex indices that are closest to each of the 
-                    electrode 
+            Array of vertex indices that are closest to each of the 
+            electrode 
         nearest_verts : array-like
-                        Coordinates for the nearest cortical vertices
+            Coordinates for the nearest cortical vertices
         '''
 
         nchans = elecmatrix.shape[0]
@@ -925,19 +932,19 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str, optional
-                          prefix of the .mat file with the electrode coordinates matrix
+            prefix of the .mat file with the electrode coordinates matrix
         atlas_surf : {'desikan-killiany', 'destrieux'}
-                     The atlas to use for labeling of surface electrodes.
+            The atlas to use for labeling of surface electrodes.
         atlas_depth : {'destrieux', 'desikan-killiany'}
-                      The atlas to use for labeling of depth electrodes.
+            The atlas to use for labeling of depth electrodes.
         elecs_all : bool
-                    Label all electrodes
+            Label all electrodes
         
         Returns
         -------
         elec_labels : array-like
-                      [nchans x 4] matrix of electrode labels. Columns include short name,
-                      long name, 'grid'/'depth'/'strip' label, and assigned anatomical label.
+            [nchans x 4] matrix of electrode labels. Columns include short name,
+            long name, 'grid'/'depth'/'strip' label, and assigned anatomical label.
         '''
 
         if atlas_surf == 'desikan-killiany':
@@ -1129,14 +1136,14 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str, optional
-                          the name of the .mat file with the electrode coordinates in elecmatrix
+            the name of the .mat file with the electrode coordinates in elecmatrix
         warp_depths : bool, optional
-                      whether to warp depth electrodes
+            whether to warp depth electrodes
         warp_surface : bool, optional
-                       whether to warp surface electrodes 
+            whether to warp surface electrodes 
         template : str, optional
-                   which atlas brain to use (default: 'cvs_avg35_inMNI152').  Must be an atlas
-                   in the freesurfer subjects directory.
+            which atlas brain to use (default: 'cvs_avg35_inMNI152').  Must be an atlas
+            in the freesurfer subjects directory.
 
         Returns
         -------
@@ -1215,9 +1222,9 @@ class freeCoG:
         Parameters
         ----------
         template : str, optional
-                   Template brain for nonlinear warp (default is 'cvs_avg35_inMNI152')
+            Template brain for nonlinear warp (default is 'cvs_avg35_inMNI152')
         openmp_threads : int, optional
-                         Number of openmp threads for parallelization of mri_cvs_register
+            Number of openmp threads for parallelization of mri_cvs_register
 
         Returns
         -------
@@ -1238,14 +1245,14 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str, optional
-                          the name of the .mat file with the electrode coordinates in elecmatrix
+            the name of the .mat file with the electrode coordinates in elecmatrix
         template_brain : str, optional
-                        Template brain for nonlinear warp (default is 'cvs_avg35_inMNI152')
+            Template brain for nonlinear warp (default is 'cvs_avg35_inMNI152')
     
         Returns
         -------
         elecmatrix : array-like
-                     [nchans x 3] electrode matrix after nonlinear warping
+            [nchans x 3] electrode matrix after nonlinear warping
         '''
 
         elecmatrix = np.empty((0, 4), int)
@@ -1321,10 +1328,10 @@ class freeCoG:
         Parameters
         ----------
         basename : str, optional
-                   prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix 
         template : str, optional
-                   Name of the template atlas for performing the surface warp 
-                   (default: 'cvs_avg35_inMNI152')
+            Name of the template atlas for performing the surface warp 
+            (default: 'cvs_avg35_inMNI152')
 
         '''               
         
@@ -1404,12 +1411,12 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str, optional
-                          prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix 
         template : str
-                   Name of the atlas template to use
+            Name of the atlas template to use
         atlas_depth : {'destrieux', 'desikan-killiany'}
-                      Which atlas to use for depth labeling. Destrieux is more detailed 
-                      so is usually a good choice for depth electrodes.
+            Which atlas to use for depth labeling. Destrieux is more detailed 
+            so is usually a good choice for depth electrodes.
 
         Returns
         -------
@@ -1452,9 +1459,9 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str
-                          prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix 
         reorient_file : str
-                        Name of the mat file containing an SPM reorient matrix.
+            Name of the mat file containing an SPM reorient matrix.
 
         Example
         -------
@@ -1926,16 +1933,16 @@ class freeCoG:
         Parameters
         ----------
         template : str, optional
-                   which atlas brain to use (default: 'cvs_avg35_inMNI152').  Must be an atlas
-                   in the freesurfer subjects directory.
+            which atlas brain to use (default: 'cvs_avg35_inMNI152').  Must be an atlas
+            in the freesurfer subjects directory.
         elecfile_prefix : str, optional
-                          prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix 
         showfig : bool
-                  Whether to show the figure
+            Whether to show the figure
         screenshot : bool
-                     Whether to take a 2D screenshot
+            Whether to take a 2D screenshot
         opacity : float (must be between 0.0 and 1.0)
-                  Opacity of surface meshes
+            Opacity of surface meshes
 
         '''
         import plotting.ctmr_brain_plot as ctmr_brain_plot
@@ -2021,30 +2028,30 @@ class freeCoG:
         Parameters
         ----------
         roi_name : str
-                   what you want to call your mesh, note that the hemisphere will be prepended to this name
+            what you want to call your mesh, note that the hemisphere will be prepended to this name
         label_list : list 
-                     A list of labels, selected from the list below
+             A list of labels, selected from the list below
 
-                    [bankssts             inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
-                    caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
-                    caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
-                    cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
-                    entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
-                    frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
-                    fusiform                lingual                 parstriangularis        rostralmiddlefrontal]
+            [bankssts               inferiorparietal        medialorbitofrontal     pericalcarine             superiorfrontal
+            caudalanteriorcingulate inferiortemporal        middletemporal          postcentral               superiorparietal
+            caudalmiddlefrontal     insula                  paracentral             posteriorcingulate        superiortemporal
+            cuneus                  isthmuscingulate        parahippocampal         precentral                supramarginal
+            entorhinal              lateraloccipital        parsopercularis         precuneus                 temporalpole
+            frontalpole             lateralorbitofrontal    parsorbitalis           rostralanteriorcingulate  transversetemporal
+            fusiform                lingual                 parstriangularis        rostralmiddlefrontal]
         
         hem : {None, 'lh', 'rh'}
-              If None, defaults to the implantation hemisphere.  Otherwise uses the hemisphere specified by the user.
+            If None, defaults to the implantation hemisphere.  Otherwise uses the hemisphere specified by the user.
         showfig : bool
-                  Show figure or not.
+            Show figure or not.
         save : bool
-               If save=True, this mesh is saved to the $SUBJECTS_DIR/Meshes/.  Otherwise it is not saved.
+            If save=True, this mesh is saved to the $SUBJECTS_DIR/Meshes/.  Otherwise it is not saved.
 
         Returns
         -------
         roi_mesh : dict
-                   A dictionary that contains roi_mesh['tri'] and roi_mesh['vert']
-                   and can be used in plotting commands for the region of interest triangle-vertex mesh.
+            A dictionary that contains roi_mesh['tri'] and roi_mesh['vert']
+            and can be used in plotting commands for the region of interest triangle-vertex mesh.
 
         '''
 
@@ -2101,9 +2108,9 @@ class freeCoG:
         Parameters
         ----------
         hem : str, optional
-              The hemisphere of the region of interest (ROI)
+            The hemisphere of the region of interest (ROI)
         roi_name : str, optional
-                   The name of the ROI mesh.
+            The name of the ROI mesh.
 
         '''
         if hem==None:
@@ -2130,15 +2137,15 @@ class freeCoG:
         Parameters
         ----------
         bgcolor : tuple
-                  background color
+            background color
         size : tuple
-               figure size
+            figure size
         color_dict: tuple
-                    freesurfer roi name -> color 
+            freesurfer roi name -> color 
         screenshot : bool
-                     Whether or not to take a screenshot of the mayavi plot
+            Whether or not to take a screenshot of the mayavi plot
         showfig : bool
-                  show figure or not.
+            show figure or not.
         kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
 
         """
