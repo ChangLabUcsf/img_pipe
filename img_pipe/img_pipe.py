@@ -255,8 +255,8 @@ class freeCoG:
         ----------
         None
 
-
         '''
+        
         from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
         # Create mask of pial surface
         hems = ['lh', 'rh']
@@ -492,7 +492,7 @@ class freeCoG:
 
         '''
         
-	   from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
+        from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
                Surface Type: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
@@ -2125,11 +2125,11 @@ class freeCoG:
                               **kwargs):
         """
         Plots all of the surface rois for a given subject. Uses colors from the Freesurfer Color lookup table (LUT)
-	    by default.
+        by default.
         
         Parameters
         ----------
-	    bgcolor : tuple
+        bgcolor : tuple
                   background color
         size : tuple
                figure size
