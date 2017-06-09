@@ -457,16 +457,40 @@ class freeCoG:
                                  surf_type='dural', \
                                  num_iter=30, dilate=0.0, grid=True,
                                  convex_hull=False):
-        '''elecfile_prefix: prefix of the .mat file with the electrode coordinates matrix 
-        use_mean_normal: whether to use mean normal vector (mean of the 4 normal vectors from the grid's 
-        corner electrodes) as the projection direction
-        surf_type: 'dural' or 'pial'
-        num_iter: how many smoothing iterations when creating the dural surface
-        grid: whether the electrodes to project are from a grid that was interpolated using interp_grid()
+        '''
+        Project electrodes to the brain's surface to correct for deformation.
         
         By default, projects the electrodes of a grid based on the mean normal vector of the four grid
         corner electrodes that were manually localized from the registered CT. Can also project strips
-        and individual electrodes if a projection direction is provided.'''
+        and individual electrodes if grid=False (you will be prompted for a projection direction).
+        
+        Parameters
+        ----------
+        elecfile_prefix : str, optional
+                          prefix of the .mat file with the electrode coordinates matrix 
+        use_mean_normal : bool, optional
+                          whether to use mean normal vector (mean of the 4 normal vectors from the grids 
+                          corner electrodes) as the projection direction
+        surf_type : {'dural','pial','OFC'}, optional
+                    Which surface to project to.  In the case of the orbitofrontal cortex (OFC),
+                    it often works better to create a separate ROI of those brain structures and
+                    project to that, rather than to the pial or dural surface
+        num_iter : int, optional
+                   Number of iterations for dural surface creation
+        dilate : float, optional
+                 Amount to dilate the dural surface
+        grid : bool, optional
+               whether the electrodes to project are from a grid that was interpolated using interp_grid()
+        convex_hull : bool, optional
+                      Whether to use the convex hull of the relevant surface or not.  Often
+                      this can result in a smoother looking projection rather than a "wavy"
+                      looking grid.
+
+        Returns
+        ---------
+        None
+
+        '''
         
 	   from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
 
@@ -636,7 +660,18 @@ class freeCoG:
 
     def subcortFs2mlab(self, subcort, nuc):
         '''Function to convert freesurfer ascii subcort segmentations
-           to triangular mesh array .mat style.'''
+           to triangular mesh array .mat style. This helper function is
+           called by get_subcort().
+        
+        Parameters
+        ----------
+        subcort : str
+                  Name of the subcortical mesh ascii file (e.g. aseg_058.asc).
+                  See get_subcort().
+        nuc : str
+              Name of the subcortical nucleus (e.g. 'rAcumb')
+        
+        '''
 
         # use freesurfer mris_convert to get ascii subcortical surface
         subcort_ascii = subcort
@@ -729,17 +764,24 @@ class freeCoG:
     def make_elecs_all(self, input_list=None, outfile=None):
         '''Interactively creates a .mat file with the montage and coordinates of 
         all the elecs files in the /elecs_individual folder.
+        
+        Parameters
+        ----------
+        input_list : list of tuples
+                     default is None which leads to the interactive prompts to create the elecs_all file, but you can
+                     input your own list of devices as a list of tuples, where each tuple is in the format
+                     (short_name, long_name, elec_type, filename). The filename is the elecmatrix .mat file of the 
+                     device, and should be in the elecs/individual_elecs folder. If you want to add NaN rows, 
+                     enter ('Nan','Nan','Nan',number_of_nan_rows), where in the fourth element you specify how many empty rows
+                     you'd like to add. 
+        outfile : str
+                  the name of the file you want to save to, specify this if not using the interactive version
 
-        input_list: default is None which leads to the interactive prompts to create the elecs_all file, but you can
-                    input your own list of devices as a list of tuples, where each tuple is in the format
-                    (short_name, long_name, elec_type, filename). The filename is the elecmatrix .mat file of the 
-                    device, and should be in the elecs/individual_elecs folder. If you want to add NaN rows, 
-                    enter ('Nan','Nan','Nan',number_of_nan_rows), where in the fourth element you specify how many empty rows
-                    you'd like to add. 
-        outfile: the name of the file you want to save to, specify this if not using the interactive version
-
-        Example usage:
+        Usage
+        -----
         >>> patient.make_elecs_all(input_list=[('AD','AmygDepth','depth','amygdala_depth.mat'),('G','Grid','grid','hd_grid.mat'),('nan','nan','nan',5)], outfile='test_elecs_all_list')
+        
+        
         '''
         short_names,long_names, elec_types, elecmatrix_all = [],[],[], []
 
