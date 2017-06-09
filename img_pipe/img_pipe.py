@@ -1483,7 +1483,7 @@ class freeCoG:
         print("Done.")
 
      #helper method to check the cvs depth warps:
-    def plot_elec(self,orig_coords,warped_coords,subj_dat,cvs_dat,elec_num,pdf):
+    def plot_elec(self, orig_coords, warped_coords, subj_dat, cvs_dat, elec_num,pdf):
         ''' helper method to check the cvs depth warps. Each electrode is one page      
         in the resulting PDF.       
         Top row shows electrodes warped to the CVS brain, bottom row shows the electrodes       
@@ -1554,7 +1554,18 @@ class freeCoG:
 
     def get_depth_elecs(self, fpath, delim1, delim2, elecfile_prefix):
         ''' Helper method to check cvs depth warps.  This helper method         
-        just loads the electrode coordinates of the depth electrodes from the matlab file            
+        just loads the electrode coordinates of the depth electrodes from the matlab file
+
+        Parameters
+        ----------
+        fpath : str
+            Path to the RAS coordinates file
+        delim1 : str
+            First delimiter (usually '\n')
+        delim2 : str
+            Second delimiter (usually '\t')
+        elecfile_prefix : str
+            prefix of the .mat file with the electrode coordinates matrix            
         '''
         f = open(fpath,'r')
         elecs = (f.read().split(delim1))
@@ -1567,7 +1578,22 @@ class freeCoG:
         return depth_elecs,np.where(tdt_elec_types == 'depth')[0]
 
     def get_elecs(self, elecfile_prefix='TDT_elecs_all', roi=None):
-        '''utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region'''
+        '''Utility function to get electrode coordinate matrix of all electrodes in a certain anatomical region.
+
+        Parameters
+        ----------
+        elecfile_prefix : str
+            prefix of the .mat file with the electrode coordinates matrix 
+        roi : str
+            Which region of interest to load electrodes from.  See get_rois(). If roi=None,
+            returns all the electrodes.
+
+        Returns
+        -------
+        e : dict
+            Dictionary containing 'elecmatrix' and 'anatomy'
+
+        '''
 
         e = {'elecmatrix': [], 'anatomy': []}
         elecfile = os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix))
@@ -1579,19 +1605,30 @@ class freeCoG:
                 anatomy = e['anatomy'][roi_indices,:]
             else:
                 elecfile = scipy.io.loadmat(os.path.join(self.elecs_dir,'%s.mat'%(elecfile_prefix)))
-                #anatomy = elecfile['anatomy'][roi_indices,:]
                 return elecfile
-                #elecmatrix = elecfile['elecmatrix']
-                #anatomy = elecfile['anatomy']
-                #eleclabels = elecfile['eleclabels'][roi_indices,:]
-                #return elecmatrix #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
+
             e = {'elecmatrix': elecmatrix, 'anatomy': anatomy} #{'anatomy': anatomy, 'elecmatrix': elecmatrix, 'eleclabels': eleclabels}
         else:
             print('File not found: %s'%(elecfile))
         return e
 
     def get_surf(self, hem='', roi='pial'):
-        ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') '''
+        ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') 
+        
+        Parameters
+        ----------
+        hem : {'', 'lh', 'rh'}
+            Hemisphere for the surface. If blank, defaults to self.hem
+        roi : str
+            The region of interest to load.  Should be a Mesh that exists
+            in the subject's Meshes directory, called [roi]_trivert.mat
+
+        Returns
+        -------
+        cortex : dict
+            Dictionary containing 'tri' and 'vert' for the loaded region of interest mesh.
+
+        '''
         if hem == '':
             hem = self.hem
         if roi == 'pial':
@@ -1603,13 +1640,33 @@ class freeCoG:
     class roi:
 
         def __init__(self, name, color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False):
-            '''wrapper class for an ROI
-            name: name of the ROI
-            color: tuple for the ROI's color where each value is between 0.0 and 1.0. 
-            opacity: opacity of the mesh, between 0.0 and 1.0
-            representation: 'surface' or 'wireframe'
-            gaussian: boolean specifying how to represent electrodes and their weights on this mesh, note that setting gaussian to True 
-                      means the mesh color cannot be specified by the user'''
+            '''Class defining a region of interest (ROI) mesh. This could be, for example, a mesh
+            for the left hippocampus, or a mesh for the right superior temporal gyrus.
+
+            Parameters
+            ----------
+            name : str
+                name of the ROI
+            color : tuple
+                Tuple for the ROI's color where each value is between 0.0 and 1.0. 
+            opacity : float (between 0.0 and 1.0)
+                opacity of the mesh, between 0.0 and 1.0
+            representation : {'surface', 'wireframe'}
+                surface representation type
+            gaussian: bool
+                specifies how to represent electrodes and their weights on this mesh, note that setting gaussian to True 
+                means the mesh color cannot be specified by the user and will instead use colors from the loaded
+                colormap.
+
+            Attributes
+            ----------
+            name : str
+            color : tuple
+            opacity : float (between 0.0 and 1.0)
+            representation : {'surface', 'wireframe'}
+            gaussian : bool 
+
+            '''
                        
             self.name = name
             self.color = color
@@ -1618,7 +1675,14 @@ class freeCoG:
             self.gaussian = gaussian
 
     def get_rois(self):
-        ''' Method to get the list of all available ROI names for plotting '''
+        ''' Method to get the list of all available ROI names for plotting 
+        
+        Returns
+        -------
+        rois : list
+            list of available regions of interest (ROIs) for plotting or making tri-vert meshes.
+
+        '''
         rois = ['rAcumb', 'rAmgd', 'rCaud', 'rGP', 'rHipp', 'rPut', 'rThal',
                     'rLatVent', 'rInfLatVent', 'rVentDienceph', 'lLatVent', 'lInfLatVent',
                     'lThal', 'lCaud', 'lPut',  'lGP', 'lHipp', 'lAmgd', 'lAcumb', 'lVentDienceph',
@@ -1647,17 +1711,29 @@ class freeCoG:
 
     def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=None, 
                     weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None):
-        '''plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
-        rois: list of roi objects (create an roi object like so:
-              hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True))
-        elecs: electrode coordinate matrix
-        weights: weight matrix associated with the electrode coordinate matrix
-        cmap: string specifying what colormap to use
-        showfig: boolean - whether to show the figure in an interactive window
-        screenshot: boolean - whether to save a screenshot and show using matplotlib (usually inline a notebook)
-        helper_call: boolean - if plot_brain being used as a helper subcall, don't close the mlab instance
+        '''Plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
+        
+        Parameters
+        ----------
+        rois : list of roi objects 
+            (create an roi object like so:
+            hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True)). See
+            get_rois() method for available ROI names.
+        elecs : array-like
+            [nchans x 3] electrode coordinate matrix
+        weights : array-like 
+            [nchans x 3] weight matrix associated with the electrode coordinate matrix
+        cmap : str
+            String specifying what colormap to use
+        showfig : bool
+            whether to show the figure in an interactive window
+        screenshot: bool
+            whether to save a screenshot and show using matplotlib (usually inline a notebook)
+        helper_call : bool
+            if plot_brain being used as a helper subcall, don't close the mlab instance
 
-        Example: 
+        Example
+        -------
         >>> pial, hipp = patient.roi('pial',(0.6,0.3,0.6),0.1,'wireframe',True), patient.roi('lHipp',(0.5,0.1,0.8),1.0,'surface',True)
         >>> elecs = patient.get_elecs()['elecmatrix']
         >>> patient.plot_brain(rois=[pial,hipp],elecs=elecs,weights=np.random.uniform(0,1,(elecs.shape[0])))
@@ -1860,6 +1936,7 @@ class freeCoG:
         showfig : bool
         screenshot : bool
         anat_colored : bool
+
         '''
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
         #use mean normal vector
