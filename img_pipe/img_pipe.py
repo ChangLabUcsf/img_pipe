@@ -243,7 +243,7 @@ class freeCoG:
         brain_mri = os.path.join(self.subj_dir, self.subj, 'mri', 'orig.mgz')
         elecs_CT = os.path.join(self.subj_dir, self.subj, 'CT', 'rCT.nii')
         aparc_aseg = os.path.join(self.subj_dir, self.subj, 'mri', 'aparc.a2009s+aseg.mgz')
-        os.system("freeview --volume %s:opacity=0.8 --volume %s:opacity=0.6 --volume %s:colormap=lut:opacity=0.5:visible=0 --viewport 'coronal'" % (brain_mri, elecs_CT, aparc_aseg))
+        os.system("freeview --volume %s:opacity=0.8 --volume %s:opacity=0.6 --volume %s:colormap=lut:opacity=0.5:visible=0 --viewport 'coronal'"%(brain_mri, elecs_CT, aparc_aseg))
 
     def make_dural_surf(self, radius=3, num_iter=30, dilate=0.0):
         '''
@@ -569,7 +569,9 @@ class freeCoG:
                 direction = proj_direction
 
         if elecfile_prefix == 'OFC_grid':
-            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis','parstriangularis','superiorfrontal','rostralanteriorcingulate','caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
+            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis',
+                                       'parstriangularis','superiorfrontal','rostralanteriorcingulate',
+                                       'caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
             surf_type = 'OFC'
 
         print('::: Loading Mesh data :::')
@@ -1117,7 +1119,9 @@ class freeCoG:
 
             for elec in np.arange(nchans):
                 anatomy[elec] = lab[aparc_dat[VoxCRS[elec,0], VoxCRS[elec,1], VoxCRS[elec,2]]]
-                print("E%d, Vox CRS: [%d, %d, %d], Label #%d = %s"%(elec, VoxCRS[elec,0], VoxCRS[elec,1], VoxCRS[elec,2], aparc_dat[VoxCRS[elec,0], VoxCRS[elec,1], VoxCRS[elec,2]], anatomy[elec]))
+                print("E%d, Vox CRS: [%d, %d, %d], Label #%d = %s"%(elec, VoxCRS[elec,0], VoxCRS[elec,1], VoxCRS[elec,2], 
+                                                                    aparc_dat[VoxCRS[elec,0], VoxCRS[elec,1], VoxCRS[elec,2]], 
+                                                                    anatomy[elec]))
 
             elec_labels[np.invert(isnotdepth),3] = anatomy
             
@@ -1126,7 +1130,9 @@ class freeCoG:
         elec_labels_orig[indices_to_use,3] = elec_labels[:,3] 
         
         print('Saving electrode labels to %s'%(elecfile_prefix))
-        scipy.io.savemat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'), {'elecmatrix': elecmatrix_orig, 'anatomy': elec_labels_orig, 'eleclabels': elecmontage})
+        scipy.io.savemat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'), {'elecmatrix': elecmatrix_orig, 
+                                                                                'anatomy': elec_labels_orig, 
+                                                                                'eleclabels': elecmontage})
 
         return elec_labels
 
@@ -1923,7 +1929,8 @@ class freeCoG:
             mlab.close()
         return mesh, mlab
 
-    def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, z_scale_factor=3.0, showfig=True, screenshot=False, anat_colored=True):
+    def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, 
+                  z_scale_factor=3.0, showfig=True, screenshot=False, anat_colored=True):
         ''' Plot ERPs as traces on the brain surface.
 
         Parameters
@@ -2003,7 +2010,8 @@ class freeCoG:
         mlab.close()
         return mesh, points, mlab
 
-    def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',showfig=True, screenshot=False, opacity=1.0):
+    def plot_recon_anatomy_compare_warped(self, template='cvs_avg35_inMNI152', elecfile_prefix='TDT_elecs_all',
+                                          showfig=True, screenshot=False, opacity=1.0):
         ''' This plots two brains, one in native space, one in the template space, showing
         the native space and warped electrodes for ease of comparison/quality control.
         
@@ -2100,7 +2108,7 @@ class freeCoG:
 
     def make_roi_mesh(self, roi_name, label_list, hem=None, showfig=False, save=True):
 
-        ''' This function makes a mesh for the cortical ROI you are interested in. Here are the list of labels you can put in your label_list.
+        ''' This function makes a mesh for the cortical ROI you are interested in. 
         
         Parameters
         ----------
