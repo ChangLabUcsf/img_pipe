@@ -166,7 +166,9 @@ class freeCoG:
 
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
-        T1.nii to the 'orig' directory and converts to mgz format.'''       
+        T1.nii to the 'orig' directory and converts to mgz format.
+
+        '''       
 
         # navigate to directory with subject freesurfer folders           
         # and make a new folder for the patient
@@ -239,6 +241,21 @@ class freeCoG:
     def make_dural_surf(self, radius=3, num_iter=30, dilate=0.0):
         '''
         Create smoothed dural surface for projecting electrodes to.
+
+        Parameters
+        ----------  
+        radius : float 
+                 radius for smoothing (currently ignored)
+        num_iter : int
+                Number of iterations for mris_smooth
+        dilate : float
+                 Amount of dilation for dural surface (argument to mris_expand)
+
+        Returns
+        ----------
+        None
+
+
         '''
         from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
         # Create mask of pial surface
@@ -293,7 +310,12 @@ class freeCoG:
         are converted into lh_pial_trivert.mat and rh_pial_trivert.mat
         in the Meshes directory (for use in python) and *_lh_pial.mat
         and *_rh_pial.mat for use in MATLAB.
-        Other potential mesh_name values could be 'white' or 'inflated'.'''
+
+        Parameters
+        ----------
+        mesh_name : {'pial', 'white', 'inflated'}
+        
+        '''
 
         hems = ['lh', 'rh']
 
@@ -322,14 +344,23 @@ class freeCoG:
         You can also specify the source (usually a CT scan, assumed to be in $SUBJECTS_DIR/subj/CT)
         and the target (usually T1 MRI, assumed to be in $SUBJECTS_DIR/subj/mri)
 
-        Arguments to nipy.algorithms.registration.histogram_registration.HistogramRegistration
-        include:
-            smooth: a smoothing parameter in mm
-            reg_type: parameter which can be either 'rigid' (the default) or 'affine'
-            interp: changes the interpolation method for resampling (default='pv', could also be 'tri')
-            xtol: tolerance parameter for function minimization
-            ftol: tolerance parmater for function minimization
-            (for more information, see help for nipy.algorithms.registration.optimizer)
+        Parameters are arguments for nipy.algorithms.registration.histogram_registration.HistogramRegistration
+        (for more information, see help for nipy.algorithms.registration.optimizer).
+
+        Parameters
+        ----------
+            smooth : float
+                     a smoothing parameter in mm
+            reg_type : {'rigid', 'affine'}
+                       Registration type
+            interp : {'pv','tri'} 
+                     changes the interpolation method for resampling
+            xtol : float
+                   tolerance parameter for function minimization
+            ftol : float
+                   tolerance parmater for function minimization
+
+            
         '''
 
         source_file = os.path.join(self.CT_dir, source)
@@ -356,7 +387,18 @@ class freeCoG:
     def interp_grid(self, nchans = 256, grid_basename='hd_grid'):
         '''Interpolates corners for an electrode grid
         given the four corners (in order, 1, 16, 241, 256), or for
-        32 channel grid, 1, 8, 25, 32.'''
+        32 channel grid, 1, 8, 25, 32.
+        
+        Parameters
+        ----------
+        nchans : {256, 20, 64}
+                 Number of channels in your grid. By default these include a 16 x 16 grid (256 channels),
+                 a 5 x 4 grid (20 channels), or an 8 x 8 grid (64 channels).
+        grid_basename : str
+                        The base name of the grid (e.g. 'hd_grid' if you have a corners file
+                        called hd_grid_corners.mat)
+
+        '''
 
         corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
         corners = scipy.io.loadmat(corner_file)['elecmatrix']
@@ -426,7 +468,7 @@ class freeCoG:
         corner electrodes that were manually localized from the registered CT. Can also project strips
         and individual electrodes if a projection direction is provided.'''
         
-	from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
+	   from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
                Surface Type: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
