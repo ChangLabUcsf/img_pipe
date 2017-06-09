@@ -365,7 +365,7 @@ class freeCoG:
         xtol : float
             tolerance parameter for function minimization
         ftol : float
-            tolerance parmater for function minimization
+            tolerance parameter for function minimization
 
             
         '''
