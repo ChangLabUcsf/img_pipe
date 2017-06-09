@@ -48,21 +48,83 @@ class freeCoG:
     >>> hem = 'rh'       
     >>> fs_dir = '/usr/local/freesurfer'     
     >>> patient = img_pipe.freeCoG(subj = subj, subj_dir = subj_dir, hem = hem, fs_dir = fs_dir)
+    
+    Parameters
+    ----------       
+    subj : str 
+           The subject ID      
+    hem : {'lh', 'rh', 'stereo'}
+          The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.        
+    zero_indexed_electrodes: bool, optional
+                             Whether or not to use zero-indexing for the electrode numbers (default: True)
+    fs_dir : str, optional
+             Path to the freesurfer install (default is $FREESURFER_HOME environmental variable) 
+    subj_dir : str, optional
+               the freesurfer subjects directory (e.g. /usr/local/freesurfer/subjects). Default
+               is the $SUBJECTS_DIR environmental variable set by Freesurfer.
+    
+    Attributes
+    ----------
+    subj : str
+           The subject ID.
+    subj_dir : str
+               The subjects directory where the data live.
+    patient_dir : str
+                  The directory containing data for this particular patient.
+                  Usually [subj_dir]/[subj]
+    hem : str
+          The hemisphere of implantation
+    img_pipe_dir : str
+                   The path to img_pipe code.
+    zero_indexed_electrodes : bool
+                              Whether zero-indexed electrode numbers are used (True)
+                              or not (False)
+    fs_dir : str
+             Path to the freesurfer installation
+    CT_dir : str
+             Path to the CT scan
+    elecs_dir : str
+                Path to the marked electrode file locations
+    mesh_dir : str
+               Path to the generated triangle-mesh surfaces (pial, subcortical, etc.)
+    pial_surf_file : dict
+                     Dictionary containing full file with path for the left and right pial surfaces.
+                     Left pial surface is pial_surf_file['lh'] and right pial surface is
+                     pial_surf_file['rh']
+    surf_dir : str
+               The freesurfer surf directory for this patient.
+    mri_dir : str
+              The freesurfer MRI directory for this patient.
 
-    Attributes:         
-        subj [str]: the subject ID      
-        subj_dir [str]: the freesurfer subjects directory (e.g. /usr/local/freesurfer/subjects)     
-        hem [str]: 'lh', 'rh', or 'stereo' -- the hemisphere of implantation        
-        CT_dir [str]: the directory for CT imaging data (usually [subj_dir]/[subj]/CT)      
-        elecs_dir [str]: the directory (usually [subj_dir]/[subj]/elecs)        
+
+    Returns
+    ----------
+    patient
+        patient object, including information about subject ID, hemisphere, where data live, 
+        and related functions for creating surface reconstructions and/or plotting.    
+
     '''
 
     def __init__(self, subj, hem, zero_indexed_electrodes=True, fs_dir=os.environ['FREESURFER_HOME'], subj_dir=os.environ['SUBJECTS_DIR']):
         '''
-        subj: patient name (i.e. 'SUBJ_25')
-        hem: patient hem of implantation ('lh' or 'rh')
-        subj_dir: freesurfer subjects dir where you run img_pipe i.e. '/data_store2/imaging/subjects/'              
-        fs_dir: the freesurfer executable directory (default: '/Applications/freesurfer')
+        Initializes the patient object.
+
+        Parameters
+        ----------       
+        subj : str 
+               The subject ID (e.g. 'SUBJ_25')     
+        hem : {'lh', 'rh', 'stereo'}
+              The hemisphere of implanation. Can be 'lh', 'rh', or 'stereo'.        
+        zero_indexed_electrodes: bool, optional
+                                 Whether or not to use zero-indexing for the electrode numbers (default: True)
+        fs_dir : str, optional
+                 Path to the freesurfer install (default is $FREESURFER_HOME environmental variable) 
+    
+        Returns
+        ----------   
+        patient
+            patient object, including information about subject ID, hemisphere, where data live, 
+            and related functions for creating surface reconstructions and/or plotting.    
         '''
         
         self.subj = subj
