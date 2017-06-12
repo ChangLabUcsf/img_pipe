@@ -118,6 +118,8 @@ class freeCoG:
             Whether or not to use zero-indexing for the electrode numbers (default: True)
         fs_dir : str, optional
             Path to the freesurfer install (default is $FREESURFER_HOME environmental variable) 
+        subj_dir : str, optional
+            Path to the freesurfer subjects (default is $SUBJECTS_DIR environmental variable)
     
         Returns
         ----------   
