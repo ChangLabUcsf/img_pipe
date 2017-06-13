@@ -1,4 +1,12 @@
 def get_lut():
+    ''' Get colors from the freesurfer lookup table.
+
+    Returns
+    -------
+    cmap : dict
+        Dictionary of colors, keys are brain areas, e.g. 'Left-Putamen'
+    '''
+
     cmap = {'Unknown': [ 0., 0., 0.],
     'Left-Cerebral-Exterior': [70., 130., 180.],
     'Left-Cerebral-White-Matter': [245., 245., 245.],
