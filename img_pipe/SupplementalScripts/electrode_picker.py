@@ -53,6 +53,89 @@ class electrode_picker:
 		We will also listen for keyboard and mouse events so the user can interact
 		with each of the subplot panels (zoom/pan) and add/remove electrodes with a 
 		keystroke.
+
+		Parameters
+		----------
+		subj_dir : str
+		    Path to freesurfer subjects
+		hem : {'lh', 'rh', 'stereo'}
+		    Hemisphere of implantation.
+
+		Attributes
+		----------
+		subj_dir : str
+		    Path to freesurfer subjects
+		hem : {'lh','rh','stereo'}
+		    Hemisphere of implantation
+		img : nibabel image
+		    Data from brain.mgz T1 MRI scan
+		ct : nibabel image
+		    Data from rCT.nii registered CT scan
+		pial_img : nibabel image
+		    Filled pial image
+		affine : array-like
+		    Affine transform for img
+		fsVox2RAS : array-like
+		    Freesurfer voxel to RAS coordinate affine transform
+		codes : nibabel orientation codes
+		voxel_sizes : array-like
+		    nibabel voxel size
+		inv_affine : array-like
+		    Inverse of self.affine transform
+		img_clim : array-like
+		    1st and 99th percentile of the image data (for color scaling)
+		pial_codes : orientation codes for pial 
+		ct_codes : orientation codes for CT
+		elec_data : array-like
+		    Mask for the electrodes
+		bin_mat : array-like
+		    Temporary mask for populating elec_data
+		device_num : int
+		    Number of current device that has been added
+		device_name : str
+		    Name of current device
+		devices : list
+		    List of devices (grids, strips, depths)
+		elec_num : dict
+                    Indexed by device_name, which number electrode we are on for
+		    that particular device
+		elecmatrix : dict
+		    Dictionary of electrode coordinates 
+		legend_handles : list
+		    Holds legend entries
+		elec_added : bool
+		    Whether we're in an electrode added state
+		imsz : array-like
+		    image size (brain.mgz)
+		ctsz : array-like
+		    CT size (rCT.nii)
+		current_slice : array-like
+		    Which 3D slice coordinate the user clicked
+		fig : figure window
+		    The current figure window
+		im : 
+		    Contains data for each axis with MRI data values.
+		ct_im : 
+		    Contains CT data for each axis
+		elec_im : 
+		    Contains electrode data for each axis
+		pial_im :
+		    Contains data for the pial surface on each axis
+		cursor : array-like
+		    Cross hair
+		cursor2 : array-like
+		    Cross hair
+		ax : 
+		    which of the axes we're on
+		contour : list of bool
+		    Whether pial surface contour is displayed in each view
+		pial_surf_on : bool
+		    Whether pial surface is visible or not
+		T1_on : bool
+		    Whether T1 is visible or not
+		ct_slice : {'s','c','a'}
+		    How to slice CT maximum intensity projection (sagittal, coronal, or axial)
+
 		'''
 		QtCore.pyqtRemoveInputHook()
 		self.subj_dir = subj_dir
@@ -651,6 +734,17 @@ class electrode_picker:
 	def slice_to_surfaceRAS(self, coord = None):
 		'''
 		Convert slice coordinate from the viewer to surface RAS
+
+		Parameters
+		----------
+		coord : array-like
+		    Slice coordinate from the viewer (CRS)
+
+		Returns
+		-------
+		elec : array-like
+		    RAS coordinate of the requested slice coordinate
+
 		'''
 		if coord is None:
 			coord = self.current_slice
@@ -668,6 +762,17 @@ class electrode_picker:
 	def surfaceRAS_to_slice(self, elec):
 		'''
 		Convert surface RAS to coordinate to be used in the viewer
+		
+		Parameters
+		----------
+		elec : array-like
+		    Surface RAS coordinate
+
+		Returns
+		-------
+		coord : array-like
+		    CRS coordinate of the requested RAS coordinate, can be used by the viewer
+
 		'''
 		elec = np.hstack((elec, 1))
 
@@ -684,6 +789,12 @@ class electrode_picker:
 	def update_legend(self, vmax=17.):
 		''' 
 		Update the legend with the electrode devices.
+
+		Parameters
+		----------
+		vmax : int
+		    Maximum number of devices (is used to set the color scale)
+
 		'''
 		self.legend_handles = []
 		for i in self.devices:
