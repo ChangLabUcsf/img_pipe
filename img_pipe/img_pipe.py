@@ -1774,8 +1774,10 @@ class freeCoG:
             #default roi_name of 'pial' plots both hemispheres' pial surfaces
             if roi_name =='pial' or roi_name == 'rh_pial' or roi_name == 'lh_pial':
                 #use pial surface of the entire hemisphere
-                lh_pial = self.get_surf(hem='lh')
-                rh_pial = self.get_surf(hem='rh')
+                if roi_name == 'pial' or roi_name == 'lh_pial':
+                    lh_pial = self.get_surf(hem='lh')
+                if roi_name == 'pial' or roi_name == 'rh_pial':
+                    rh_pial = self.get_surf(hem='rh')
                 if gaussian:
                     if roi_name == 'pial' or roi_name == 'lh_pial':
                         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights,
@@ -2269,3 +2271,41 @@ class freeCoG:
 
         if showfig:
             mlab.show()
+
+    # def auto_2D_brain(self, azimuth=180, elevation=90):
+    #     '''Generate 2D screenshot of the brain at a specified azimuth and elevation,
+    #     and return projected 2D coordinates of electrodes at this view.
+
+    #     Parameters
+    #     ----------
+    #     azimuth : float
+    #         Azimuth for brain plot
+    #     elevation : float
+    #         Elevation for brain plot
+        
+    #     Returns
+    #     -------
+    #     brain : array-like
+    #         2D brain image
+    #     brain_file : str
+    #         Path to the saved brain image
+
+        
+    #     '''
+
+    #     # Path to each of the 2D files (a screenshot of the brain at a given angle,
+    #     # as well as the 2D projected electrode coordinates for that view).
+    #     brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png'%(azimuth, elevation))
+    #     elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat'%(azimuth, elevation))
+
+    #     # Test whether we already made these files
+    #     if os.path.isfile(brain_file):
+
+    #     else:
+    #         from mayavi import mlab
+    #         from plotting.ctmr_brain_plot import ctmr_gauss_plot
+
+
+
+
+
