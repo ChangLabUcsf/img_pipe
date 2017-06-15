@@ -1718,7 +1718,8 @@ class freeCoG:
                 %(self.subj, 'rh', gyri_labels_dir))
 
     def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=None, 
-                    weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None):
+                    weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None,
+                    azimuth=None, elevation=90):
         '''Plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         
         Parameters
@@ -1739,6 +1740,16 @@ class freeCoG:
             whether to save a screenshot and show using matplotlib (usually inline a notebook)
         helper_call : bool
             if plot_brain being used as a helper subcall, don't close the mlab instance
+        vmin : float 
+            Minimum color value when using cmap
+        vmax : float
+            Maximum color value when using cmap
+        azimuth : float
+            Azimuth for brain view.  By default (if azimuth=None), this will be set automatically to
+            the left side for hem='lh', right side for hem='rh', or front view for 'pial'
+        elevation : float
+            Elevation for brain view. Default: 90
+
 
         Example
         -------
@@ -1818,13 +1829,15 @@ class freeCoG:
             #if no elecs to add as points3D
             points = None
 
-        if self.hem=='lh':
-            azimuth=180
-        elif self.hem=='rh':
-            azimuth=0
-        else:
-            azimuth=90
-        mlab.view(azimuth, elevation=90)
+        if azimuth is None:
+            if self.hem=='lh':
+                azimuth=180
+            elif self.hem=='rh':
+                azimuth=0
+            else:
+                azimuth=90
+
+        mlab.view(azimuth, elevation)
 
         if screenshot:
             arr = mlab.screenshot(antialiased=True)
@@ -2272,40 +2285,35 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-    # def auto_2D_brain(self, azimuth=180, elevation=90):
-    #     '''Generate 2D screenshot of the brain at a specified azimuth and elevation,
-    #     and return projected 2D coordinates of electrodes at this view.
+    def auto_2D_brain(self, azimuth=180, elevation=90):
+        '''Generate 2D screenshot of the brain at a specified azimuth and elevation,
+        and return projected 2D coordinates of electrodes at this view.
 
-    #     Parameters
-    #     ----------
-    #     azimuth : float
-    #         Azimuth for brain plot
-    #     elevation : float
-    #         Elevation for brain plot
+        Parameters
+        ----------
+        azimuth : float
+            Azimuth for brain plot
+        elevation : float
+            Elevation for brain plot
         
-    #     Returns
-    #     -------
-    #     brain : array-like
-    #         2D brain image
-    #     brain_file : str
-    #         Path to the saved brain image
+        Returns
+        -------
+        brain : array-like
+            2D brain image
+        brain_file : str
+            Path to the saved brain image
 
         
-    #     '''
+        '''
 
-    #     # Path to each of the 2D files (a screenshot of the brain at a given angle,
-    #     # as well as the 2D projected electrode coordinates for that view).
-    #     brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png'%(azimuth, elevation))
-    #     elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat'%(azimuth, elevation))
+        # Path to each of the 2D files (a screenshot of the brain at a given angle,
+        # as well as the 2D projected electrode coordinates for that view).
+        brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png'%(azimuth, elevation))
+        elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat'%(azimuth, elevation))
 
-    #     # Test whether we already made these files
-    #     if os.path.isfile(brain_file):
+        # Test whether we already made these files
+        if os.path.isfile(brain_file):
 
-    #     else:
-    #         from mayavi import mlab
-    #         from plotting.ctmr_brain_plot import ctmr_gauss_plot
-
-
-
-
-
+        else:
+            patient.plot_brain
+    
