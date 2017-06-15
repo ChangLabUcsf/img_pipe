@@ -1845,6 +1845,8 @@ class freeCoG:
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
             plt.show()
+        else:
+            arr = []
 
         if showfig:
             mlab.show()
@@ -1852,7 +1854,7 @@ class freeCoG:
         if not helper_call and not showfig:
             mlab.close()
 
-        return mesh, points, mlab
+        return mesh, points, mlab, arr
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
         '''
@@ -1975,7 +1977,7 @@ class freeCoG:
         num_timepoints = erp_matrix.shape[1]
         num_channels = erp_matrix.shape[0]
 
-        mesh, points, mlab = self.plot_brain(showfig=False, helper_call=True)
+        mesh, points, mlab, arr = self.plot_brain(showfig=False, helper_call=True)
         elecmatrix = self.get_elecs()['elecmatrix']
         if anat_colored:
             anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy'][:,3]
@@ -2285,12 +2287,14 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-    def auto_2D_brain(self, azimuth=180, elevation=90):
+    def auto_2D_brain(self, hem=None, azimuth=180, elevation=90):
         '''Generate 2D screenshot of the brain at a specified azimuth and elevation,
         and return projected 2D coordinates of electrodes at this view.
 
         Parameters
         ----------
+        hem : {None, 'lh', 'rh', 'both'}
+            Hemisphere to show. If None, defaults to self.hem.  
         azimuth : float
             Azimuth for brain plot
         elevation : float
@@ -2313,7 +2317,19 @@ class freeCoG:
 
         # Test whether we already made these files
         if os.path.isfile(brain_file):
-
+            # Get the file
+            print("file exists")
         else:
-            patient.plot_brain
+            if hem is None:
+                roi_name = self.hem+'_pial'
+            elif hem == 'lh' or hem == 'rh':
+                roi_name = hem+'_pial'
+            else:
+                roi_name = 'pial'
+
+            pial = patient.roi(name=roi_name)
+            mesh, points, mlab, arr = patient.plot_brain(rois = [pial], screenshot=True, showfig=False)
+
+
+
     
