@@ -1761,7 +1761,7 @@ class freeCoG:
         import mayavi
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         
-        mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
+        fh=mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
 
         #if there are any rois with gaussian set to True, don't plot any elecs as points3d, to avoid mixing gaussian representation
         #if needed, simply add the elecs by calling el_add
@@ -1854,7 +1854,7 @@ class freeCoG:
         if not helper_call and not showfig:
             mlab.close()
 
-        return mesh, points, mlab, arr
+        return mesh, points, mlab, arr, fh
 
     def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
         '''
@@ -1977,7 +1977,7 @@ class freeCoG:
         num_timepoints = erp_matrix.shape[1]
         num_channels = erp_matrix.shape[0]
 
-        mesh, points, mlab, arr = self.plot_brain(showfig=False, helper_call=True)
+        mesh, points, mlab, arr, f = self.plot_brain(showfig=False, helper_call=True)
         elecmatrix = self.get_elecs()['elecmatrix']
         if anat_colored:
             anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy'][:,3]
@@ -2287,10 +2287,13 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-    def auto_2D_brain(self, hem=None, azimuth=180, elevation=90):
+    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90, force=False):
         '''Generate 2D screenshot of the brain at a specified azimuth and elevation,
         and return projected 2D coordinates of electrodes at this view.
 
+        Some code for projection taken from example_mlab_3D_to_2D by S. Chris Colbert <sccolbert@gmail.com>, 
+        see: http://docs.enthought.com/mayavi/mayavi/auto/example_mlab_3D_to_2D.html
+        
         Parameters
         ----------
         hem : {None, 'lh', 'rh', 'both'}
@@ -2299,6 +2302,8 @@ class freeCoG:
             Azimuth for brain plot
         elevation : float
             Elevation for brain plot
+        force : bool
+            Force re-creation of the image and 2D coordinates even if the files exist.
         
         Returns
         -------
@@ -2306,30 +2311,146 @@ class freeCoG:
             2D brain image
         brain_file : str
             Path to the saved brain image
-
         
         '''
+        from PIL import Image
+
+        if hem is None:
+            roi_name = self.hem+'_pial'
+        elif hem == 'lh' or hem == 'rh':
+            roi_name = hem+'_pial'
+        else:
+            roi_name = 'pial'
+
+        if azimuth is None:
+            if self.hem=='lh':
+                azimuth=180
+            elif self.hem=='rh':
+                azimuth=0
+            else:
+                azimuth=90
 
         # Path to each of the 2D files (a screenshot of the brain at a given angle,
         # as well as the 2D projected electrode coordinates for that view).
         brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png'%(azimuth, elevation))
         elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat'%(azimuth, elevation))
 
-        # Test whether we already made these files
-        if os.path.isfile(brain_file):
+        # Test whether we already made the brain file
+        if os.path.isfile(brain_file) and force is False:
             # Get the file
-            print("file exists")
+            print("Loading previously saved file %s"%(brain_file))
+            im = Image.open(brain_file)
+            brain_image = np.asarray(im)
+
         else:
-            if hem is None:
-                roi_name = self.hem+'_pial'
-            elif hem == 'lh' or hem == 'rh':
-                roi_name = hem+'_pial'
-            else:
-                roi_name = 'pial'
+            # Get the pial surface and plot it at the specified azimuth and elevation
+            pial = self.roi(name=roi_name)
+            mesh, points, mlab, brain_image, f = self.plot_brain(rois = [pial], screenshot=True, showfig=False, helper_call=True, azimuth=azimuth, elevation=elevation)
+            
+            # Clip out the white space (there may be a better way to do this...)
+            # Can't currently do this if projecting 3D points to 2D in the way I'm doing below
+            #rgb_sum = brain_image.sum(2) 
+            #white_space1 = 1-np.all(rgb_sum==255*3, axis=0)
+            #brain_image = brain_image[:,white_space1.astype(bool),:]
+            #white_space2 = 1-np.all(rgb_sum==255*3, axis=1)
+            #brain_image = brain_image[white_space2.astype(bool),:,:]
 
-            pial = patient.roi(name=roi_name)
-            mesh, points, mlab, arr = patient.plot_brain(rois = [pial], screenshot=True, showfig=False)
+            # Save as a png
+            im = Image.fromarray(brain_image)
+            im.save(brain_file)
+
+        # Test whether we already have the electrodes file
+        if os.path.isfile(elecs_2D_file):
+            print("Loading previously saved file %s"%(elecs_2D_file))
+            elecmatrix_2D = scipy.io.loadmat(elecs_2D_file)['elecmatrix']
+
+        else:
+            # Get the 3D electrode matrix
+            e = self.get_elecs()
+            elecmatrix = e['elecmatrix']
+            
+            W = np.ones(elecmatrix.shape[0])
+            hmgns_world_coords = np.column_stack((elecmatrix, W))
+
+            # Get unnormalized view coordinates
+            combined_transform_mat = get_world_to_view_matrix(f.scene)
+            view_coords = \
+                apply_transform_to_points(hmgns_world_coords, combined_transform_mat)
+
+            # Get normalized view coordinates
+            norm_view_coords = view_coords / (view_coords[:,3].reshape(-1, 1))
+
+            # Transform from normalized coordinates to display coordinates (2D)
+            view_to_disp_mat = get_view_to_display_matrix(f.scene)
+            disp_coords = apply_transform_to_points(norm_view_coords, view_to_disp_mat)
+            elecmatrix_2D = np.zeros((elecmatrix.shape[0],2))
+            for i in np.arange(elecmatrix.shape[0]):
+                elecmatrix_2D[i,:] = disp_coords[:,:2][i]
+
+            print(elecmatrix_2D)
+
+            scipy.io.savemat(elecs_2D_file, {'elecmatrix': elecmatrix_2D})
+            mlab.close()
+
+        return brain_image, elecmatrix_2D
+
+def get_world_to_view_matrix(mlab_scene):
+    """returns the 4x4 matrix that is a concatenation of the modelview transform and
+    perspective transform. Takes as input an mlab scene object."""
+    from mayavi.core.ui.mayavi_scene import MayaviScene
+
+    if not isinstance(mlab_scene, MayaviScene):
+        raise TypeError('argument must be an instance of MayaviScene')
 
 
+    # The VTK method needs the aspect ratio and near and far clipping planes
+    # in order to return the proper transform. So we query the current scene
+    # object to get the parameters we need.
+    scene_size = tuple(mlab_scene.get_size())
+    clip_range = mlab_scene.camera.clipping_range
+    aspect_ratio = float(scene_size[0])/float(scene_size[1])
 
-    
+    # this actually just gets a vtk matrix object, we can't really do anything with it yet
+    vtk_comb_trans_mat = mlab_scene.camera.get_composite_projection_transform_matrix(
+                                aspect_ratio, clip_range[0], clip_range[1])
+
+     # get the vtk mat as a numpy array
+    np_comb_trans_mat = vtk_comb_trans_mat.to_array()
+
+    return np_comb_trans_mat
+
+def get_view_to_display_matrix(mlab_scene):
+    """ this function returns a 4x4 matrix that will convert normalized
+        view coordinates to display coordinates. It's assumed that the view should
+        take up the entire window and that the origin of the window is in the
+        upper left corner"""
+    from mayavi.core.ui.mayavi_scene import MayaviScene
+
+    if not (isinstance(mlab_scene, MayaviScene)):
+        raise TypeError('argument must be an instance of MayaviScene')
+
+    # this gets the client size of the window
+    x, y = tuple(mlab_scene.get_size())
+    print(x,y)
+
+    # normalized view coordinates have the origin in the middle of the space
+    # so we need to scale by width and height of the display window and shift
+    # by half width and half height. The matrix accomplishes that.
+    view_to_disp_mat = np.array([[x/2.0,      0.,   0.,   x/2.0],
+                                 [   0.,  -y/2.0,   0.,   y/2.0],
+                                 [   0.,      0.,   1.,      0.],
+                                 [   0.,      0.,   0.,      1.]])
+
+    return view_to_disp_mat
+
+def apply_transform_to_points(points, trans_mat):
+    """a function that applies a 4x4 transformation matrix to an of
+        homogeneous points. The array of points should have shape Nx4"""
+
+    if not trans_mat.shape == (4, 4):
+        raise ValueError('transform matrix must be 4x4')
+
+    if not points.shape[1] == 4:
+        raise ValueError('point array must have shape Nx4')
+
+    return np.dot(trans_mat, points.T).T
