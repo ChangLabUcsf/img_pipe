@@ -2361,7 +2361,7 @@ class freeCoG:
             im.save(brain_file)
 
         # Test whether we already have the electrodes file
-        if os.path.isfile(elecs_2D_file):
+        if os.path.isfile(elecs_2D_file) and force is False:
             print("Loading previously saved file %s"%(elecs_2D_file))
             elecmatrix_2D = scipy.io.loadmat(elecs_2D_file)['elecmatrix']
 
