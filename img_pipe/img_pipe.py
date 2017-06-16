@@ -2341,7 +2341,7 @@ class freeCoG:
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
             # Get the file
-            print("Loading previously saved file %s"%(brain_file))
+            #print("Loading previously saved file %s"%(brain_file))
             im = Image.open(brain_file)
             brain_image = np.asarray(im)
 
@@ -2366,7 +2366,7 @@ class freeCoG:
 
         # Test whether we already have the electrodes file
         if os.path.isfile(elecs_2D_file) and force is False:
-            print("Loading previously saved file %s"%(elecs_2D_file))
+            #print("Loading previously saved file %s"%(elecs_2D_file))
             elecmatrix_2D = scipy.io.loadmat(elecs_2D_file)['elecmatrix']
 
         else:
