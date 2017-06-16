@@ -2241,11 +2241,11 @@ class freeCoG:
         Parameters
         ----------
         bgcolor : tuple
-            background color
+            background color (default is black)
         size : tuple
             figure size
-        color_dict: tuple
-            freesurfer roi name -> color 
+        color_dict: None or dict
+            freesurfer roi name -> color (default is freesurfer colormap)
         screenshot : bool
             Whether or not to take a screenshot of the mayavi plot
         showfig : bool
