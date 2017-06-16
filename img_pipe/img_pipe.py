@@ -2307,10 +2307,11 @@ class freeCoG:
         
         Returns
         -------
-        brain : array-like
+        brain_image : array-like
             2D brain image
-        brain_file : str
-            Path to the saved brain image
+        elecmatrix_2D : array-like
+            elecs x 2 matrix of coordinates in 2D that match brain_image and can be plotted
+            using matplotlib pyplot instead of mayavi.
         
         '''
         from PIL import Image
@@ -2396,7 +2397,17 @@ class freeCoG:
 
 def get_world_to_view_matrix(mlab_scene):
     """returns the 4x4 matrix that is a concatenation of the modelview transform and
-    perspective transform. Takes as input an mlab scene object."""
+    perspective transform. Takes as input an mlab scene object.
+    
+    Parameters
+    ----------
+    mlab_scene : MayaviScene instance
+
+    Returns
+    -------
+    np_comb_trans_mat : array-like
+        Combined 4x4 transformation matrix for modelview and perspective transforms
+    """
     from mayavi.core.ui.mayavi_scene import MayaviScene
 
     if not isinstance(mlab_scene, MayaviScene):
@@ -2423,7 +2434,18 @@ def get_view_to_display_matrix(mlab_scene):
     """ this function returns a 4x4 matrix that will convert normalized
         view coordinates to display coordinates. It's assumed that the view should
         take up the entire window and that the origin of the window is in the
-        upper left corner"""
+        upper left corner
+    
+    Parameters
+    ----------
+    mlab_scene : MayaviScene instance
+
+    Returns
+    -------
+    view_to_disp_mat : array-like
+        4 x 4 matrix that will convert normalized view coordinates to display coordinates.
+    
+    """
     from mayavi.core.ui.mayavi_scene import MayaviScene
 
     if not (isinstance(mlab_scene, MayaviScene)):
@@ -2445,7 +2467,21 @@ def get_view_to_display_matrix(mlab_scene):
 
 def apply_transform_to_points(points, trans_mat):
     """a function that applies a 4x4 transformation matrix to an of
-        homogeneous points. The array of points should have shape Nx4"""
+        homogeneous points. The array of points should have shape Nx4
+    
+    Parameters
+    ----------
+    points : array-like
+        Nx4 matrix of points in homogeneous coordinates
+    trans_mat : array-like
+        4x4 transformation matrix
+
+    Returns
+    -------
+    tpoints : array-like
+        Transformed point matrix 
+
+    """
 
     if not trans_mat.shape == (4, 4):
         raise ValueError('transform matrix must be 4x4')
@@ -2453,4 +2489,5 @@ def apply_transform_to_points(points, trans_mat):
     if not points.shape[1] == 4:
         raise ValueError('point array must have shape Nx4')
 
-    return np.dot(trans_mat, points.T).T
+    tpoints = np.dot(trans_mat, points.T).T
+    return tpoints
