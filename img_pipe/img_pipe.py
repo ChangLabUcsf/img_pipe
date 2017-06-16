@@ -2352,11 +2352,13 @@ class freeCoG:
             
             # Clip out the white space (there may be a better way to do this...)
             # Can't currently do this if projecting 3D points to 2D in the way I'm doing below
-            #rgb_sum = brain_image.sum(2) 
-            #white_space1 = 1-np.all(rgb_sum==255*3, axis=0)
-            #brain_image = brain_image[:,white_space1.astype(bool),:]
-            #white_space2 = 1-np.all(rgb_sum==255*3, axis=1)
-            #brain_image = brain_image[white_space2.astype(bool),:,:]
+            rgb_sum = brain_image.sum(2) 
+            white_space1 = 1-np.all(rgb_sum==255*3, axis=0)
+            x_offset = np.where(white_space1==1)[0][0]
+            brain_image = brain_image[:,white_space1.astype(bool),:]
+            white_space2 = 1-np.all(rgb_sum==255*3, axis=1)
+            y_offset = np.where(white_space2==1)[0][0]
+            brain_image = brain_image[white_space2.astype(bool),:,:]
 
             # Save as a png
             im = Image.fromarray(brain_image)
@@ -2389,6 +2391,9 @@ class freeCoG:
             elecmatrix_2D = np.zeros((elecmatrix.shape[0],2))
             for i in np.arange(elecmatrix.shape[0]):
                 elecmatrix_2D[i,:] = disp_coords[:,:2][i]
+
+            elecmatrix_2D[:,0] = elecmatrix_2D[:,0] - x_offset
+            elecmatrix_2D[:,1] = elecmatrix_2D[:,1] - y_offset
 
             print(elecmatrix_2D)
 
