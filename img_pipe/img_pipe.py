@@ -1858,7 +1858,7 @@ class freeCoG:
 
         return mesh, points, mlab, arr, fh
 
-    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0):
+    def plot_recon_anatomy(self, elecfile_prefix='TDT_elecs_all', template=None, showfig=True, screenshot=False, opacity=1.0, show_numbers=True):
         '''
         Plot the brain along with all of the anatomically labeled electrodes, colored by location using freesurfer
         color lookup table.
@@ -1923,10 +1923,13 @@ class freeCoG:
             elec_indices = np.where(e['anatomy'][:,3]==b)[0]
             elec_colors[elec_indices,:] = el_color
 
-        if self.zero_indexed_electrodes:
-            elec_numbers = range(e['elecmatrix'].shape[0])
+        if show_numbers:
+            if self.zero_indexed_electrodes:
+                elec_numbers = range(e['elecmatrix'].shape[0])
+            else:
+                elec_numbers = range(1,e['elecmatrix'].shape[0]+1)
         else:
-            elec_numbers = range(1,e['elecmatrix'].shape[0]+1)
+            elec_numbers = None
 
         ctmr_brain_plot.el_add(e['elecmatrix'],elec_colors,numbers=elec_numbers, label_offset=label_offset)
 
