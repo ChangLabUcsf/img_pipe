@@ -147,7 +147,8 @@ class electrode_picker:
 		pial_fill = os.path.join(subj_dir, 'surf', '%s.pial.filled.mgz'%(self.hem))
 		if not os.path.isfile(pial_fill):
 			pial_surf = os.path.join(subj_dir, 'surf', '%s.pial'%(self.hem))
-			os.system('mris_fill -c -r 1 %s %s'%(pial_surf, pial_fill))
+			mris_fill = os.path.join(os.environ['FREESURFER_HOME'], 'bin', 'mris_fill')
+			os.system('%s -c -r 1 %s %s'%(mris_fill, pial_surf, pial_fill))
 		self.pial_img = nib.load(pial_fill)
 		
 		# Get affine transform 
