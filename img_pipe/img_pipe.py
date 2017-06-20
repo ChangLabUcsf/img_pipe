@@ -395,54 +395,30 @@ class freeCoG:
         print("Saving registered CT image as %s"%(outfile))
         nipy.save_image(reg_CT, outfile)
 
-    def interp_grid(self, nchans = 256, grid_basename='hd_grid'):
+    def interp_grid(self, nrows=16, ncols=16, grid_basename='hd_grid'):
         '''Interpolates corners for an electrode grid
         given the four corners (in order, 1, 16, 241, 256), or for
         32 channel grid, 1, 8, 25, 32.
         
         Parameters
         ----------
-        nchans : {256, 20, 64}
-            Number of channels in your grid. By default these include a 16 x 16 grid (256 channels),
-            a 5 x 4 grid (20 channels), or an 8 x 8 grid (64 channels).
+        nrows : int
+            Number of rows in the grid
+        ncols : int
+            Number of columns in the grid
         grid_basename : str
             The base name of the grid (e.g. 'hd_grid' if you have a corners file
             called hd_grid_corners.mat)
 
         '''
+        
+        nchans = nrows*ncols
 
         corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
         corners = scipy.io.loadmat(corner_file)['elecmatrix']
         elecmatrix = np.zeros((nchans, 3))
-        #you can add your own grid dimensions and corner indices here, if needed
-        if nchans == 256:
-            corner_nums = [0, 15, 240, 255]
-            nrows = 16
-            ncols = 16
-        elif nchans == 20:
-            corner_nums = [0,4,15,19]
-            nrows = 5
-            ncols = 4 
-        elif nchans == 32:
-            corner_nums = [0, 7, 24, 31]
-            nrows = 8
-            ncols = 4
-        elif nchans == 64:
-            corner_nums = [0, 7, 56, 63]
-            nrows = 8
-            ncols = 8
-        elif nchans == 128:
-            corner_nums = [0,15,112,127]
-            nrows = 16 
-            ncols= 8
-        elif nchans == 56:
-            corner_nums = [0, 6, 49, 55]
-            nrows = 7
-            ncols = 8
-        elif nchans == 48:
-            corner_nums = [0,7,40,47]
-            nrows = 8
-            ncols = 6
+
+        corner_nums = [0, 0+nrows-1, nchans-nrows, nchans-1]
 
         # Add the electrode coordinates for the corners
         for i in np.arange(4):
@@ -1897,8 +1873,8 @@ class freeCoG:
         if self.hem == 'lh' or self.hem == 'rh':
             mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
         elif self.hem == 'stereo':
-            for h in ['lh', 'rh']:
-                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a[h]['tri'], a[h]['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['lh']['tri'], a['lh']['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['rh']['tri'], a['rh']['vert'], color=(0.8, 0.8, 0.8), opacity=opacity, new_fig=False)
 
         # Add the electrodes, colored by anatomical region
         elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
@@ -1917,12 +1893,17 @@ class freeCoG:
         brain_areas = np.unique(e['anatomy'][:,3])
 
         # Loop through unique brain areas and find the appropriate color for each brain area from the color LUT dictionary
+        if self.hem=='stereo':
+            label_hem = 'lh'
+        else:
+            label_hem = self.hem
+
         for b in brain_areas:
             # Add relevant extra information to the label if needed for the color LUT
             if b[0][0] != 'NaN':
                 this_label = b[0]
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
-                    this_label = 'ctx-%s-%s'%(self.hem, b[0])
+                    this_label = 'ctx-%s-%s'%(label_hem, b[0])
                     print(this_label)
                 
                 if this_label != '' and this_label != 'NaN':
@@ -1950,7 +1931,7 @@ class freeCoG:
             azimuth=0
         else:
             azimuth=90
-        
+
         mlab.view(azimuth, elevation=90)
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
