@@ -652,8 +652,7 @@ class electrode_picker:
 
 		if not self.elec_added:
 			current_RAS = self.slice_to_surfaceRAS()
-			plt.gcf().suptitle('Surface RAS = [%3.3f, %3.3f, %3.3f]'%(current_RAS[0], current_RAS[1], current_RAS[2]), fontsize=14)
-		
+			self.ax[3].set_xlabel('Surface RAS = [%3.3f, %3.3f, %3.3f]'%(current_RAS[0], current_RAS[1], current_RAS[2]), fontsize=14)
 
 	def add_electrode(self, add_to_file = True):
 		'''
