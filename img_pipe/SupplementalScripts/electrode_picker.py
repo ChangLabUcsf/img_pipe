@@ -316,7 +316,7 @@ class electrode_picker:
         self.ax[3].axis([0,self.imsz[1],0,self.imsz[2]])
 
         self.elec_im.append(plt.imshow(self.elec_data[cs[0],:,:].T, cmap=self.elec_colors, aspect='auto', alpha=1, vmin=0, vmax=17))
-        plt.gcf().suptitle("Press 'n' to enter device name in console, press 'e' to add an electrode at crosshair, press 'h' for more options", fontsize=14)
+        plt.gcf().suptitle("Press 'n' to enter device name, press 'e' to add an electrode at crosshair, press 'h' for more options", fontsize=14)
 
         plt.tight_layout()
         plt.subplots_adjust(top=0.9)
@@ -378,7 +378,7 @@ class electrode_picker:
             self.T1_on = not self.T1_on
 
         if event.key == 'n':
-            plt.gcf().suptitle("Enter electrode name in python console", fontsize=14)
+            plt.gcf().suptitle("Enter device name in pop-up dialog", fontsize=14)
             plt.gcf().canvas.draw()
 
             #self.device_name = raw_input("Enter electrode name: ")
