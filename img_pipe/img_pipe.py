@@ -1642,7 +1642,12 @@ class freeCoG:
         if hem == '':
             hem = self.hem
         if roi == 'pial':
-            cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+            if hem == 'lh' or hem == 'rh':
+                cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+            elif hem == 'stereo':
+                cortex = dict()
+                for h in ['lh', 'rh']:
+                    cortex[h] = scipy.io.loadmat(self.pial_surf_file[h])
         else: 
             cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + '_trivert.mat'))
         return cortex
@@ -1889,7 +1894,11 @@ class freeCoG:
         e = self.get_elecs(elecfile_prefix = elecfile_prefix)
 
         # Plot the pial surface
-        mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
+        if self.hem == 'lh' or self.hem == 'rh':
+            mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
+        elif self.hem == 'stereo':
+            for h in ['lh', 'rh']:
+                mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a[h]['tri'], a[h]['vert'], color=(0.8, 0.8, 0.8), opacity=opacity)
 
         # Add the electrodes, colored by anatomical region
         elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
@@ -1900,6 +1909,8 @@ class freeCoG:
         if self.hem=='lh':
             label_offset=-1.5
         elif self.hem=='rh':
+            label_offset=1.5
+        else:
             label_offset=1.5
 
         # Find all the unique brain areas in this subject
@@ -1937,6 +1948,9 @@ class freeCoG:
             azimuth=180
         elif self.hem=='rh':
             azimuth=0
+        else:
+            azimuth=90
+        
         mlab.view(azimuth, elevation=90)
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
