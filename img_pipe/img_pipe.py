@@ -17,7 +17,6 @@ import nibabel as nib
 from tqdm import tqdm
 
 import numpy as np
-#import scipy
 import scipy.io
 import scipy.spatial
 import matplotlib
