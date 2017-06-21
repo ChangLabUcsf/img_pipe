@@ -56,6 +56,18 @@ You should now be able to import img_pipe from python.
 >>> patient.get_recon()
 ```
 
+If you have completed all of the steps, you can plot the brain with anatomically-labeled electrodes as follows:
+```python
+>>> import img_pipe
+>>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
+>>> patient.plot_recon_anatomy()
+```
+
+Or just the brain with
+```python
+>>> patient.plot_brain()
+```
+
 The full workflow is shown as a flowchart below:
 
 ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalFiles/workflow.png "img_pipe")
