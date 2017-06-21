@@ -1,7 +1,11 @@
 #!/usr/bin/env python
+# 
+# Written 2017 by Liberty Hamilton
+# 
 
 import matplotlib
 matplotlib.use('Qt4Agg') 
+matplotlib.rcParams['toolbar'] = 'None'
 from pyface.qt import QtGui, QtCore
 from matplotlib import pyplot as plt
 plt.rcParams['keymap.save'] = '' # Unbind 's' key saving
@@ -22,6 +26,7 @@ import os
 import warnings
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from matplotlib.widgets import Slider
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -163,6 +168,8 @@ class electrode_picker:
             mris_fill = os.path.join(os.environ['FREESURFER_HOME'], 'bin', 'mris_fill')
             os.system('%s -c -r 1 %s %s'%(mris_fill, pial_surf, pial_fill))
         self.pial_img = nib.load(pial_fill)
+
+        #self.slider = QSlider(Qt.Horizontal)
         
         # Get affine transform 
         self.affine = self.img.affine
@@ -325,6 +332,19 @@ class electrode_picker:
         cid = self.fig.canvas.mpl_connect('key_press_event', self.on_key)
         #cid4 = self.fig.canvas.mpl_connect('key_release_event', self.on_key)
 
+        slider_ax = plt.axes([self.ax[0].get_position().bounds[0]+0.06, 
+        					  self.ax[0].get_position().bounds[1]+0.42, 
+        					  self.ax[0].get_position().bounds[2]-0.1, 0.02])
+        self.mri_slider = Slider(slider_ax, 'MRI max', img_data.min(), img_data.max(), facecolor=[0.3, 0.3, 0.3])
+        self.mri_slider.on_changed(self.update_mri)
+
+        ct_slider_ax = plt.axes([self.ax[1].get_position().bounds[0]+0.06, 
+                      self.ax[1].get_position().bounds[1]+0.42, 
+                      self.ax[1].get_position().bounds[2]-0.1, 0.02])
+        print(np.nanmax(ct_data))
+        self.ct_slider = Slider(ct_slider_ax, 'CT max', 1000, np.nanmax(ct_data), facecolor=[0.8, 0.1, 0.1])
+        self.ct_slider.on_changed(self.update_ct)
+
         plt.show()
         self.fig.canvas.draw()
 
@@ -414,7 +434,7 @@ class electrode_picker:
 
         if event.key == 'h':
             # Show help 
-            plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial surface, 'b': toggle brain, '3': show 3D view\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12)
+            plt.gcf().suptitle("Help: 'n': name device, 'e': add electrode, 'u': remove electrode, 't': toggle pial, 'b': toggle brain, '3': show 3D view\nMaximum intensity projection views: 's': sagittal, 'c': coronal, 'a': axial\nScroll to zoom, arrows to pan, pgup/pgdown or click to go to slice", fontsize=12, y=1.0)
 
         if event.key == 'e':
             if self.device_name == '':
@@ -547,6 +567,8 @@ class electrode_picker:
                 self.current_slice[0] = event.xdata
                 self.current_slice[1] = event.ydata
             ax_num = 3
+        else:
+            ax_num = None
 
         self.elec_added = False
         self.update_figure_data(ax_clicked=ax_num)
@@ -819,7 +841,7 @@ class electrode_picker:
             c = cmap(num/vmax)
             color_patch = mpatches.Patch(color=c, label=i)
             self.legend_handles.append(color_patch)
-            plt.legend(handles=self.legend_handles, loc='upper right', fontsize='x-small')
+            plt.legend(handles=self.legend_handles, fontsize='x-small', borderaxespad=3, bbox_to_anchor=self.ax[3].get_position())
 
     def launch_3D_viewer(self):
         '''
@@ -842,6 +864,18 @@ class electrode_picker:
             num = self.devices.index(dev)
             c = self.elec_colors(num/vmax)
             el_add(e, color=tuple(c[:3]), msize=4, numbers=1+np.arange(e.shape[0]))
+    
+    def update_mri(self, val):
+        ''' Update slider value '''
+        for i in np.arange(3):
+            curr_min = self.im[i].get_clim()
+            self.im[i].set_clim([curr_min[0], val])
+
+    def update_ct(self, val):
+        ''' Update slider value '''
+        for i in np.arange(3):
+            curr_min = 1000
+            self.ct_im[i].set_clim([curr_min, val])
 
 
 if __name__ == '__main__':
