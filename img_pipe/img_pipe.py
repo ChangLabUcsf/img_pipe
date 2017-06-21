@@ -17,7 +17,7 @@ import nibabel as nib
 from tqdm import tqdm
 
 import numpy as np
-import scipy
+#import scipy
 import scipy.io
 import scipy.spatial
 import matplotlib
@@ -687,57 +687,16 @@ class freeCoG:
         subcort_vert = [item.split('  ')
                         for item in subcort_vert]  # seperate strings
 
-        # create containers for each column in vert matrix
-        x = []
-        y = []
-        z = []
-
-        # fill the containers with float values of the strings in each column
-        for i in subcort_vert:
-            x.append(float(i[0]))
-            y.append(float(i[1]))
-            z.append(float(i[2]))
-
-        # convert to scipy mat
-        x = scipy.mat(x)
-        y = scipy.mat(y)
-        z = scipy.mat(z)
-
-        # concat columns to one n x 3 matrix
-        x = x.transpose()
-        y = y.transpose()
-        z = z.transpose()
-        subcort_vert = scipy.column_stack((x, y, z))
-        #scipy.io.savemat('%s_subcort_vert.mat' % (nuc), {'vert': subcort_vert})  # save vert matrix
+        # Convert into an array of floats
+        subcort_vert = np.array(np.vstack((subcort_vert)), dtype=np.float)
 
         # get rows for triangles only, strip 0 column, and split into seperate
         # strings
         subcort_tri = [item[:-2] for item in subcort_mat[subcort_inds[0] + 1:]]
         subcort_tri = [item.split(' ')
                        for item in subcort_tri]  # seperate strings
+        subcort_tri = np.array(np.vstack((subcort_tri)), dtype=np.int)
 
-        # create containers for each column in vert matrix
-        x = []
-        y = []
-        z = []
-
-        # fill the containers with float values of the strings in each column
-        for i in subcort_tri:
-            x.append(int(i[0]))
-            y.append(int(i[1]))
-            z.append(int(i[2]))
-
-        # convert to scipy mat
-        x = scipy.mat(x)
-        y = scipy.mat(y)
-        z = scipy.mat(z)
-
-        # concat columns to one n x 3 matrix
-        x = x.transpose()
-        y = y.transpose()
-        z = z.transpose()
-        subcort_tri = scipy.column_stack((x, y, z))
-        #subcort_tri = subcort_tri 
         outfile = '%s_subcort_trivert.mat' % (nuc)
         scipy.io.savemat(outfile, {'tri': subcort_tri, 'vert': subcort_vert})  # save tri/vert matrix
 
