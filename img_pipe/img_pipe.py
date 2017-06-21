@@ -409,9 +409,9 @@ class freeCoG:
         grid_basename : str
             The base name of the grid (e.g. 'hd_grid' if you have a corners file
             called hd_grid_corners.mat)
-
-        '''
         
+        '''
+
         nchans = nrows*ncols
 
         corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
@@ -1898,10 +1898,13 @@ class freeCoG:
         else:
             label_hem = self.hem
 
+        good_labels = []
+        color_list = []
         for b in brain_areas:
             # Add relevant extra information to the label if needed for the color LUT
             if b[0][0] != 'NaN':
                 this_label = b[0]
+                good_labels.append(this_label)
                 if b[0][0:3]!='ctx' and b[0][0:4] != 'Left' and b[0][0:5] != 'Right' and b[0][0:5] != 'Brain' and b[0] != 'Unknown':
                     this_label = 'ctx-%s-%s'%(label_hem, b[0])
                     print(this_label)
@@ -1912,6 +1915,7 @@ class freeCoG:
                         el_color = matplotlib.cm.get_cmap('viridis').colors[int(float(np.where(brain_areas==b)[0])/float(len(brain_areas)))]
                     else:
                         el_color = np.array(cmap[this_label])/255.
+                    color_list.append(el_color)
             elec_indices = np.where(e['anatomy'][:,3]==b)[0]
             elec_colors[elec_indices,:] = el_color
 
@@ -1938,10 +1942,15 @@ class freeCoG:
 
         arr = mlab.screenshot(antialiased=True)
         if screenshot:
-            plt.figure(figsize=(20,10))
+            plt.figure(figsize=(20,20))
+            arr, xoff, yoff = remove_whitespace(arr)
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
+            dummies = [plt.gca().plot([],[], ls='-', lw=5, c=c)[0] for c in color_list]
+            plt.gca().legend(dummies, good_labels, ncol=4)
+            plt.tight_layout()
             plt.show()
+            plt.savefig(os.path.join(self.patient_dir, '%s_anatomy.png'%self.subj))
         if showfig:
             mlab.show()
         else: 
@@ -2350,13 +2359,7 @@ class freeCoG:
             
             # Clip out the white space (there may be a better way to do this...)
             # Can't currently do this if projecting 3D points to 2D in the way I'm doing below
-            rgb_sum = brain_image.sum(2) 
-            white_space1 = 1-np.all(rgb_sum==255*3, axis=0)
-            x_offset = np.where(white_space1==1)[0][0]
-            brain_image = brain_image[:,white_space1.astype(bool),:]
-            white_space2 = 1-np.all(rgb_sum==255*3, axis=1)
-            y_offset = np.where(white_space2==1)[0][0]
-            brain_image = brain_image[white_space2.astype(bool),:,:]
+            brain_image, x_offset, y_offset = remove_whitespace(brain_image)
 
             # Save as a png
             im = Image.fromarray(brain_image)
@@ -2400,3 +2403,30 @@ class freeCoG:
 
         return brain_image, elecmatrix_2D
 
+def remove_whitespace(brain_image):
+    '''
+    Remove white space from an image
+
+    Parameters
+    ----------
+    brain_image : array-like
+        X x Y x 3 RGB image
+
+    Returns
+    -------
+    brain_image : array-like
+        X x Y x 3 RGB image, but trimmed
+    x_offset : int
+        Number of pixels to offset
+    y_offset : int
+        Number of pixels to offset
+    '''
+    rgb_sum = brain_image.sum(2) 
+    white_space1 = 1-np.all(rgb_sum==255*3, axis=0)
+    x_offset = np.where(white_space1==1)[0][0]
+    brain_image = brain_image[:,white_space1.astype(bool),:]
+    white_space2 = 1-np.all(rgb_sum==255*3, axis=1)
+    y_offset = np.where(white_space2==1)[0][0]
+    brain_image = brain_image[white_space2.astype(bool),:,:]
+
+    return brain_image, x_offset, y_offset
