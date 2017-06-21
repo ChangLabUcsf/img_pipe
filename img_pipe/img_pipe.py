@@ -36,6 +36,14 @@ import nipy.algorithms.registration.histogram_registration
 
 from plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
 
+# For animations, from pycortex
+linear = lambda x, y, m: (1.-m)*x + m*y
+mixes = dict(
+    linear=linear,
+    smoothstep=(lambda x, y, m: linear(x,y,3*m**2 - 2*m**3)),
+    smootherstep=(lambda x, y, m: linear(x, y, 6*m**5 - 15*m**4 + 10*m**3))
+)
+
 class freeCoG:
     ''' This defines the class freeCoG, which creates a patient object      
     for use in creating brain surface reconstructions, electrode placement,     
@@ -1956,8 +1964,8 @@ class freeCoG:
             plt.savefig(os.path.join(self.patient_dir, '%s_anatomy.png'%self.subj))
         if showfig:
             mlab.show()
-        else: 
-            mlab.close()
+        #else:
+        #    mlab.close()
         return mesh, mlab
 
     def plot_erps(self, erp_matrix, elecfile_prefix='TDT_elecs_all', time_scale_factor=0.03, 
@@ -2405,6 +2413,71 @@ class freeCoG:
             mlab.close()
 
         return brain_image, elecmatrix_2D
+
+    def animate_scene(self, mlab, movie_name='movie', mix_type='smootherstep', 
+                      start_stop_azimuth=(0, 360), start_stop_elevation=(90, 90), 
+                      nframes=200, frame_rate = 25, ffmpeg = '/Applications/ffmpeg', 
+                      close_fig=True, show_title=False):
+        ''' Create animation of rotating brain 
+
+        Parameters
+        ----------
+        mlab : mayavi mlab instance
+        movie_name : str
+            Name of the movie frame e.g. 'TIMIT_activity'
+        mix_type : {'smootherstep', 'smoothstep', 'linear'}
+            Easing for the movie.  If 'smootherstep' or 'smoothstep', the animation
+            appears to go slowly at the beginning and end, and fast in the middle.
+            If 'linear', it evenly rotates with no easing.
+        start_stop_azimuth : tuple
+            Start and stop azimuth for the plot. Usually you will want this to be
+            (0, 360) for 'rh' subjects and (180, 180+360) for 'lh' subjects
+        start_stop_elevation : tuple
+            Start and stop azimuth for the plot
+        nframes : int
+            Number of frames in the animation.  More frames = smoother animation
+        frame_rate : int
+            The frame rate for the movie in Hz
+        ffmpeg : str
+            Location of your ffmpeg binary
+        close_fig : bool
+            Whether to close the mlab figure after the movie is done rendering
+        show_title : bool
+            Whether to keep the current mlab figure title on the screen or suppress it
+
+        Returns
+        -------
+        A movie file in $SUBJECTS_DIR/[self.subj]/movies/[movie_name].mp4
+
+        '''
+        movie_dir = os.path.join(self.patient_dir, 'movies')
+        mix = mixes[mix_type]
+
+        if not os.path.isdir(movie_dir):
+            os.mkdir(movie_dir)
+
+        if show_title==False:
+            mlab.title('')
+
+        plt.figure(figsize=(20,10))
+            
+        for mi, m in enumerate(np.linspace(0, 1, nframes)):
+            new_az = mix(start_stop_azimuth[0], start_stop_azimuth[1], m)
+            new_el = mix(start_stop_elevation[0], start_stop_elevation[1], m)
+            print(new_az, new_el)
+            mlab.view(new_az, new_el)
+            arr = mlab.screenshot(antialiased=True)
+            plt.cla()
+            plt.imshow(arr, aspect='equal')
+            plt.axis('off')
+            plt.savefig(os.path.join(movie_dir, '%s_%03d.png'%(movie_name, mi)))
+
+        os.system('%s -r %d -start_number 0 -i %s/%s_%%03d.png \
+            -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 \
+            -pix_fmt yuv420p %s/%s.mp4'%(ffmpeg, frame_rate, movie_dir, movie_name, movie_dir, movie_name))
+
+        if close_fig:
+            mlab.close()
 
 def remove_whitespace(brain_image):
     '''
