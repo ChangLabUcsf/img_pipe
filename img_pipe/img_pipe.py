@@ -2417,7 +2417,7 @@ class freeCoG:
     def animate_scene(self, mlab, movie_name='movie', mix_type='smootherstep', 
                       start_stop_azimuth=(0, 360), start_stop_elevation=(90, 90), 
                       nframes=200, frame_rate = 25, ffmpeg = '/Applications/ffmpeg', 
-                      close_fig=True, show_title=False):
+                      close_fig=True, keep_frames=False, show_title=False):
         ''' Create animation of rotating brain 
 
         Parameters
@@ -2442,8 +2442,12 @@ class freeCoG:
             Location of your ffmpeg binary
         close_fig : bool
             Whether to close the mlab figure after the movie is done rendering
+        keep_frames : bool
+            Whether to keep the pngs for each frame of the movie or delete them
+            upon mp4 creation. (default: False)
         show_title : bool
             Whether to keep the current mlab figure title on the screen or suppress it
+            (Default: False)
 
         Returns
         -------
@@ -2455,6 +2459,8 @@ class freeCoG:
 
         if not os.path.isdir(movie_dir):
             os.mkdir(movie_dir)
+        if not os.path.isdir(os.path.join(movie_dir, 'frames')):
+            os.mkdir(os.path.join(movie_dir, 'frames'))
 
         if show_title==False:
             mlab.title('')
@@ -2470,12 +2476,19 @@ class freeCoG:
             plt.cla()
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
-            plt.savefig(os.path.join(movie_dir, '%s_%03d.png'%(movie_name, mi)))
+            frame_png = os.path.join(movie_dir, 'frames', '%s_%03d.png'%(movie_name, mi))
+            plt.savefig(frame_png)
 
-        os.system('%s -r %d -start_number 0 -i %s/%s_%%03d.png \
+        png_files = os.path.join(movie_dir, 'frames', movie_name+'_%03d.png')
+        movie_file = os.path.join(movie_dir, movie_name+'.mp4')
+        os.system('%s -r %d -start_number 0 -i %s \
             -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 \
-            -pix_fmt yuv420p %s/%s.mp4'%(ffmpeg, frame_rate, movie_dir, movie_name, movie_dir, movie_name))
+            -pix_fmt yuv420p %s'%(ffmpeg, frame_rate, png_files, movie_file))
 
+        if not keep_frames:
+            png_files = os.path.join(movie_dir, 'frames', movie_name+'_*.png')
+            [os.remove(r) for r in glob.glob(png_files)]
+            
         if close_fig:
             mlab.close()
 
