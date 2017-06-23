@@ -590,26 +590,37 @@ class freeCoG:
             os.system('mv %s %s'%(orig_file, preproc_dir))
         return 
 
-    def get_clinical_grid(self):
+    def get_clinical_grid(self, elecfile_prefix='hd_grid'):
         '''Loads in HD grid coordinates and use a list
-        of indices to extract downsampled grid.'''
+        of indices to extract downsampled grid.
+        
+        Parameters
+        ----------
+        elecfile_prefix : str
+            prefix of the .mat file with the electrode coordinates matrix
+
+        Returns
+        -------
+        clinicalgrid : array-like
+            n x 3 elecmatrix (every other row and every other column)
+        '''
 
         # load in clinical grid indices
-        clingrid = scipy.io.loadmat(os.path.join(self.img_pipe_dir, 'SupplementalFiles','clingrid_inds.mat'))
-        clingrid = clingrid.get('inds')
+        clingrid = scipy.io.loadmat(os.path.join(self.img_pipe_dir, 'SupplementalFiles','clingrid_inds.mat'))['inds'].ravel()
 
-        # load in hd grid coordinates
-        hd = scipy.io.loadmat(os.path.join(self.elecs_dir,'hd_grid.mat'))['elecmatrix']
+        # load in high density grid coordinates
+        hd = scipy.io.loadmat(os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'.mat'))['elecmatrix']
+        
+        # If we have a grid that is smaller than 256 channels, remove the irrelevant clinical grid indices
+        clingrid = clingrid[clingrid<hd.shape[0]]
 
-        # get clinical grid coordinates
-        clinicalgrid = hd[clingrid]
-        clinicalgrid = clinicalgrid[0,:,:]
+        # get clinical grid coordinates using the relevant indices
+        clinicalgrid = hd[clingrid,:]
 
         # save new coordinates
-        scipy.io.savemat(os.path.join(self.elecs_dir, 'clinical_grid.mat'), {'elecmatrix': clinicalgrid})
+        scipy.io.savemat(os.path.join(self.elecs_dir, 'individual_elecs', 'clinical_'+elecfile_prefix+'.mat'), {'elecmatrix': clinicalgrid})
 
         return clinicalgrid
-
 
     def get_subcort(self):
         '''Obtains .mat files for vertex and triangle
