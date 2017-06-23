@@ -60,7 +60,11 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
         gsp : float
             gaussian smoothing parameter, larger makes electrode activity
             more spread out across the surface if specified
-
+    
+    Returns
+    -------
+    mesh : mayavi mesh (actor)
+    mlab : mayavi mlab scene
     '''
     # if color is another iterable, make it a tuple.
     color = tuple(color)
