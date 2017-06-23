@@ -454,7 +454,7 @@ class freeCoG:
     def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
                                  surf_type='dural', \
                                  num_iter=30, dilate=0.0, grid=True,
-                                 convex_hull=False):
+                                 convex_hull=True):
         '''
         Project electrodes to the brain's surface to correct for deformation.
         
@@ -2488,7 +2488,7 @@ class freeCoG:
         if not keep_frames:
             png_files = os.path.join(movie_dir, 'frames', movie_name+'_*.png')
             [os.remove(r) for r in glob.glob(png_files)]
-            
+
         if close_fig:
             mlab.close()
 
