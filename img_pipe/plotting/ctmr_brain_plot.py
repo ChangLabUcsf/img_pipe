@@ -30,6 +30,7 @@ import mayavi
 from mayavi import mlab
 import numpy as np
 import matplotlib as mpl
+from matplotlib import cm
 
 def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
                     opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
