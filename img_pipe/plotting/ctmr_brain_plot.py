@@ -129,9 +129,10 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
         mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
 
     # Make the mesh look smoother
-    poly_data_normals = mlab.get_engine().scenes[0].children[0].children[0]
-    poly_data_normals.filter.feature_angle = 80.0 # Feature angle says which angles are considered hard corners
-    
+    for child in mlab.get_engine().scenes[0].children:
+        poly_data_normals = child.children[0]
+        poly_data_normals.filter.feature_angle = 80.0 # Feature angle says which angles are considered hard corners
+
     return mesh, mlab
 
 
