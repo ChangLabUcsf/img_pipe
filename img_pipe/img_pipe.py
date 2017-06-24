@@ -259,7 +259,7 @@ class freeCoG:
         elecs_CT = os.path.join(self.subj_dir, self.subj, 'CT', 'rCT.nii')
         aparc_aseg = os.path.join(self.subj_dir, self.subj, 'mri', 'aparc.a2009s+aseg.mgz')
         os.system("freeview --volume %s:opacity=0.8 --volume %s:opacity=0.6 --volume %s:colormap=lut:opacity=0.5:visible=0 --viewport 'coronal'"%(brain_mri, elecs_CT, aparc_aseg))
-
+        
     def make_dural_surf(self, radius=3, num_iter=30, dilate=0.0):
         '''
         Create smoothed dural surface for projecting electrodes to.
@@ -610,7 +610,7 @@ class freeCoG:
 
         # load in high density grid coordinates
         hd = scipy.io.loadmat(os.path.join(self.elecs_dir, 'individual_elecs', elecfile_prefix+'.mat'))['elecmatrix']
-        
+
         # If we have a grid that is smaller than 256 channels, remove the irrelevant clinical grid indices
         clingrid = clingrid[clingrid<hd.shape[0]]
 
@@ -1755,6 +1755,14 @@ class freeCoG:
         elevation : float
             Elevation for brain view. Default: 90
 
+        Returns
+        -------
+        mesh : mayavi brain mesh
+        points : mayavi electrodes
+        mlab : mayavi mlab scene
+        arr : array-like
+            brain image screenshot
+        fh : the mayavi figure handle
 
         Example
         -------
