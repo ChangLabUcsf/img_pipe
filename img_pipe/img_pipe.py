@@ -1817,11 +1817,11 @@ class freeCoG:
             if roi_name  in ('pial', 'rh_pial', 'lh_pial'):
                 #use pial surface of the entire hemisphere
                 if roi_name in ('pial', 'lh_pial'):
-                    lh_pial = self.get_surf(hem='lh')
+                    lh_pial = self.get_surf(hem='lh', template=template)
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], **kwargs)
 
                 if roi_name in ('pial', 'rh_pial'):
-                    rh_pial = self.get_surf(hem='rh')
+                    rh_pial = self.get_surf(hem='rh', template=template)
                     mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(rh_pial['tri'], rh_pial['vert'], **kwargs)
                     
             else:
