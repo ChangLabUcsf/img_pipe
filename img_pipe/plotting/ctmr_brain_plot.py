@@ -21,7 +21,8 @@
         mlab.show()  
 
 Modified for use in python from MATLAB code originally written by 
-Kai Miller (ctmr_gui)
+Kai Miller and Dora Hermes (ctmr_gui, see https://github.com/dorahermes/Paper_Hermes_2010_JNeuroMeth)
+
 '''
 
 import scipy.io
@@ -29,26 +30,45 @@ import mayavi
 from mayavi import mlab
 import numpy as np
 import matplotlib as mpl
+from matplotlib import cm
 
 def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
                     opacity = 1.0, representation='surface', line_width=1.0, gsp = 10,
                     cmap=mpl.cm.get_cmap('RdBu_r'), show_colorbar=True, new_fig=True, vmin=None, vmax=None,
                     ambient=0.4225, specular = 0.333, specular_power = 66, diffuse = 0.6995, interpolation='phong'):
+    ''' This function plots the 3D brain surface mesh
+    
+    Parameters
+    ----------
+        color : tuple
+            (n,n,n) tuple of floats between 0.0 and 1.0, background color of brain
+        elecs : array-like
+            [nchans x 3] matrix of electrode coordinate values in 3D
+        weights : array-like 
+            [nchans x 1] - if [elecs] is also given, this will color the brain vertices 
+            according to these weights
+        msize : float
+            size of the electrode.  default = 2
+        opacity : float (0.0 - 1.0)
+            opacity of the brain surface (value from 0.0 - 1.0)
+        cmap : str or mpl.colors.LinearSegmentedColormap
+            colormap to use when plotting gaussian weights with [elecs]
+            and [weights]
+        representation : {'surface', 'wireframe'}
+            surface representation
+        line_width : float
+            width of lines for triangular mesh
+        gsp : float
+            gaussian smoothing parameter, larger makes electrode activity
+            more spread out across the surface if specified
+    
+    Returns
+    -------
+    mesh : mayavi mesh (actor)
+    mlab : mayavi mlab scene
     '''
-    ctmr_gauss_plot(tri, vert)
-    This function plots the 3D brain surface mesh
-    Inputs:
-        color: (n,n,n) tuple of floats between 0.0 and 1.0, background color of brain
-        elecs: [nchans x 3] matrix of electrode coordinate values in 3D
-        weights: [nchans x 1] - if [elecs] is also given, this will color the brain vertices according to these weights
-        msize: size of the electrode.  default = 2
-        opacity: opacity of the brain surface (value from 0.0 - 1.0)
-        cmap: [str or mpl.colors.LinearSegmentedColormap], colormap to use when plotting gaussian weights with [elecs]
-        and [weights]
-        representation: 'surface' (default), or 'wireframe'
-        line_width: [float]
-        gsp: [int], gaussian smoothing parameter
-    '''
+    # if color is another iterable, make it a tuple.
+    color = tuple(color)
 
     brain_color = []
     #c = np.zeros(vert.shape[0],)
@@ -108,20 +128,29 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
     if opacity < 1.0:
         mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
 
+    # Make the mesh look smoother
+    for child in mlab.get_engine().scenes[0].children:
+        poly_data_normals = child.children[0]
+        poly_data_normals.filter.feature_angle = 80.0 # Feature angle says which angles are considered hard corners
+
     return mesh, mlab
 
 
 def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0, ambient = 0.3261, specular = 1, specular_power = 16, diffuse = 0.6995, interpolation = 'phong'):
-    '''
-    el_add(elecs, color = (1., 0., 0.), msize = 2)
-    This function adds the electrode matrix [elecs] (nchans x 3) to
+    '''This function adds the electrode matrix [elecs] (nchans x 3) to
     the scene.
-    Inputs:
-        elecs: [nchans x 3] matrix of electrode coordinate values in 3D
-        color: Electrode color is either a triplet (r, g, b),
-               or a numpy array with the same shape as [elecs] to plot one color per electrode
-        msize: size of the electrode.  default = 2
-        label_offset: how much to move the number labels out by (so not blocked by electrodes)
+    
+    Parameters
+    ----------
+        elecs : array-like
+            [nchans x 3] matrix of electrode coordinate values in 3D
+        color : tuple (triplet) or numpy array
+            Electrode color is either a triplet (r, g, b),
+            or a numpy array with the same shape as [elecs] to plot one color per electrode
+        msize : float
+            size of the electrode.  default = 2
+        label_offset : float
+            how much to move the number labels out by (so not blocked by electrodes)
     '''
 
     # plot the electrodes as spheres
