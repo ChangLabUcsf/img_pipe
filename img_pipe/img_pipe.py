@@ -2302,7 +2302,6 @@ class freeCoG:
         showfig : bool
             show figure or not.
         kwargs: goes to ctmr_gauss_plot. e.g. ambient, specular, diffuse, etc.
-
         """
         
         from mayavi import mlab
@@ -2577,3 +2576,4 @@ def remove_whitespace(brain_image):
     brain_image = brain_image[white_space2.astype(bool),:,:]
 
     return brain_image, x_offset, y_offset
+
