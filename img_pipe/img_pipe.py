@@ -1741,8 +1741,9 @@ class freeCoG:
         ----------
         rois : list of roi objects 
             (create an roi object like so:
-            hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, representation='surface', gaussian=True)). See
-            get_rois() method for available ROI names.
+            hipp_roi = patient.roi(name='lHipp', color=(0.5,0.1,0.8), opacity=1.0, 
+	                           representation='surface', gaussian=True)). 
+            See get_rois() method for available ROI names.
         elecs : array-like
             [nchans x 3] electrode coordinate matrix
         weights : array-like 
