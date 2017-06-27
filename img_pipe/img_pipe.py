@@ -1909,7 +1909,7 @@ class freeCoG:
             template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
             a = scipy.io.loadmat(template_pial_surf_file)
 
-        e = self.get_elecs(elecfile_prefix = elecfile_prefix)
+        e = self.get_elecs(elecfile_prefix=elecfile_prefix)
 
         # Plot the pial surface
         if self.hem == 'lh' or self.hem == 'rh':
@@ -2108,8 +2108,8 @@ class freeCoG:
         template_brain = scipy.io.loadmat(template_pial_surf_file)
 
         # Get native space and warped electrodes
-        subj_e = self.get_elecs(elecfile_prefix = elecfile_prefix)
-        template_e = self.get_elecs(elecfile_prefix = elecfile_prefix+'_warped')
+        subj_e = self.get_elecs(elecfile_prefix=elecfile_prefix)
+        template_e = self.get_elecs(elecfile_prefix=elecfile_prefix+'_warped')
         
         subj_brain_width = np.abs(np.max(subj_brain['vert'][:,1])-np.min(subj_brain['vert'][:,1]))
         template_brain_width = np.abs(np.max(template_brain['vert'][:,1])-np.min(template_brain['vert'][:,1]))
