@@ -2400,7 +2400,6 @@ class freeCoG:
             mesh, points, mlab, brain_image, f = self.plot_brain(rois=[pial], screenshot=True, showfig=False, helper_call=True, azimuth=azimuth, elevation=elevation)
             
             # Clip out the white space (there may be a better way to do this...)
-            # Can't currently do this if projecting 3D points to 2D in the way I'm doing below
             brain_image, x_offset, y_offset = remove_whitespace(brain_image)
 
             # Save as a png
