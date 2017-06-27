@@ -2369,8 +2369,6 @@ class freeCoG:
         elecs_2D_file: (optional) None or str
             Filename used when saving electrode position file. If None,
             filename is automatically generated based on view orientation.
-        test_plot : bool
-            Whether to show 2D plot (for debugging purposes)
         
         Returns
         -------
@@ -2413,7 +2411,7 @@ class freeCoG:
         if brain_file is None:
             brain_file = os.path.join(mesh_dir, 'brain2D_az%d_el%d%s.png' % (azimuth, elevation, template_nm))
         if elecs_2D_file is None:
-            elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d%s.mat' % (azimuth, elevation, template_nm))
+            elecs_2D_file = os.path.join(self.elecs_dir, '%s_2D_az%d_el%d%s.mat' % (elecfile_prefix, azimuth, elevation, template_nm))
 
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
