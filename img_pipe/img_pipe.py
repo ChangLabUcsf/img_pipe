@@ -2326,11 +2326,14 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90, force=False):
-        '''Generate 2D screenshot of the brain at a specified azimuth and elevation,
-        and return projected 2D coordinates of electrodes at this view.
+    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90, force=False,
+                      brain_file=None, elecs_2D_file=None):
+        """Generate 2D screenshot of the brain at a specified azimuth and
+        elevation, and return projected 2D coordinates of electrodes at this
+        view.
 
-        Some code for projection taken from example_mlab_3D_to_2D by S. Chris Colbert <sccolbert@gmail.com>, 
+        Some code for projection taken from example_mlab_3D_to_2D
+        by S. Chris Colbert <sccolbert@gmail.com>,
         see: http://docs.enthought.com/mayavi/mayavi/auto/example_mlab_3D_to_2D.html
         
         Parameters
@@ -2342,38 +2345,47 @@ class freeCoG:
         elevation : float
             Elevation for brain plot
         force : bool
-            Force re-creation of the image and 2D coordinates even if the files exist.
+            Force re-creation of the image and 2D coordinates even if the files
+            exist.
+        brain_file: (optional) None or str
+            Filename used when saving 2D brain image. If None, filename is
+            automatically generated based on view orientation.
+        elecs_2D_file: (optional) None or str
+            Filename used when saving electrode position file. If None,
+            filename is automatically generated based on view orientation.
         
         Returns
         -------
         brain_image : array-like
             2D brain image
         elecmatrix_2D : array-like
-            elecs x 2 matrix of coordinates in 2D that match brain_image and can be plotted
-            using matplotlib pyplot instead of mayavi.
+            elecs x 2 matrix of coordinates in 2D that match brain_image and
+            can be plotted using matplotlib pyplot instead of mayavi.
         
-        '''
+        """
         from PIL import Image
 
         if hem is None:
-            roi_name = self.hem+'_pial'
+            roi_name = self.hem + '_pial'
         elif hem == 'lh' or hem == 'rh':
-            roi_name = hem+'_pial'
+            roi_name = hem + '_pial'
         else:
             roi_name = 'pial'
 
         if azimuth is None:
-            if self.hem=='lh':
-                azimuth=180
-            elif self.hem=='rh':
-                azimuth=0
+            if self.hem == 'lh':
+                azimuth = 180
+            elif self.hem == 'rh':
+                azimuth = 0
             else:
-                azimuth=90
+                azimuth = 90
 
         # Path to each of the 2D files (a screenshot of the brain at a given angle,
         # as well as the 2D projected electrode coordinates for that view).
-        brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png'%(azimuth, elevation))
-        elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat'%(azimuth, elevation))
+        if brain_file is None:
+            brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png' % (azimuth, elevation))
+        if elecs_2D_file is None:
+            elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat' % (azimuth, elevation))
 
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
@@ -2385,7 +2397,7 @@ class freeCoG:
         else:
             # Get the pial surface and plot it at the specified azimuth and elevation
             pial = self.roi(name=roi_name)
-            mesh, points, mlab, brain_image, f = self.plot_brain(rois = [pial], screenshot=True, showfig=False, helper_call=True, azimuth=azimuth, elevation=elevation)
+            mesh, points, mlab, brain_image, f = self.plot_brain(rois=[pial], screenshot=True, showfig=False, helper_call=True, azimuth=azimuth, elevation=elevation)
             
             # Clip out the white space (there may be a better way to do this...)
             # Can't currently do this if projecting 3D points to 2D in the way I'm doing below
@@ -2414,17 +2426,17 @@ class freeCoG:
                 apply_transform_to_points(hmgns_world_coords, combined_transform_mat)
 
             # Get normalized view coordinates
-            norm_view_coords = view_coords / (view_coords[:,3].reshape(-1, 1))
+            norm_view_coords = view_coords / (view_coords[:, 3].reshape(-1, 1))
 
             # Transform from normalized coordinates to display coordinates (2D)
             view_to_disp_mat = get_view_to_display_matrix(f.scene)
             disp_coords = apply_transform_to_points(norm_view_coords, view_to_disp_mat)
-            elecmatrix_2D = np.zeros((elecmatrix.shape[0],2))
+            elecmatrix_2D = np.zeros((elecmatrix.shape[0], 2))
             for i in np.arange(elecmatrix.shape[0]):
-                elecmatrix_2D[i,:] = disp_coords[:,:2][i]
+                elecmatrix_2D[i, :] = disp_coords[:, :2][i]
 
-            elecmatrix_2D[:,0] = elecmatrix_2D[:,0] - x_offset
-            elecmatrix_2D[:,1] = elecmatrix_2D[:,1] - y_offset
+            elecmatrix_2D[:, 0] = elecmatrix_2D[:, 0] - x_offset
+            elecmatrix_2D[:, 1] = elecmatrix_2D[:, 1] - y_offset
 
             print(elecmatrix_2D)
 
