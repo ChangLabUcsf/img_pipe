@@ -1620,7 +1620,7 @@ class freeCoG:
             print('File not found: %s'%(elecfile))
         return e
 
-    def get_surf(self, hem='', roi='pial'):
+    def get_surf(self, hem='', roi='pial', template=None):
         ''' Utility for loading the pial surface for a given hemisphere ('lh' or 'rh') 
         
         Parameters
@@ -1630,7 +1630,9 @@ class freeCoG:
         roi : str
             The region of interest to load.  Should be a Mesh that exists
             in the subject's Meshes directory, called [roi]_trivert.mat
-
+        template : str, optional
+            Name of the template to use if plotting electrodes on an atlas brain. e.g. 'cvs_avg35_inMNI152'
+        
         Returns
         -------
         cortex : dict
@@ -1641,11 +1643,19 @@ class freeCoG:
             hem = self.hem
         if roi == 'pial':
             if hem == 'lh' or hem == 'rh':
-                cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+                if template == None:
+                    cortex = scipy.io.loadmat(self.pial_surf_file[hem])
+                else:
+                    template_file = os.path.join(self.subj_dir, template, 'Meshes', hem+'_pial_trivert.mat')
+                    cortex = scipy.io.loadmat(template_file)
             elif hem == 'stereo':
                 cortex = dict()
                 for h in ['lh', 'rh']:
-                    cortex[h] = scipy.io.loadmat(self.pial_surf_file[h])
+                    if template == None:
+                        cortex[h] = scipy.io.loadmat(self.pial_surf_file[h])
+                    else:
+                        template_file = os.path.join(self.subj_dir, template, 'Meshes', h+'_pial_trivert.mat')
+                        cortex[h] = scipy.io.loadmat(template_file)
         else: 
             cortex = scipy.io.loadmat(os.path.join(self.mesh_dir, hem + '_' + roi + '_trivert.mat'))
         return cortex
@@ -1724,7 +1734,7 @@ class freeCoG:
 
     def plot_brain(self, rois=[roi(name='pial', color=(0.8,0.8,0.8), opacity=1.0, representation='surface', gaussian=False)], elecs=None, 
                     weights=None, cmap = 'RdBu', showfig=True, screenshot=False, helper_call=False, vmin=None, vmax=None,
-                    azimuth=None, elevation=90):
+                    azimuth=None, elevation=90, template=None):
         '''Plots multiple meshes on one figure. Defaults to plotting both hemispheres of the pial surface.
         
         Parameters
@@ -1754,7 +1764,9 @@ class freeCoG:
             the left side for hem='lh', right side for hem='rh', or front view for 'pial'
         elevation : float
             Elevation for brain view. Default: 90
-
+        template : None or str
+            Name of the template to use if plotting electrodes on an atlas brain. e.g. 'cvs_avg35_inMNI152'
+        
         Returns
         -------
         mesh : mayavi brain mesh
@@ -1799,9 +1811,9 @@ class freeCoG:
             if roi_name =='pial' or roi_name == 'rh_pial' or roi_name == 'lh_pial':
                 #use pial surface of the entire hemisphere
                 if roi_name == 'pial' or roi_name == 'lh_pial':
-                    lh_pial = self.get_surf(hem='lh')
+                    lh_pial = self.get_surf(hem='lh', template=template)
                 if roi_name == 'pial' or roi_name == 'rh_pial':
-                    rh_pial = self.get_surf(hem='rh')
+                    rh_pial = self.get_surf(hem='rh', template=template)
                 if gaussian:
                     if roi_name == 'pial' or roi_name == 'lh_pial':
                         mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(lh_pial['tri'], lh_pial['vert'], color=color, opacity=opacity, elecs=elecs, weights=weights,
@@ -1877,15 +1889,15 @@ class freeCoG:
         Parameters
         ----------
         elecfile_prefix : str, optional
-                        prefix of the .mat file with the electrode coordinates matrix 
+            prefix of the .mat file with the electrode coordinates matrix 
         template : str, optional
-                   Name of the template to use if plotting electrodes on an atlas brain
+            Name of the template to use if plotting electrodes on an atlas brain
         showfig : bool
-                  Whether to show the figure or not
+            Whether to show the figure or not
         screenshot : bool
-                     Whether to take a 2D screenshot or not
+            Whether to take a 2D screenshot or not
         opacity : float (from 0.0 to 1.0)
-                  opacity of the brain surface mesh.
+            opacity of the brain surface mesh.
 
         '''
         import plotting.ctmr_brain_plot as ctmr_brain_plot
@@ -2326,8 +2338,8 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90, force=False,
-                      brain_file=None, elecs_2D_file=None):
+    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90, elecfile_prefix='TDT_elecs_all',
+                      template=None, force=False, brain_file=None, elecs_2D_file=None):
         """Generate 2D screenshot of the brain at a specified azimuth and
         elevation, and return projected 2D coordinates of electrodes at this
         view.
@@ -2341,9 +2353,13 @@ class freeCoG:
         hem : {None, 'lh', 'rh', 'both'}
             Hemisphere to show. If None, defaults to self.hem.  
         azimuth : float
-            Azimuth for brain plot
+            Azimuth for brain plot. Normally azimuth=180 for lh, azimuth=0 for rh
         elevation : float
             Elevation for brain plot
+        elecfile_prefix: str
+            prefix of the .mat with the electrode coordinates matrix
+        template : str or None
+            Name of the atlas template (if used instead of the subject's brain).
         force : bool
             Force re-creation of the image and 2D coordinates even if the files
             exist.
@@ -2353,6 +2369,8 @@ class freeCoG:
         elecs_2D_file: (optional) None or str
             Filename used when saving electrode position file. If None,
             filename is automatically generated based on view orientation.
+        test_plot : bool
+            Whether to show 2D plot (for debugging purposes)
         
         Returns
         -------
@@ -2380,12 +2398,22 @@ class freeCoG:
             else:
                 azimuth = 90
 
+        # Add the template to the file name if it is specified, also
+        # don't save the same template view over and over if it isn't
+        # necessary
+        if template is not None:
+            template_nm = template
+            mesh_dir = os.path.join(self.subj_dir, template, 'Meshes')
+        else:
+            template_nm = ''
+            mesh_dir = self.mesh_dir
+
         # Path to each of the 2D files (a screenshot of the brain at a given angle,
         # as well as the 2D projected electrode coordinates for that view).
         if brain_file is None:
-            brain_file = os.path.join(self.mesh_dir, 'brain2D_az%d_el%d.png' % (azimuth, elevation))
+            brain_file = os.path.join(mesh_dir, 'brain2D_az%d_el%d%s.png' % (azimuth, elevation, template_nm))
         if elecs_2D_file is None:
-            elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d.mat' % (azimuth, elevation))
+            elecs_2D_file = os.path.join(self.elecs_dir, 'elecs2D_az%d_el%d%s.mat' % (azimuth, elevation, template_nm))
 
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
@@ -2397,8 +2425,10 @@ class freeCoG:
         else:
             # Get the pial surface and plot it at the specified azimuth and elevation
             pial = self.roi(name=roi_name)
-            mesh, points, mlab, brain_image, f = self.plot_brain(rois=[pial], screenshot=True, showfig=False, helper_call=True, azimuth=azimuth, elevation=elevation)
-            
+            mesh, points, mlab, brain_image, f = self.plot_brain(rois=[pial], screenshot=True, showfig=False, 
+                                                                 helper_call=True, azimuth=azimuth, elevation=elevation,
+                                                                 template=template)
+
             # Clip out the white space (there may be a better way to do this...)
             brain_image, x_offset, y_offset = remove_whitespace(brain_image)
 
@@ -2413,7 +2443,7 @@ class freeCoG:
 
         else:
             # Get the 3D electrode matrix
-            e = self.get_elecs()
+            e = self.get_elecs(elecfile_prefix=elecfile_prefix)
             elecmatrix = e['elecmatrix']
             
             W = np.ones(elecmatrix.shape[0])
