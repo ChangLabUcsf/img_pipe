@@ -1895,12 +1895,7 @@ class freeCoG:
         import plotting.ctmr_brain_plot as ctmr_brain_plot
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
-        if template == None:
-            a = self.get_surf()
-        else:
-            template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
-            a = scipy.io.loadmat(template_pial_surf_file)
-
+        a = self.get_surf(template=template)
         e = self.get_elecs(elecfile_prefix=elecfile_prefix)
 
         # Plot the pial surface
@@ -2096,8 +2091,7 @@ class freeCoG:
         import SupplementalFiles.FS_colorLUT as FS_colorLUT
 
         subj_brain = self.get_surf()
-        template_pial_surf_file = os.path.join(self.subj_dir, template, 'Meshes', self.hem+'_pial_trivert.mat')
-        template_brain = scipy.io.loadmat(template_pial_surf_file)
+        template_brain = self.get_surf(template=template)
 
         # Get native space and warped electrodes
         subj_e = self.get_elecs(elecfile_prefix=elecfile_prefix)
