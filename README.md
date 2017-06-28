@@ -73,6 +73,8 @@ The full workflow is shown as a flowchart below:
 ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalFiles/workflow.png "img_pipe")
 
 ### Example images: ###
+In addition to localization, labeling, and warping of electrodes, `img_pipe` includes some nice plotting functions for visualizing your data.  You can plot cortical and subcortical ROIs with different surface properties (opacity, color, specularity, etc) and you can plot electrodes either as spheres or as gaussian blobs on the cortical surface. Electrodes can be colored individually or all the same color. If you prefer to work in 2D (using matplotlib), there is a function `patient.auto_2D_brain()` that will create a brain image and corresponding projected 2D coordinates for even more flexibility (and some added speed since it avoids 3D rendering).
+
 All of these images should be created after initializing the patient (as below).
 ```python
 >>> import img_pipe
