@@ -72,4 +72,123 @@ The full workflow is shown as a flowchart below:
 
 ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalFiles/workflow.png "img_pipe")
 
+### Example images: ###
+All of these images should be created after initializing the patient (as below).
+```python
+>>> import img_pipe
+>>> patient = img_pipe.freeCoG(subj='subj_ID', hem='lh')
+```
+
+<table>
+<tr>
+<th width=300px>
+Image
+</th>
+<th width=300px>
+ Code
+</th>
+</tr>
+<tr>
+<td width=300px align="center">
+ <img src="gallery/brain_left.png" alt="pial surface"/>
+</td>
+<td width=300px>
+   <pre lang="python">
+patient.plot_brain() 
+   </pre>
+</td>
+</tr>
+<tr>
+<td align="center">
+ <img src="gallery/brain_hipp.png" alt="pial surface with hippocampus"/>
+</td>
+<td>
+   <pre lang="python">
+pial = patient.roi('pial',opacity=0.3, representation='surface',
+                   color=(0.9,0.8,0.5),gaussian=False)
+hipp = patient.roi('lHipp', opacity = 0.8, representation = 'wireframe', 
+                   color=(0.5, 0.3,0.5), gaussian=False) 
+patient.plot_brain(rois=[pial, hipp])
+   </pre>
+</td>
+</tr>
+<tr>
+<td align="center">
+ <img src="gallery/ifg.png" alt="pial surface with IFG ROI"/>
+</td>
+<td>
+   <pre lang="python">
+roi_list = ['parsopercularis','parstriangularis','parsorbitalis']
+patient.make_roi_mesh('pars',roi_list, showfig=False)
+patient.plot_brain(rois=[patient.roi('pial',opacity=1.0),
+                   patient.roi('lh_pars',color=(0.3,0.6,0.4))], 
+                   screenshot=True, showfig=False)
+   </pre>
+</td>
+</tr>
+<tr>
+<td align="center">
+ <img src="gallery/recon_anatomy.png" alt="labeled electrodes on brain"/>
+</td>
+<td>
+   <pre lang="python">
+patient.plot_recon_anatomy()
+   </pre>
+</td>
+</tr>
+<tr>
+<td align="center">
+ <img src="gallery/brain_prepost.png" alt="electrodes on pre and postcentral gyri"/>
+</td>
+<td>
+   <pre lang="python">
+from plotting.ctmr_brain_plot import ctmr_gauss_plot
+from plotting.ctmr_brain_plot import el_add
+from matplotlib import cm
+from matplotlib import pyplot as plt
+patient = img_pipe.freeCoG(subj='EC108', hem='lh', subj_dir=subj_dir)
+precentral_elecs = patient.get_elecs(roi='precentral')['elecmatrix']
+postcentral_elecs = patient.get_elecs(roi='postcentral')['elecmatrix']
+pial = patient.get_surf(hem='lh')
+cmap = cm.Reds
+precentral_colors = cmap(np.linspace(0,1,precentral_elecs.shape[0]))[:,:3]
+cmap = cm.Blues
+postcentral_colors = cmap(np.linspace(0,1,postcentral_elecs.shape[0]))[:,:3]
+mesh, mlab = ctmr_gauss_plot(tri=pial['tri'], vert=pial['vert'])
+el_add(precentral_elecs, color = precentral_colors)
+el_add(postcentral_elecs, color = postcentral_colors)
+   </pre>
+</td>
+</tr>
+<tr>
+<td align="center">
+ <img src="gallery/atlaselecs.png" alt="warped electrodes on atlas brain"/>
+</td>
+<td>
+   <pre lang="python">
+subjs = ['EC108','EC125']
+elecs = []
+
+#get the electrode coordinate matrix for each subject
+for s in subjs:
+&nbsp;&nbsp;&nbsp;&nbsp;print s
+&nbsp;&nbsp;&nbsp;&nbsp;patient = img_pipe.freeCoG(subj = s, hem = 'lh')
+&nbsp;&nbsp;&nbsp;&nbsp;warped_elecs = patient.get_elecs(elecfile_prefix='TDT_elecs_all_warped')
+&nbsp;&nbsp;&nbsp;&nbsp;elecs.append(warped_elecs['elecmatrix'])
+#combine the electrode matrices from the different subjects into one matrix
+elecmatrix = np.concatenate(elecs, axis=0)
+#simply pass in the elecmatrix to plot_brain()
+template = 'cvs_avg35_inMNI152'
+atlas_patient = img_pipe.freeCoG(subj = template, hem='lh')
+roi = atlas_patient.roi('pial', opacity=0.5)
+atlas_patient.plot_brain(rois = [roi], 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;showfig=True, 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;screenshot=True, 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;elecs = elecmatrix,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;weights = None)
+   </pre>
+</td>
+</tr>
+</table>
+
 If you find any bugs, please post in the Issues tab. 
