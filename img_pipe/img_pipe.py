@@ -505,6 +505,12 @@ class freeCoG:
         else:
             elecfile_name = elecfile_prefix
 
+        if elecfile_prefix == 'OFC_grid':
+            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis',
+                                       'parstriangularis','superiorfrontal','rostralanteriorcingulate',
+                                       'caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
+            surf_type = 'OFC'
+        
         dural_mesh = os.path.join(self.subj_dir, self.subj, 'Meshes', self.subj + '_' + self.hem + '_dural.mat')
         if surf_type=='dural' and not os.path.isfile(dural_mesh):
             print('Creating dural surface mesh, using %d smoothing iterations'%(num_iter))
@@ -558,12 +564,6 @@ class freeCoG:
                 direction = self.hem
             else:
                 direction = proj_direction
-
-        if elecfile_prefix == 'OFC_grid':
-            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis',
-                                       'parstriangularis','superiorfrontal','rostralanteriorcingulate',
-                                       'caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
-            surf_type = 'OFC'
 
         print('::: Loading Mesh data :::')
         print(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))
@@ -2021,6 +2021,7 @@ class freeCoG:
         if anat_colored:
             anatomy_labels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy'][:,3]
 
+        brain_areas = np.unique(anatomy_labels)
         for c in range(num_channels):
             if anat_colored:
                 b = anatomy_labels[c]
