@@ -358,7 +358,12 @@ class freeCoG:
             cortex = {'tri': tri+1, 'vert': vert}
             scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
-        setattr(self, mesh_name+'_surf_file', out_file)
+        if mesh_name=='pial':
+            self.pial_surf_file = dict()
+            self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
+            self.pial_surf_file['rh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'rh_pial_trivert.mat')
+        else:
+            setattr(self, mesh_name+'_surf_file', out_file)
   
     def reg_img(self, source='CT.nii', target='orig.mgz', smooth=0., reg_type='rigid', interp='pv', xtol=0.0001, ftol=0.0001):
         '''Runs nmi coregistration between two images.
