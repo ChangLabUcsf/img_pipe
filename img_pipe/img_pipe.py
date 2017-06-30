@@ -144,7 +144,7 @@ class freeCoG:
             and related functions for creating surface reconstructions and/or plotting.    
         '''
         # Check if hem is valid
-        if not self.hem in ['rh', 'lh', 'stereo']:
+        if not hem in ['rh', 'lh', 'stereo']:
             raise NameError('Invalid hem for freeCoG')
         
         self.subj = subj
