@@ -1067,9 +1067,9 @@ class freeCoG:
                                [   0.,   -1.,    0.,  128.],
                                [   0.,    0.,    0.,    1.]])
 
-            elecs_depths = elecmatrix[np.invert(isnotdepth),:]
+            elecs_depths = elecmatrix[np.invert(isnotdepth), :]
             intercept = np.ones(len(elecs_depths))
-            elecs_ones = np.column_stack((elecs_depths,intercept))
+            elecs_ones = np.column_stack((elecs_depths, intercept))
 
             # Find voxel CRS
             VoxCRS = np.dot(np.linalg.inv(affine), elecs_ones.transpose()).transpose().astype(int)
@@ -1270,7 +1270,7 @@ class freeCoG:
         #affine_template = np.loadtxt(os.path.join(self.subj_dir, '%s_affine_subj.txt'%(template_brain)))
 
         elec = VoxCRS
-        elec = elec[:,0:3]
+        elec = elec[:, 0:3]
         nan_elecs = np.isnan(elec)
         elec = np.nan_to_num(elec)
 
@@ -1278,25 +1278,26 @@ class freeCoG:
         np.savetxt(RAS_text_file, elec, fmt='%1.2f\t%1.2f\t%1.2f', delimiter='\t')
 
         print(':::: Applying Non-linear warping ::::')
-        template_brain_file = os.path.join(self.subj_dir, template_brain, 'mri', 'brain.mgz')
-        morph_file = os.path.join(self.subj_dir, self.subj, 'cvs', 'combined_to'+template_brain+'_elreg_afteraseg-norm.tm3d')
+        template_brain_file = os.path.join(self.subj_dir, template_brain,
+                                           'mri', 'brain.mgz')
+        morph_file = os.path.join(self.subj_dir, self.subj, 'cvs',
+                                  'combined_to'+template_brain+'_elreg_afteraseg-norm.tm3d')
         nearest_warped_file = os.path.join(self.elecs_dir, elecfile_prefix+'_nearest_warped.txt')
-        os.system('applyMorph --template %s --transform %s tract_point_list %s %s nearest' % (template_brain_file,
-                                                                                              morph_file,
-                                                                                              RAS_text_file,
-                                                                                              nearest_warped_file))
+        os.system('applyMorph --template %s --transform %s tract_point_list %s %s nearest'%
+                  (template_brain_file, morph_file, RAS_text_file,
+                   nearest_warped_file))
 
         print(':::: Computing Vox2RAS and saving %s_warped mat file ::::'% (elecfile_prefix))
         elec = np.loadtxt(nearest_warped_file)
 
-        elec = np.concatenate((elec, np.ones((elec.shape[0], 1))), axis = 1)
+        elec = np.concatenate((elec, np.ones((elec.shape[0], 1))), axis=1)
 
         elecmatrix = np.dot(fsVox2RAS, elec.transpose()).transpose()  
 
         elecmatrix = elecmatrix[:, 0:3]
         
         # Set the electrodes back to NaN where applicable
-        elecmatrix[np.where(nan_elecs[:,0]),:] = np.nan
+        elecmatrix[np.where(nan_elecs[:, 0]), :] = np.nan
 
          # This is for deleting the duplicate row that applyMorph produces for some reason
         if (elecmatrix[-1,:] == elecmatrix[-2,:]).all():
@@ -2449,9 +2450,13 @@ class freeCoG:
         # Path to each of the 2D files (a screenshot of the brain at a given angle,
         # as well as the 2D projected electrode coordinates for that view).
         if brain_file is None:
-            brain_file = os.path.join(mesh_dir, 'brain2D_az%d_el%d%s.png' % (azimuth, elevation, template_nm))
+            brain_file = os.path.join(mesh_dir, 'brain2D_az%d_el%d%s.png' %
+                                      (azimuth, elevation, template_nm))
         if elecs_2D_file is None:
-            elecs_2D_file = os.path.join(self.elecs_dir, '%s_2D_az%d_el%d%s.mat' % (elecfile_prefix, azimuth, elevation, template_nm))
+            elecs_2D_file = os.path.join(self.elecs_dir,
+                                         '%s_2D_az%d_el%d%s.mat' %
+                                         (elecfile_prefix, azimuth, elevation,
+                                          template_nm))
 
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
@@ -2463,9 +2468,10 @@ class freeCoG:
         else:
             # Get the pial surface and plot it at the specified azimuth and elevation
             pial = self.roi(name=roi_name)
-            mesh, points, mlab, brain_image, f = self.plot_brain(rois=[pial], screenshot=True, showfig=False, 
-                                                                 helper_call=True, azimuth=azimuth, elevation=elevation,
-                                                                 template=template)
+            mesh, points, mlab, brain_image, f = \
+                self.plot_brain(rois=[pial], screenshot=True, showfig=False,
+                                helper_call=True, azimuth=azimuth,
+                                elevation=elevation, template=template)
 
             # Clip out the white space (there may be a better way to do this...)
             brain_image, x_offset, y_offset = remove_whitespace(brain_image)
