@@ -28,6 +28,8 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 
+import pdb
+
 # For CT to MRI registration
 from nipy.core.api import AffineTransform
 import nipy.algorithms
@@ -2325,7 +2327,8 @@ class freeCoG:
 
     def auto_2D_brain(self, hem=None, azimuth=None, elevation=90,
                       elecfile_prefix='TDT_elecs_all', template=None,
-                      force=False, brain_file=None, elecs_2D_file=None):
+                      force=False, brain_file=None, elecs_2D_file=None,
+                      elecs=None):
         """Generate 2D screenshot of the brain at a specified azimuth and
         elevation, and return projected 2D coordinates of electrodes at this
         view.
@@ -2351,10 +2354,15 @@ class freeCoG:
             exist.
         brain_file: (optional) None or str
             Filename used when saving 2D brain image. If None, filename is
-            automatically generated based on view orientation.
+            automatically generated based on view orientation. If empty string,
+            no brain_file is saved.
         elecs_2D_file: (optional) None or str
             Filename used when saving electrode position file. If None,
             filename is automatically generated based on view orientation.
+            If empy string, do not save elecs_2D_file.
+        elecs: (optional) None or array-like
+            [nchan x 3] If specified, ignores elecfile_prefix and loads in
+            elecmatrix directly
         
         Returns
         -------
@@ -2404,6 +2412,10 @@ class freeCoG:
 
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
+            if not os.path.isfile(elecs_2D_file):
+                raise ValueError(
+                   'If brain_file is an existing file and force is False, '
+                   'elecs_2D_file must also be an existing file.')
             # Get the file
             #print("Loading previously saved file %s"%(brain_file))
             im = Image.open(brain_file)
@@ -2422,7 +2434,8 @@ class freeCoG:
 
             # Save as a png
             im = Image.fromarray(brain_image)
-            im.save(brain_file)
+            if brain_file:
+                im.save(brain_file)
 
         # Test whether we already have the electrodes file
         if os.path.isfile(elecs_2D_file) and force is False:
@@ -2430,15 +2443,20 @@ class freeCoG:
             elecmatrix_2D = scipy.io.loadmat(elecs_2D_file)['elecmatrix']
 
         else:
-            # Get the 3D electrode matrix
-            e = self.get_elecs(elecfile_prefix=elecfile_prefix)
-            elecmatrix = e['elecmatrix']
-            
-            elecmatrix_2D = compute_2d_warp(elecmatrix, f.scene)
+            if elecs is None:
+                # Get the 3D electrode matrix
+                e = self.get_elecs(elecfile_prefix=elecfile_prefix)
+                elecmatrix = e['elecmatrix']
+            else:
+                elecmatrix = elecs
+
+            #pdb.set_trace()
+            elecmatrix_2D = compute_2d_projection(elecmatrix, f.scene,
+                                                  x_offset, y_offset)
 
             print(elecmatrix_2D)
-
-            scipy.io.savemat(elecs_2D_file, {'elecmatrix': elecmatrix_2D})
+            if elecs_2D_file:
+                scipy.io.savemat(elecs_2D_file, {'elecmatrix': elecmatrix_2D})
             mlab.close()
 
         return brain_image, elecmatrix_2D
@@ -2550,7 +2568,22 @@ def remove_whitespace(brain_image):
     return brain_image, x_offset, y_offset
 
 
-def compute_2d_warp(elecmatrix, scene):
+def compute_2d_projection(elecmatrix, scene, x_offset, y_offset):
+    """Computes projection of coordinates from 3D to 2D sites in a scene.
+
+    Parameters
+    ----------
+    elecmatrix: array-like
+    [nchan x 3]
+    scene: mayavi.core.scene.Scene
+    x_offset, y_offset: float
+
+    Returns
+    -------
+    elecmatrix_2D: array-like
+    [nchan x 2]
+
+    """
     W = np.ones(elecmatrix.shape[0])
     hmgns_world_coords = np.column_stack((elecmatrix, W))
 
