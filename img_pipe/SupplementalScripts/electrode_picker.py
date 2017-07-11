@@ -198,10 +198,7 @@ class electrode_picker:
         self.ct_codes =nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(self.ct.affine))
         ct_data = nib.orientations.apply_orientation(self.ct.get_data(), self.ct_codes)
 
-        # Threshold the CT so only bright objects (electrodes) are visible
-        ct_data[ct_data < 1000] = np.nan
-        cx,cy,cz=np.array(ct_data.shape, dtype='float')
-        
+        cx,cy,cz=np.array(ct_data.shape, dtype='float')       
 
         # Resample both images to the highest resolution
         voxsz = (256, 256, 256)
@@ -213,6 +210,9 @@ class electrode_picker:
             print("Resizing voxels in MRI")
             img_data = scipy.ndimage.zoom(img_data, [voxsz[0]/nx, voxsz[1]/ny, voxsz[2]/nz])
             print(img_data.shape)
+        
+        # Threshold the CT so only bright objects (electrodes) are visible
+        ct_data[ct_data < 1000] = np.nan
         
         self.ct_data = ct_data
         self.img_data = img_data
