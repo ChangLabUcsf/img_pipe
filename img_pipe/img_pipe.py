@@ -5,16 +5,19 @@
 # Laboratory of Edward Chang
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: June 21, 2017
+# Date Last Edited: June 30, 2017
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
 # brain surface reconstruction and electrode localization/labeling
+#test
 
 import os
 import glob
 import pickle
 import shutil
+import argparse
+import inspect
 
 import nibabel as nib
 from tqdm import tqdm
@@ -140,6 +143,9 @@ class freeCoG:
             patient object, including information about subject ID, hemisphere, where data live, 
             and related functions for creating surface reconstructions and/or plotting.    
         '''
+        # Check if hem is valid
+        if not hem in ['rh', 'lh', 'stereo']:
+            raise NameError('Invalid hem for freeCoG')
         
         self.subj = subj
         self.subj_dir = subj_dir
@@ -148,11 +154,17 @@ class freeCoG:
         self.img_pipe_dir = os.path.dirname(os.path.realpath(__file__))
         self.zero_indexed_electrodes = zero_indexed_electrodes
 
-        #Freesurfer home directory
+        # Freesurfer home directory
         self.fs_dir = fs_dir
+
+        # acpc_dir: dir for acpc MRIs
+        self.acpc_dir = os.path.join(self.subj_dir, self.subj, 'acpc')
 
         # CT_dir: dir for CT img data
         self.CT_dir = os.path.join(self.subj_dir, self.subj, 'CT')
+
+        # dicom_dir: dir for storing dicoms
+        self.dicom_dir = os.path.join(self.subj_dir, self.subj, 'dicom')
 
         # elecs_dir: dir for elecs coordinates
         self.elecs_dir = os.path.join(self.subj_dir, self.subj, 'elecs')
@@ -162,7 +174,7 @@ class freeCoG:
         if self.hem == 'stereo':
             surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
         else:
-            surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem+'_pial_trivert.mat')
+            surf_file = os.path.join(self.subj_dir, self.subj, 'Meshes', self.hem + '_pial_trivert.mat')
         if os.path.isfile(surf_file):
             self.pial_surf_file = dict()
             self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
@@ -173,6 +185,23 @@ class freeCoG:
 
         # mri directory
         self.mri_dir = os.path.join(self.subj_dir, self.subj, 'mri')
+
+        # Check if subj is valid
+        if not os.path.isdir(os.path.join(self.subj_dir, self.subj)):
+            print('No such subject directory as %s' % (os.path.join(self.subj_dir, self.subj)))
+            ans = raw_input('Would you like to create a new subject directory? (y/N): ')
+            if ans.upper() == 'Y' or ans.upper() == 'YES':
+                os.chdir(self.subj_dir)
+                print("Making subject directory")
+                os.mkdir(self.subj)
+                os.mkdir(self.acpc_dir)
+                os.mkdir(self.CT_dir)
+                os.mkdir(self.dicom_dir)
+                os.mkdir(self.elecs_dir)
+                os.mkdir(self.mesh_dir)
+                os.mkdir(self.mri_dir)
+            else:
+                raise NameError('No such subject directory as %s' % (os.path.join(subj_dir, subj)))
 
         #if paths are not the default paths in the shell environment:
         os.environ['FREESURFER_HOME'] = fs_dir
@@ -186,10 +215,6 @@ class freeCoG:
 
         # navigate to directory with subject freesurfer folders           
         # and make a new folder for the patient
-
-        if not os.path.isdir(os.path.join(self.subj_dir, self.subj)):
-            print("Making subject directory")
-            os.mkdir(self.subj)
 
         # create elecs folders
         if not os.path.isdir(self.elecs_dir):
@@ -358,7 +383,12 @@ class freeCoG:
             cortex = {'tri': tri+1, 'vert': vert}
             scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
-        setattr(self, mesh_name+'_surf_file', out_file)
+        if mesh_name=='pial':
+            self.pial_surf_file = dict()
+            self.pial_surf_file['lh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'lh_pial_trivert.mat')
+            self.pial_surf_file['rh'] = os.path.join(self.subj_dir, self.subj, 'Meshes', 'rh_pial_trivert.mat')
+        else:
+            setattr(self, mesh_name+'_surf_file', out_file)
   
     def reg_img(self, source='CT.nii', target='orig.mgz', smooth=0., reg_type='rigid', interp='pv', xtol=0.0001, ftol=0.0001):
         '''Runs nmi coregistration between two images.
@@ -2537,6 +2567,9 @@ class freeCoG:
         if close_fig:
             mlab.close()
 
+
+# Functions #
+
 def remove_whitespace(brain_image):
     '''
     Remove white space from an image
@@ -2555,7 +2588,7 @@ def remove_whitespace(brain_image):
     y_offset : int
         Number of pixels to offset
     '''
-    rgb_sum = brain_image.sum(2) 
+    rgb_sum = brain_image.sum(2)
     white_space1 = 1-np.all(rgb_sum==255*3, axis=0)
     x_offset = np.where(white_space1==1)[0][0]
     brain_image = brain_image[:,white_space1.astype(bool),:]
@@ -2565,3 +2598,75 @@ def remove_whitespace(brain_image):
 
     return brain_image, x_offset, y_offset
 
+# Private Functions
+def _str2bool(v):
+    ''' Changes a string to a boolean.'''
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+def _method_args_to_parser(method, parser):
+    '''Adds argument information from method to a parser'''
+    method_argnames = inspect.getargspec(method)[0]
+    method_argnames.pop(0)
+    defaults = inspect.getargspec(method)[3]
+    if defaults:
+        required_args = len(method_argnames) - len(defaults)
+        args_values = [None] * required_args + list(defaults)
+    else:
+        required_args = len(method_argnames)
+    for arg_number in range(len(method_argnames)):
+        if arg_number < required_args:
+            parser.add_argument(method_argnames[arg_number])
+        elif args_values[arg_number] is None:
+            parser.add_argument('--' + method_argnames[arg_number], default=args_values[arg_number])
+        elif type(args_values[arg_number]) == bool:
+            parser.add_argument('--' + method_argnames[arg_number], type=_str2bool, default=args_values[arg_number])
+        else:
+            parser.add_argument('--' + method_argnames[arg_number], type=type(args_values[arg_number]), default=args_values[arg_number])
+
+
+########## Main ##########
+
+if __name__ == "__main__":
+    # Get the argument information of the freeCoG methods
+    free_methods = inspect.getmembers(freeCoG, predicate=inspect.ismethod)
+    init_method = free_methods.pop(0)
+
+    # Build parser
+    parser = argparse.ArgumentParser(description=('img_pipe '))
+    _method_args_to_parser(init_method[1],parser)
+    subparsers = parser.add_subparsers(dest='method',metavar='method')
+    # Create subparser for each freeCoG method
+    for free_method in free_methods:
+        method_parser = subparsers.add_parser(free_method[0], help=free_method[1].__doc__)
+        # Get arguments and defaults for the freeCoG method
+        _method_args_to_parser(free_method[1],method_parser)
+
+
+    # Parse Commandline arguments
+    args = parser.parse_args(sys.argv[1:])
+    freeCoG_args = {}
+    method_args = vars(args)
+    # Remove extra spaces from arguments and set None types
+    for key in method_args:
+        if type(method_args[key]) == str:
+            method_args[key] = method_args[key].lstrip()
+        if method_args[key] == 'None':
+            method_args[key] = None
+    # Separate out initialization arguments and instantiate freeGoG
+    for key in inspect.getargspec(init_method[1])[0][1:]:
+        freeCoG_args[key] = method_args[key]
+        del method_args[key]
+    print('Instantiating freeCoG with:')
+    print(freeCoG_args)
+    patient = freeCoG(**freeCoG_args)
+    # Get the method, its arguments, and run it
+    freeCoG_method = getattr(patient, args.method)
+    print('Running %s with arguments:' % (method_args['method']))
+    del method_args['method']
+    print(method_args)
+    freeCoG_method(**method_args)
