@@ -276,7 +276,7 @@ class freeCoG:
         Returns
         ----------
         None
-
+        
         '''
         
         from surface_warping_scripts.make_outer_surf import make_outer_surf # From ielu
@@ -505,12 +505,6 @@ class freeCoG:
         else:
             elecfile_name = elecfile_prefix
 
-        if elecfile_prefix == 'OFC_grid':
-            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis',
-                                       'parstriangularis','superiorfrontal','rostralanteriorcingulate',
-                                       'caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
-            surf_type = 'OFC'
-        
         dural_mesh = os.path.join(self.subj_dir, self.subj, 'Meshes', self.subj + '_' + self.hem + '_dural.mat')
         if surf_type=='dural' and not os.path.isfile(dural_mesh):
             print('Creating dural surface mesh, using %d smoothing iterations'%(num_iter))
@@ -564,6 +558,12 @@ class freeCoG:
                 direction = self.hem
             else:
                 direction = proj_direction
+
+        if elecfile_prefix == 'OFC_grid':
+            self.make_roi_mesh('OFC', ['lateralorbitofrontal','medialorbitofrontal','rostralmiddlefrontal','parsorbitalis',
+                                       'parstriangularis','superiorfrontal','rostralanteriorcingulate',
+                                       'caudalanteriorcingulate','frontalpole','insula'], hem=None, showfig=False)
+            surf_type = 'OFC'
 
         print('::: Loading Mesh data :::')
         print(os.path.join(self.subj_dir, self.subj, 'Meshes', '%s_%s_trivert.mat'%(self.hem, surf_type)))

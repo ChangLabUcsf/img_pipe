@@ -200,12 +200,12 @@ class electrode_picker:
 
         # Threshold the CT so only bright objects (electrodes) are visible
         ct_data[ct_data < 1000] = np.nan
-        cx,cy,cz=np.array(self.ct.shape, dtype='float')
+        cx,cy,cz=np.array(ct_data.shape, dtype='float')
         
 
         # Resample both images to the highest resolution
         voxsz = (256, 256, 256)
-        if self.ct.shape != voxsz:
+        if ct_data.shape != voxsz:
             print("Resizing voxels in CT")
             ct_data = scipy.ndimage.zoom(ct_data, [voxsz[0]/cx, voxsz[1]/cy, voxsz[2]/cz])
             print(ct_data.shape)
