@@ -2355,8 +2355,9 @@ class freeCoG:
         if showfig:
             mlab.show()
 
-    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90, elecfile_prefix='TDT_elecs_all',
-                      template=None, force=False, brain_file=None, elecs_2D_file=None):
+    def auto_2D_brain(self, hem=None, azimuth=None, elevation=90,
+                      elecfile_prefix='TDT_elecs_all', template=None,
+                      force=False, brain_file=None, elecs_2D_file=None):
         """Generate 2D screenshot of the brain at a specified azimuth and
         elevation, and return projected 2D coordinates of electrodes at this
         view.
@@ -2376,7 +2377,7 @@ class freeCoG:
         elecfile_prefix: str
             prefix of the .mat with the electrode coordinates matrix
         template : str or None
-            Name of the atlas template (if used instead of the subject's brain).
+            Name of the atlas template (if used instead of the subject's brain)
         force : bool
             Force re-creation of the image and 2D coordinates even if the files
             exist.
@@ -2423,28 +2424,37 @@ class freeCoG:
             template_nm = ''
             mesh_dir = self.mesh_dir
 
-        # Path to each of the 2D files (a screenshot of the brain at a given angle,
+        # Path to each 2D file (a screenshot of the brain at a given angle,
         # as well as the 2D projected electrode coordinates for that view).
         if brain_file is None:
-            brain_file = os.path.join(mesh_dir, 'brain2D_az%d_el%d%s.png' % (azimuth, elevation, template_nm))
+            brain_file = os.path.join(mesh_dir, 'brain2D_az%d_el%d%s.png' %
+                                      (azimuth, elevation, template_nm))
         if elecs_2D_file is None:
-            elecs_2D_file = os.path.join(self.elecs_dir, '%s_2D_az%d_el%d%s.mat' % (elecfile_prefix, azimuth, elevation, template_nm))
+            elecs_2D_file = os.path.join(self.elecs_dir,
+                                         '%s_2D_az%d_el%d%s.mat' %
+                                         (elecfile_prefix, azimuth, elevation,
+                                          template_nm))
 
         # Test whether we already made the brain file
         if os.path.isfile(brain_file) and force is False:
+            if not os.path.isfile(elecs_2D_file):
+                raise ValueError(
+                    'If brain_file is an existing file and force is False, '
+                    'elecs_2D_file must also be an existing file.')
             # Get the file
-            #print("Loading previously saved file %s"%(brain_file))
+            # print("Loading previously saved file %s"%(brain_file))
             im = Image.open(brain_file)
             brain_image = np.asarray(im)
 
         else:
-            # Get the pial surface and plot it at the specified azimuth and elevation
+            # Get pial surface and plot it at specified azimuth and elevation
             pial = self.roi(name=roi_name)
-            mesh, points, mlab, brain_image, f = self.plot_brain(rois=[pial], screenshot=True, showfig=False, 
-                                                                 helper_call=True, azimuth=azimuth, elevation=elevation,
-                                                                 template=template)
+            mesh, points, mlab, brain_image, f = \
+                self.plot_brain(rois=[pial], screenshot=True, showfig=False,
+                                helper_call=True, azimuth=azimuth,
+                                elevation=elevation, template=template)
 
-            # Clip out the white space (there may be a better way to do this...)
+            # Clip out the white space (there may be a better way to do this..)
             brain_image, x_offset, y_offset = remove_whitespace(brain_image)
 
             # Save as a png
@@ -2467,14 +2477,16 @@ class freeCoG:
             # Get unnormalized view coordinates
             combined_transform_mat = get_world_to_view_matrix(f.scene)
             view_coords = \
-                apply_transform_to_points(hmgns_world_coords, combined_transform_mat)
+                apply_transform_to_points(hmgns_world_coords,
+                                          combined_transform_mat)
 
             # Get normalized view coordinates
             norm_view_coords = view_coords / (view_coords[:, 3].reshape(-1, 1))
 
             # Transform from normalized coordinates to display coordinates (2D)
             view_to_disp_mat = get_view_to_display_matrix(f.scene)
-            disp_coords = apply_transform_to_points(norm_view_coords, view_to_disp_mat)
+            disp_coords = apply_transform_to_points(norm_view_coords,
+                                                    view_to_disp_mat)
             elecmatrix_2D = np.zeros((elecmatrix.shape[0], 2))
             for i in np.arange(elecmatrix.shape[0]):
                 elecmatrix_2D[i, :] = disp_coords[:, :2][i]
@@ -2491,7 +2503,7 @@ class freeCoG:
 
     def animate_scene(self, mlab, movie_name='movie', mix_type='smootherstep', 
                       start_stop_azimuth=(0, 360), start_stop_elevation=(90, 90), 
-                      nframes=200, frame_rate = 25, ffmpeg = '/Applications/ffmpeg', 
+                      nframes=200, frame_rate=25, ffmpeg = '/Applications/ffmpeg',
                       close_fig=True, keep_frames=False, show_title=False):
         ''' Create animation of rotating brain 
 
