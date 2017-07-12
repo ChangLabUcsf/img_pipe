@@ -213,7 +213,7 @@ class electrode_picker:
         
         # Threshold the CT so only bright objects (electrodes) are visible
         ct_data[ct_data < 1000] = np.nan
-        
+
         self.ct_data = ct_data
         self.img_data = img_data
         self.pial_data = pial_data
@@ -534,8 +534,8 @@ class electrode_picker:
         # Transform coordinates to figure coordinates
         fxy = self.fig.transFigure.inverted().transform((event.x, event.y))
         
-        x = np.int(np.round(event.xdata))
-        y = np.int(np.round(event.ydata))
+        # x = np.int(np.round(event.xdata.astype(np.float)))
+        # y = np.int(np.round(event.ydata.astype(np.float)))
 
         # If you clicked the first subplot
         if bb1.contains(fxy[0],fxy[1]):
