@@ -37,7 +37,7 @@ import nipy.algorithms
 import nipy.algorithms.resample
 import nipy.algorithms.registration.histogram_registration
 
-from plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
+from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
 
 # For animations, from pycortex
 linear = lambda x, y, m: (1.-m)*x + m*y
@@ -520,7 +520,7 @@ class freeCoG:
 
         '''
         
-        from surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
+        from .surface_warping_scripts.project_electrodes_anydirection import project_electrodes_anydirection
 
         print('Projection Params: \n\t Grid Name: %s.mat \n\t Use Mean Normal: %s \n\t \
                Surface Type: %s \n\t Number of Smoothing Iterations (if using dural): %d'\
@@ -1815,7 +1815,7 @@ class freeCoG:
         '''
 
         import mayavi
-        import plotting.ctmr_brain_plot as ctmr_brain_plot
+        from .plotting import ctmr_brain_plot as ctmr_brain_plot
         
         fh=mayavi.mlab.figure(fgcolor=(0, 0, 0), bgcolor=(1, 1, 1), size=(1200,900))
 
@@ -1923,8 +1923,8 @@ class freeCoG:
             opacity of the brain surface mesh.
 
         '''
-        import plotting.ctmr_brain_plot as ctmr_brain_plot
-        import SupplementalFiles.FS_colorLUT as FS_colorLUT
+        from .plotting import ctmr_brain_plot as ctmr_brain_plot
+        from .SupplementalFiles import FS_colorLUT as FS_colorLUT
 
         a = self.get_surf(template=template)
         e = self.get_elecs(elecfile_prefix=elecfile_prefix)
@@ -2033,7 +2033,7 @@ class freeCoG:
         anat_colored : bool
 
         '''
-        import SupplementalFiles.FS_colorLUT as FS_colorLUT
+        from .SupplementalFiles import FS_colorLUT as FS_colorLUT
         #use mean normal vector
         #no anat color map option
         #time *-1 if left hemisphere
@@ -2119,8 +2119,8 @@ class freeCoG:
             Opacity of surface meshes
 
         '''
-        import plotting.ctmr_brain_plot as ctmr_brain_plot
-        import SupplementalFiles.FS_colorLUT as FS_colorLUT
+        from .plotting import ctmr_brain_plot as ctmr_brain_plot
+        from .SupplementalFiles import FS_colorLUT as FS_colorLUT
 
         subj_brain = self.get_surf()
         template_brain = self.get_surf(template=template)
@@ -2264,7 +2264,7 @@ class freeCoG:
         roi_mesh['tri'] = tri_list_reindexed
 
         if showfig:
-            import plotting.ctmr_brain_plot as ctmr_brain_plot   
+            from .plotting import ctmr_brain_plot as ctmr_brain_plot   
             mesh,mlab = ctmr_brain_plot.ctmr_gauss_plot(roi_mesh['tri'],roi_mesh['vert'])
             mlab.show()
 
@@ -2323,10 +2323,10 @@ class freeCoG:
         """
         
         from mayavi import mlab
-        from plotting.ctmr_brain_plot import ctmr_gauss_plot
+        from .plotting.ctmr_brain_plot import ctmr_gauss_plot
 
         if color_dict is None:
-            from SupplementalFiles import FS_colorLUT
+            from .SupplementalFiles import FS_colorLUT
             color_dict = FS_colorLUT.get_lut()
 
         mlab.figure(fgcolor=(0, 0, 0), bgcolor=bgcolor, size=size)
