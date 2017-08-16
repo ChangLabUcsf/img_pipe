@@ -847,8 +847,8 @@ class electrode_picker:
         '''
         Launch 3D viewer showing position of identified electrodes in 3D space
         '''
-        from plotting.ctmr_brain_plot import ctmr_gauss_plot as ctmr_gauss_plot
-        from plotting.ctmr_brain_plot import el_add as el_add
+        from plotting.ctmr_brain_plot import ctmr_gauss_plot
+        from plotting.ctmr_brain_plot import el_add
         
         # Get appropriate hemisphere
         pial = scipy.io.loadmat(os.path.join(self.subj_dir, 'Meshes', self.hem+'_pial_trivert.mat'))
