@@ -59,7 +59,6 @@ dependencies:
   - traitlets==4.3.2
   - traits==4.6.0
   - traitsui==5.1.0
-  - vispy==0.5.0.dev0
   - wcwidth==0.1.7
 prefix: ~/anaconda/envs/img_pipe_py2
 
