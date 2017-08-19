@@ -6,7 +6,7 @@ sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 # Just test whether the import works
 import img_pipe
 #from img_pipe import freeCoG
-patient = img_pipe.freeCoG(subj = 'S1', hem = 'lh', fs_dir='', subj_dir='tests')
+patient = img_pipe.freeCoG(subj = 'S1', hem = 'lh', fs_dir='', subj_dir='.')
 
 # Test import of electrode picker
 from img_pipe.SupplementalScripts import electrode_picker
