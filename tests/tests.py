@@ -6,10 +6,10 @@ from img_pipe import freeCoG
 patient = freeCoG(subj = 'S1', hem = 'lh', fs_dir='', subj_dir='tests')
 
 # Test import of electrode picker
-from ..SupplementalScripts import electrode_picker
+from SupplementalScripts import electrode_picker
 
 # Test import of plotting
-from ..plotting import ctmr_brain_plot
+from plotting import ctmr_brain_plot
 
 # Test whether mayavi works
 import mayavi
