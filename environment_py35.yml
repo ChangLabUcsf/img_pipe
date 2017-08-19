@@ -11,6 +11,7 @@ dependencies:
 - ipython=6.1.0=py35_0
 - ipython_genutils=0.2.0=py35_0
 - libpng=1.6.27=0
+- matplotlib=1.5.3
 - mkl=2017.0.3=0
 - numpy=1.13.1=py35_0
 - openssl=1.0.2l=0
@@ -27,6 +28,7 @@ dependencies:
 - readline=6.2=2
 - setuptools=27.2.0=py35_0
 - simplegeneric=0.8.1=py35_1
+- scipy=0.19.1
 - sip=4.18=py35_0
 - six=1.10.0=py35_0
 - sqlite=3.13.0=0
@@ -48,7 +50,6 @@ dependencies:
   - cycler==0.10.0
   - img-pipe==2017.7.12.1
   - ipython-genutils==0.2.0
-  - matplotlib==1.5.3
   - mne==0.14.1
   - mpmath==0.19
   - nibabel==2.1.0
@@ -59,7 +60,6 @@ dependencies:
   - python-dateutil==2.6.1
   - pytz==2017.2
   - pyvtk==0.5.18
-  - scipy==0.19.1
   - sympy==1.1.1
   - tqdm==4.15.0
 prefix: ~/anaconda/envs/img_pipe_py3

@@ -5,6 +5,7 @@ dependencies:
 - cython=0.26
 - freetype=2.5.5=2
 - libpng=1.6.27=0
+- matplotlib=1.5.3
 - mkl=2017.0.3=0
 - numpy=1.13.1=py27_0
 - openssl=1.0.2l=0
@@ -22,7 +23,6 @@ dependencies:
 - wheel=0.29.0=py27_0
 - zlib=1.2.8=3
 - pip:
-  - appnope==0.1.0
   - apptools==4.4.0
   - backports.shutil-get-terminal-size==1.0.0
   - configobj==5.0.6
@@ -33,7 +33,6 @@ dependencies:
   - img-pipe==2017.7.12.1
   - ipython==5.4.1
   - ipython-genutils==0.2.0
-  - matplotlib==1.5.3
   - mayavi==4.5.0
   - mne==0.14.1
   - mpmath==0.19
