@@ -35,4 +35,5 @@ install:
 script:
   # Your test script goes here
   - pwd
-  - python tests/tests.py
+  - cd tests
+  - python tests.py
