@@ -30,7 +30,6 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda env create -f environment_py27.yml
   - source activate img_pipe_py2
-  - python setup.py install
 
 script:
   # Your test script goes here
