@@ -14,9 +14,6 @@ from mayavi import mlab
 
 mlab.test_mesh()
 
-# Test import of electrode picker
-from .SupplementalScripts import electrode_picker
-
 # Test import of plotting
 from .plotting import ctmr_brain_plot
 
