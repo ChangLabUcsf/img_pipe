@@ -47,7 +47,7 @@ dependencies:
 - pip:
   - configparser==3.5.0
   - cycler==0.10.0
-  - img-pipe==2017.8.19.2
+  - img-pipe==2017.8.19.3
   - ipython-genutils==0.2.0
   - matplotlib==1.5.3
   - mne==0.14.1
