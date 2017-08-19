@@ -15,5 +15,5 @@ from mayavi import mlab
 mlab.test_mesh()
 
 # Test import of plotting
-from plotting import ctmr_brain_plot
+from ..plotting import ctmr_brain_plot
 
