@@ -1,7 +1,4 @@
 language: python
-python:
-   - '2.7'
-   - '3.5'
 matrix:
    include:
      # We don't actually use the Travis Python, but this keeps it organized.
