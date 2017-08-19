@@ -29,7 +29,6 @@ dependencies:
   - cycler==0.10.0
   - decorator==4.1.2
   - enum34==1.1.6
-  - img-pipe==2017.7.12.1
   - ipython==5.4.1
   - ipython-genutils==0.2.0
   - mayavi==4.5.0
