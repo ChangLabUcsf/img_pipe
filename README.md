@@ -1,5 +1,6 @@
 ## ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/leftbrain_blackbg.png "img_pipe") img_pipe: Image processing pipeline for ECoG data ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/rightbrain_blackbg.png "img_pipe") ##
 
+[![Build Status](https://travis-ci.org/ChangLabUcsf/img_pipe.svg?branch=master)](https://travis-ci.org/ChangLabUcsf/img_pipe)
 
 Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laboratory of Dr. Edward Chang, UC San Francisco
 http://changlab.ucsf.edu
@@ -21,16 +22,28 @@ Example results are shown below in the native subject space (left) and in the cv
 
 To download this package, you will need:
 * a MacOS or Linux machine (if you are using Windows, download a Linux Virtual Machine to use this package)
-* __anaconda__ for Python version 2.7, not 3 (https://www.continuum.io/downloads)<br>
+* __anaconda__ for Python version 2.7 or 3 (https://www.continuum.io/downloads)<br>
 * __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 5.3.0 or higher
 
-After you download and install those dependencies, run the following commands in your terminal:
+After you download and install those dependencies, run the following commands in your terminal if using Python 2.7:
 
 ``` 
-$ conda install vtk
-$ conda install pyqt==4.11.4 
-$ pip install img_pipe
+$ git clone https://github.com/changlabucsf/img_pipe
+$ conda env create -f img_pipe/environment_py27.yml
+$ source activate img_pipe_py2
+$ ipython
+$ import img_pipe
  ```
+
+The following instructions should be used if you wish to work in Python 3:
+
+```
+$ git clone https://github.com/changlabucsf/img_pipe
+$ conda env create -f img_pipe/environment_py35.yml
+$ source activate img_pipe_py3
+$ ipython
+$ from img_pipe import img_pipe
+```
 
 After that, edit your ~/.bash_profile or ~/.bashrc and set the following environment variables with these lines:
 
