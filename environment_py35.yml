@@ -3,7 +3,6 @@ channels:
 - menpo
 - defaults
 dependencies:
-- appnope=0.1.0=py35_0
 - configobj=5.0.6=py35_0
 - cython=0.26
 - decorator=4.1.2=py35_0
@@ -11,7 +10,6 @@ dependencies:
 - hdf5=1.8.17=2
 - ipython=6.1.0=py35_0
 - ipython_genutils=0.2.0=py35_0
-- jedi=0.10.2=py35_2
 - libpng=1.6.27=0
 - mkl=2017.0.3=0
 - numpy=1.13.1=py35_0
