@@ -36,4 +36,5 @@ script:
   # Your test script goes here
   - pwd
   - cd tests
+  - ls /home/travis/miniconda/envs/img_pipe_py2/lib/python2.7/site-packages
   - python tests.py
