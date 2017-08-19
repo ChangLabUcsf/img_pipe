@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-import sys
-from os import path
-sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
-print(sys.path)
+# Path hack.
+import sys, os
+sys.path.insert(0, os.path.abspath('..'))
 
 # Just test whether the import works
 import img_pipe
