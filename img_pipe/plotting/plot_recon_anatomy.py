@@ -5,7 +5,7 @@
 
 import mayavi
 import scipy.io
-import .ctmr_brain_plot
+from .ctmr_brain_plot import ctmr_gauss_plot, el_add
 from .SupplementalFiles import FS_colorLUT as FS_colorLUT
 import numpy as np
 import os
@@ -19,7 +19,7 @@ def plot_recon_anatomy(patient):
 	e = scipy.io.loadmat('%s/%s/elecs/TDT_elecs_all.mat'%(fs_dir, subj))
 
 	# Plot the pial surface
-	mesh, mlab = ctmr_brain_plot.ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
+	mesh, mlab = ctmr_gauss_plot(a['tri'], a['vert'], color=(0.8, 0.8, 0.8))
 	
 	# Add the electrodes, colored by anatomical region
 	elec_colors = np.zeros((e['elecmatrix'].shape[0], e['elecmatrix'].shape[1]))
@@ -43,7 +43,7 @@ def plot_recon_anatomy(patient):
 	   	
 	    if this_label != '':
 	        el_color = np.array(cmap[this_label])/255.
-	        ctmr_brain_plot.el_add(np.atleast_2d(e['elecmatrix'][e['anatomy'][:,3]==b,:]), 
-	        					   color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b])
+	        el_add(np.atleast_2d(e['elecmatrix'][e['anatomy'][:,3]==b,:]), 
+	               color=tuple(el_color), numbers=elec_numbers[e['anatomy'][:,3]==b])
 	mlab.show()        
 	return mesh, mlab
