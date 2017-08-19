@@ -63,7 +63,7 @@ and place in `$SUBJECTS_DIR/your_subj/CT`.
 
 You should now be able to import img_pipe from python. 
 ```python
->>> import img_pipe
+>>> import img_pipe # Or in python 3, from img_pipe import img_pipe
 >>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
 >>> patient.prep_recon()
 >>> patient.get_recon()
