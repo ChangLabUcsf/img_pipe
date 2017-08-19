@@ -2,4 +2,4 @@
 
 # Just test whether the import works
 import img_pipe
-patient = img_pipe.freeCoG(subj = 'test', hem = 'lh', fs_dir='', subj_dir='')
+patient = img_pipe.freeCoG(subj = 'S1', hem = 'lh', fs_dir='', subj_dir='test')
