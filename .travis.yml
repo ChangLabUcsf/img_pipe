@@ -1,11 +1,18 @@
 language: python
+python:
+   - '2.7'
+   - '3.5'
 matrix:
    include:
      # We don't actually use the Travis Python, but this keeps it organized.
      - python: "2.7"
-       env: ENV_FILE=environment_py27.yml, ENV_NAME=img_pipe_py2
+       env: 
+          - ENV_FILE=environment_py27.yml
+          - ENV_NAME=img_pipe_py2
      - python: "3.5"
-       env: ENV_FILE=environment_py35.yml, ENV_NAME=img_pipe_py3
+       env: 
+          - ENV_FILE=environment_py35.yml
+          - ENV_NAME=img_pipe_py3
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
