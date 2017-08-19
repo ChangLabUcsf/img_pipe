@@ -2,6 +2,7 @@ name: img_pipe_py2
 channels:
 - defaults
 dependencies:
+- cython=0.26
 - freetype=2.5.5=2
 - libpng=1.6.27=0
 - mkl=2017.0.3=0
@@ -27,7 +28,6 @@ dependencies:
   - configobj==5.0.6
   - configparser==3.5.0
   - cycler==0.10.0
-  - cython==0.26
   - decorator==4.1.2
   - enum34==1.1.6
   - img-pipe==2017.7.12.1
