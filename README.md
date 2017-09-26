@@ -1,6 +1,6 @@
 ## ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/leftbrain_blackbg.png "img_pipe") img_pipe: Image processing pipeline for ECoG data ![alt text](https://github.com/ChangLabUcsf/img_pipe/raw/master/img_pipe/SupplementalScripts/icons/rightbrain_blackbg.png "img_pipe") ##
 
-[![Build Status](https://travis-ci.org/ChangLabUcsf/img_pipe.svg?branch=master)](https://travis-ci.org/ChangLabUcsf/img_pipe) [![PyPI version](https://badge.fury.io/py/img-pipe.svg)](https://badge.fury.io/py/img-pipe)
+[![Build Status](https://travis-ci.org/ChangLabUcsf/img_pipe.svg?branch=master)](https://travis-ci.org/ChangLabUcsf/img_pipe) [![PyPI version](https://badge.fury.io/py/img-pipe.svg)](https://badge.fury.io/py/img-pipe) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.996814.svg)](https://doi.org/10.5281/zenodo.996814)
 
 Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laboratory of Dr. Edward Chang, UC San Francisco
 http://changlab.ucsf.edu
