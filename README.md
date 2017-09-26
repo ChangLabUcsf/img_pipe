@@ -11,6 +11,8 @@ brain surface reconstruction and electrode localization/labeling.
 The full capabilities of the pipeline are described in the paper: 
 Hamilton LS, Chang DL, Lee MB, Chang EF. Semi-automated anatomical labeling and inter-subject warping of high-density intracranial recording electrodes in electrocorticography.
 
+[Sample data is available on Zenodo](https://doi.org/10.5281/zenodo.996814), including an AC-PC aligned T1 scan, CT scan, and all intermediate and final files from the img_pipe processing pipeline.
+
 ## About ##
 `img_pipe` is an open source python package for preprocessing of imaging data for use in intracranial electrocorticography (ECoG) and intracranial stereo-EEG analyses. This python package aims to provide a standardized interface for electrode localization, labeling, and warping to an atlas, as well as code to plot and display results on 3D cortical surface meshes. It gives the user an easy interface to create anatomically labeled electrodes that can also be warped to an atlas brain, starting with only a preoperative T1 MRI scan and a postoperative CT scan. 
 
