@@ -1491,6 +1491,66 @@ class freeCoG:
                 self.plot_elec(subj_elecs[i], warped_elecs[i], subj_dat, cvs_dat, subj_elecnums[i], pdf)
         pdf.close()
 
+    def apply_xfm(self, xfm_dir='mri/transforms', xfm_file='talairach.xfm', 
+                  source_file='elecs/TDT_elecs_all.mat', target_file='elecs/TDT_elecs_all_2tal.mat', 
+                  file_type='elecs'):
+        ''' Apply an xfm transform from freesurfer
+        Parameters
+        ----------
+        xfm_dir : str
+            Directory containing the xfm transform file.  Assumed to be a subdirectory
+            within $SUBJECTS_DIR/[subj_id].  Default: 'mri/transforms'
+        xfm_file : str
+            Name of the xfm file.  Default: 'talairach.xfm'
+        source_file : str
+            Name of the file you want to apply the transform to.  Default: 'elecs/TDT_elecs_all.mat'
+            If transforming a surface, use Meshes/[hem]_pial_trivert.mat
+        target_file : str
+            Name of the output file that has been transformed according to the transform
+            in [xfm_file]. Default: 'elecs/TDT_elecs_all_2tal.mat'.  
+            If transforming a surface, use e.g. 'Meshes/[hem]_pial_trivert_2tal.mat'
+        file_type : {'surf', 'elecs'}
+            The type of file to which you are applying the transform. Choices include
+            'surf' (for a triangle-mesh surface) or 'elecs' (for an electrode matrix file,
+            assumed to be in the elecs_all format).
+        
+        '''
+
+        # First load the matrix in the xfm file:
+        xfm_mat = np.genfromtxt(os.path.join(self.patient_dir, xfm_dir, xfm_file), skip_header=5, 
+                                delimiter=' ', comments=';')
+
+        # Also get the vox2RAS matrices for volumes and surfaces
+        orig_file = os.path.join(self.mri_dir, 'orig.mgz')
+        vox2ras_file = os.path.join(self.mri_dir, 'vox2ras.txt')
+        vox2rastk_file = os.path.join(self.mri_dir, 'vox2rastk.txt')
+        os.system('mri_info --vox2ras %s > %s'%(orig_file, vox2ras_file))
+        os.system('mri_info --vox2ras-tkr %s > %s'%(orig_file, vox2rastk_file))
+        
+        vox2ras = np.loadtxt(vox2ras_file)
+        vox2rastk = np.loadtxt(vox2rastk_file)
+
+        print("Applying xfm %s to %s"%(xfm_file, source_file))
+        if file_type == 'elecs':
+            e = scipy.io.loadmat(os.path.join(self.patient_dir, source_file))
+            elecs_ones = np.hstack((e['elecmatrix'], np.ones((e['elecmatrix'].shape[0],1)) ))
+            elecs_xfm = reduce(np.dot, [xfm_mat, vox2ras, np.linalg.inv(vox2rastk), elecs_ones.T]).T
+            print("Saving transformed coordinates as %s"%(target_file))
+            scipy.io.savemat(os.path.join(self.patient_dir, target_file), 
+                             {'elecmatrix': elecs_xfm, 'anatomy': e['anatomy']})
+
+        elif file_type == 'surf':
+            s = scipy.io.loadmat(os.path.join(self.patient_dir, source_file))
+            vert_ones = np.hstack((s['vert'], np.ones((s['vert'].shape[0],1)) ))
+            vert_xfm = reduce(np.dot, [xfm_mat, vox2ras, np.linalg.inv(vox2rastk), vert_ones.T]).T
+            print("Saving transformed coordinates as %s"%(target_file))
+            scipy.io.savemat(os.path.join(self.patient_dir, target_file), 
+                             {'tri': s['tri'], 'vert': vert_xfm})
+
+        else:
+            warning("Please specify file_type = 'surf' or file_type = 'elecs'.")
+
+    
     def apply_transform(self, elecfile_prefix, reorient_file):
         ''' Apply an affine transform (from SPM) to an electrode file.  
 
