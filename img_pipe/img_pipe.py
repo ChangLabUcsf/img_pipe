@@ -810,17 +810,17 @@ class freeCoG:
                 num_empty_rows = raw_input('Are you adding a row that will be NaN in the elecmatrix? If not, press enter. If so, enter the number of empty rows to add: \n')
                 if len(num_empty_rows):
                     num_empty_rows = int(num_empty_rows)
-                    short_name_prefix = raw_input('What is the short name prefix?\n')
+                    short_name_prefix = raw_input('What is the short name prefix (e.g. G, AD, HD)?\n')
                     short_names.extend([short_name_prefix for i in range(1,num_empty_rows+1)])
-                    long_name_prefix = raw_input('What is the long name prefix?\n')
+                    long_name_prefix = raw_input('What is the long name prefix (e.g. L256Grid, HippocampalDepth)?\n')
                     long_names.extend([long_name_prefix for i in range(1,num_empty_rows+1)])
-                    elec_type = raw_input('What is the type of the device?\n')
+                    elec_type = raw_input('What is the type of the device (e.g. grid, strip, depth)?\n')
                     elec_types.extend([elec_type for i in range(num_empty_rows)])
                     elecmatrix_all.append(np.ones((num_empty_rows,3))*np.nan)
                 else:
-                    short_name_prefix = raw_input('What is the short name prefix of the device?\n')
-                    long_name_prefix = raw_input('What is the long name prefix of the device?\n')
-                    elec_type = raw_input('What is the type of the device?\n')     
+                    short_name_prefix = raw_input('What is the short name prefix of the device (e.g. G, AD, HD)?\n')
+                    long_name_prefix = raw_input('What is the long name prefix of the device? (e.g. L256Grid, HippocampalDepth)\n')
+                    elec_type = raw_input('What is the type of the device? (e.g. grid, strip, depth)\n')     
                     try:
                         file_name = raw_input('What is the filename of the device\'s electrode coordinate matrix?\n')
                         indiv_file = os.path.join(self.elecs_dir,'individual_elecs', file_name)
