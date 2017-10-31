@@ -9,7 +9,7 @@ This contains the imaging pipeline as one importable python class for running a 
 brain surface reconstruction and electrode localization/labeling.
 
 The full capabilities of the pipeline are described in the paper: 
-Hamilton LS, Chang DL, Lee MB, Chang EF. Semi-automated anatomical labeling and inter-subject warping of high-density intracranial recording electrodes in electrocorticography.
+Hamilton LS, Chang DL, Lee MB, Chang EF. [Semi-automated anatomical labeling and inter-subject warping of high-density intracranial recording electrodes in electrocorticography.](https://doi.org/10.3389/fninf.2017.00062) Frontiers in Neuroinformatics 11(62).
 
 [Sample data is available on Zenodo](https://doi.org/10.5281/zenodo.996814), including an AC-PC aligned T1 scan, CT scan, and all intermediate and final files from the img_pipe processing pipeline.
 
