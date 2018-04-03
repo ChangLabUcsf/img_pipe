@@ -154,8 +154,14 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
         **kwargs : 
             any other keyword arguments that can be passed to points3d
     '''
+    
+    # Get the current keyword arguments
+    cur_kwargs = dict(color = color, scale_factor = msize, resolution=25)
 
-    # plot the electrodes as spheres
+    # Allow the user to override the default keyword arguments using kwargs
+    cur_kwargs.update(kwargs)
+    
+   e# plot the electrodes as spheres
     # If we have one color for each electrode, color them separately
     if type(color) is np.ndarray:
         if color.shape[0] == elecs.shape[0]:
@@ -165,13 +171,14 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
             unique_colors = np.array(list(set([tuple(row) for row in color])))
             for individual_color in unique_colors:
                 indices = np.where((color==individual_color).all(axis=1))[0]
-                points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2],scale_factor=msize,color=tuple(individual_color),resolution=25,**kwargs)
+                cur_kwargs.update(color=tuple(individual_color))
+                points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2], **cur_kwargs)
         else:
             print('Warning: color array does not match size of electrode matrix')
 
     # Otherwise, use the same color for all electrodes
     else:
-        points = mlab.points3d(elecs[:,0],elecs[:,1], elecs[:,2], scale_factor = msize, color = color, resolution=25, **kwargs)
+        points = mlab.points3d(elecs[:,0],elecs[:,1], elecs[:,2], **cur_kwargs)
 
     # Set display properties
     points.actor.property.ambient = ambient
