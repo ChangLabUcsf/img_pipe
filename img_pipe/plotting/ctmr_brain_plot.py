@@ -161,7 +161,7 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
     # Allow the user to override the default keyword arguments using kwargs
     cur_kwargs.update(kwargs)
     
-   e# plot the electrodes as spheres
+    # plot the electrodes as spheres
     # If we have one color for each electrode, color them separately
     if type(color) is np.ndarray:
         if color.shape[0] == elecs.shape[0]:
