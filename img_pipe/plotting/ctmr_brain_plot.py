@@ -171,7 +171,7 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
 
     # Otherwise, use the same color for all electrodes
     else:
-        points = mlab.points3d(elecs[:,0],elecs[:,1], elecs[:,2], scale_factor = msize, color = color, resolution=25)
+        points = mlab.points3d(elecs[:,0],elecs[:,1], elecs[:,2], scale_factor = msize, color = color, resolution=25, **kwargs)
 
     # Set display properties
     points.actor.property.ambient = ambient
