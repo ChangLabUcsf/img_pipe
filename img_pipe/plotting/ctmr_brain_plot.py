@@ -136,7 +136,7 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
     return mesh, mlab
 
 
-def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0, ambient = 0.3261, specular = 1, specular_power = 16, diffuse = 0.6995, interpolation = 'phong'):
+def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=-1.0, ambient = 0.3261, specular = 1, specular_power = 16, diffuse = 0.6995, interpolation = 'phong', **kwargs):
     '''This function adds the electrode matrix [elecs] (nchans x 3) to
     the scene.
     
@@ -151,6 +151,8 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
             size of the electrode.  default = 2
         label_offset : float
             how much to move the number labels out by (so not blocked by electrodes)
+        **kwargs : 
+            any other keyword arguments that can be passed to points3d
     '''
 
     # plot the electrodes as spheres
@@ -163,7 +165,7 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
             unique_colors = np.array(list(set([tuple(row) for row in color])))
             for individual_color in unique_colors:
                 indices = np.where((color==individual_color).all(axis=1))[0]
-                points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2],scale_factor=msize,color=tuple(individual_color),resolution=25)
+                points = mlab.points3d(elecs[indices,0],elecs[indices,1],elecs[indices,2],scale_factor=msize,color=tuple(individual_color),resolution=25,**kwargs)
         else:
             print('Warning: color array does not match size of electrode matrix')
 
