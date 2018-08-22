@@ -5,6 +5,8 @@
 Developed by Liberty Hamilton, David Chang, Morgan Lee at the Laboratory of Dr. Edward Chang, UC San Francisco
 http://changlab.ucsf.edu
 
+Email: edward.chang@ucsf.edu or liberty.hamilton@austin.utexas.edu with questions.
+
 This contains the imaging pipeline as one importable python class for running a patient's
 brain surface reconstruction and electrode localization/labeling.
 
