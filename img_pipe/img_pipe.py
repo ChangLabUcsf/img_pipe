@@ -2393,65 +2393,6 @@ class freeCoG:
 
         f.close()
 
-    def obj_to_mat(self, hem=None, roi_name='pial'):
-        '''This function reads in a .obj file and converts it to .mat format
-        to be read into img_pipe or matlab.
-
-        Parameters
-        ----------
-        hem : str, optional
-            The hemisphere of the region of interest (ROI)
-        roi_name : str, optional
-            The name of the ROI mesh.
-        '''
-
-        if hem == None:
-            hem = self.hem
-
-        vertices=[]
-        facelines=[]
-
-        with open(os.path.join(self.mesh_dir, '%s_%s.obj' % (hem, roi_name)), 'r') as f:
-            for line in f:
-                if line.startswith("v "):
-                    varray=line.replace('\n','')
-                    varray1=varray.split(' ')
-                    vertices.append(varray1[1:4])
-
-                if line.startswith("f "):
-                    faceline = line.replace('\n','')
-                    faceline1 = faceline.replace('/',' ')
-                    farray = faceline1.split(' ')
-                    farray = list(filter(None, farray))
-                    facelines.append(farray[1:len(farray)])
-
-        facelines = list(filter(None, facelines))
-
-        vert = np.asarray(vertices, dtype=np.float)
-        face = np.asarray(facelines, dtype=np.int)
-        tri = np.zeros((face.shape[0], 3), dtype=np.int)
-
-        if face.shape[1] == 3:
-            tri = face - 1
-
-        elif face.shape[1] == 6:
-            tri[:, 0] = face[:, 0] - 1
-            tri[:, 1] = face[:, 2] - 1
-            tri[:, 2] = face[:, 4] - 1
-
-        elif face.shape[1] == 9:
-            tri[:, 0] = face[:, 0] - 1
-            tri[:, 1] = face[:, 3] - 1
-            tri[:, 2] = face[:, 6] - 1
-
-        out_file_trivert = os.path.join(self.mesh_dir, '%s_%s_trivert.mat'%(hem, roi_name))
-        scipy.io.savemat(out_file_trivert, {'tri': tri, 'vert': vert})
-
-        cortex = {'tri': tri+1, 'vert': vert}
-        out_file_struct = os.path.join(self.mesh_dir, '%s_%s.mat' % (hem, roi_name))
-        scipy.io.savemat(out_file_struct, {'cortex': cortex})
-
-
     def plot_all_surface_rois(self, bgcolor=(0, 0, 0), size=(1200, 900), color_dict=None, screenshot=False, showfig=True,
                               **kwargs):
         """
