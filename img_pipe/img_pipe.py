@@ -684,6 +684,120 @@ class freeCoG:
 
         return clinicalgrid
 
+    def get_clinical_elecs_all(self,elecfile_prefix='TDT_elecs_all',num_grids=1,grid_shortnames=['G']):
+        '''Loads in elecs all file created with high density grid
+        and outputs elecs all file containing downsampled grid'''
+
+
+        print('This only is to be used when the only difference is the density of grids')
+        origelecs = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['elecmatrix']
+        origlabels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['eleclabels']
+
+
+
+
+        short_label = []
+        long_label = []
+        grid_or_depth = []
+        # hd=np.empty((256,3))
+        hd_label=[]
+        masterlist=[]
+        for r in origlabels:
+            short_label.append(r[0][0])  # This is the shortened electrode montage label
+            long_label.append(r[1][0])  # This is the long form electrode montage label
+            grid_or_depth.append(r[2][0])  # This is the label for grid, depth, or strip
+
+        leadlist = []
+
+        for string in range(0, len(short_label)):
+            lead = []
+            for s in short_label[string]:
+                if not s.isdigit():
+                    lead.append(s)
+            if string == 0:
+                leadlist.append(''.join(lead))
+                listidx = 1
+            elif ''.join(lead) != leadlist[listidx-1]:
+                leadlist.append(''.join(lead))
+                listidx += 1
+            # for grid in range(0, num_grids):
+            #     if grid_shortnames[grid] == ''.join(lead):
+            #         hd[grid,grididx, :]=origelecs[string]
+            #         hd_label.append(''.join(lead))
+            #         grididx += 1
+            masterlist.append(''.join(lead))
+
+        grids = np.split(hd,num_grids,axis=0)
+        clinicalgrids=[]
+        for grid in range(0,num_grids):
+            hd=np.empty((0,3))
+            coord=np.empty((1,3))
+            for string in range(0, len(short_label)):
+                if grid_shortnames[grid] == masterlist[string]:
+                    coord[0,:] = origelecs[string]
+                    hd = np.append(hd,coord,axis=0)
+                    hd_label.append(''.join(lead))
+
+            # load in clinical grid indices
+            clingrid = scipy.io.loadmat(os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'clingrid_inds.mat'))['inds'].ravel()
+            # If we have a grid that is smaller than 256 channels, remove the irrelevant clinical grid indices
+            clingrid = clingrid[clingrid < hd.shape[0]]
+            # get clinical grid coordinates using the relevant indices
+            clinicalgrid = hd[clingrid, :]
+
+            clinicalgrids.append(clinicalgrid)
+            # if grid==0:
+            #     clinicalgrids=clinicalgrid
+            # else:
+            #     clinicalgrids.append(clinicalgrid)
+
+
+        newelecs=np.zeros(origelecs.shape)
+        newlabel=[]
+        grididx = 0
+        for string in range(0, len(short_label)):
+            if masterlist[string] not in ('NaN', 'nan', 'ECG', 'EKG', 'NAN'):
+                if masterlist[string] not in grid_shortnames:
+                    newelecs[string,:] = origelecs[string, :]
+                    newlabel.append(short_label[string])
+                else:
+                    for grid in range(0, num_grids):
+                        if masterlist[string] !=0 and masterlist[string] != masterlist[string-1]:
+                            grididx=0
+                        if masterlist[string] == grid_shortnames[grid]:
+                            clinicalgrid = clinicalgrids[grid]
+                            if grididx < clinicalgrid.shape[0]:
+                                newelecs[string] = clinicalgrid[grididx]
+                                grididx += 1
+
+        newelecs = newelecs[newelecs != [0,0,0]]
+        newelecs = np.reshape(newelecs, (newelecs.shape[0]/3, 3))
+
+        # for lab in range(0,len(leadlist)):
+        #     if leadlist[lab] not in ('NaN', 'nan', 'ECG', 'EKG', 'NAN'):
+        #         if leadlist[lab] not in grid_shortnames:
+        #             newelecs[short_label == lab] = origelecs[short_label == lab]
+        #             newlabel[short_label == lab] = lab
+        #
+        #         else:
+        #             newlabel[short_label=lab]=
+        #
+
+
+
+
+            # if origlabels[string,2]=='grid':
+            #     hd.append(origelecs[string])
+            #     hd_label.append(''.join(lead))
+            #     grididx+=1
+
+
+
+#need to do something to remove nans too and maybe to check order if it is a warped file.
+
+
+
+
     def get_subcort(self):
         '''Obtains .mat files for vertex and triangle
            coords of all subcortical freesurfer segmented meshes'''
