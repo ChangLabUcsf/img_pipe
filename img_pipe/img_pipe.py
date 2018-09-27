@@ -207,38 +207,6 @@ class freeCoG:
         os.environ['FREESURFER_HOME'] = fs_dir
         os.environ['SUBJECTS_DIR'] = subj_dir
 
-    def full_warp_recon(self):
-
-        T1_orig_file = os.path.join(self.subj_dir, self.subj, 'acpc', 'T1_orig.nii')
-
-        MRCTwarp_output_dir = os.path.join(self.img_pipe_dir,'MRCTwarpout')
-
-        os.mkdir(MRCTwarp_output_dir)
-
-        preCT_file = os.path.join(self.subj_dir, self.subj, 'CT', 'preCT.nii')
-
-        postCT_file = os.path.join(self.subj_dir, self.subf, 'CT', 'postCT.nii')
-
-        MRCTwarp = os.path.join(self.img_pipe_dir, 'SupplementalScripts', 'call_matlabwarp.sh')
-
-        os.system('%s %s %s %s' %(MRCTwarp, preCT_file, postCT_file, T1_orig_file))
-
-        CT_final_aligned = os.path.join(MRCTwarp_output_dir, 'cpostrigid/result.0.nii.gz')
-
-        MR_final_aligned = os.path.join(MRCTwarp_output_dir, 'mcrigid/result.0.nii.gz')
-
-        MR_final_warp = os.path.join(MRCTwarp_output_dir, 'mcnonrigid/result.nii')
-
-        reg_CT = os.path.join(self.img_pipe_dir,'CT/rCT.nii')
-
-        os.system('cp %s %s' %(CT_final_aligned, CT_dir))
-
-        self.prep_recon()
-
-        readyforreconflag = os.path.join(self.img_pipe_dir,'tmp','readyforrecon')
-
-        os.system('touch %s' %(readyforreconflag))
-
     def prep_recon(self):
         '''Prepares file directory structure of subj_dir, copies acpc-aligned               
         T1.nii to the 'orig' directory and converts to mgz format.
