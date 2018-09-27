@@ -686,44 +686,36 @@ class freeCoG:
 
     def get_clinical_elecs_all(self,elecfile_prefix='TDT_elecs_all',num_grids=1,grid_shortnames=['G']):
         '''Loads in elecs all file created with high density grid
-        and outputs elecs all file containing downsampled grid'''
+        and outputs elecs all file containing downsampled grid and no NaNs
+        '''
 
 
         print('This only is to be used when the only difference is the density of grids and/or presence of NaNs')
         origelecs = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['elecmatrix']
         origlabels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy']
 
-
         short_label = []
         long_label = []
         grid_or_depth = []
-        hd_label=[]
-        anatomy=[]
-        masterlist=[]
+        hd_label = []
+        masterlist = []
+
         for r in origlabels:
-            short_label.append(r[0][0])  # This is the shortened electrode montage label
-            long_label.append(r[1][0])  # This is the long form electrode montage label
-            grid_or_depth.append(r[2][0])  # This is the label for grid, depth, or strip
-            anatomy.append(r[3][0])    #This is the label assigned by freesurfer
-        leadlist = []
+                short_label.append(r[0][0]) # This is the shortened electrode montage label
+                long_label.append(r[1][0])  # This is the long form electrode montage label
+                grid_or_depth.append(r[2][0])  # This is the label for grid, depth, or strip
 
         for string in range(0, len(short_label)):
             lead = []
             for s in short_label[string]:
                 if not s.isdigit():
                     lead.append(s)
-            if string == 0:
-                leadlist.append(''.join(lead))
-                listidx = 1
-            elif ''.join(lead) != leadlist[listidx-1]:
-                leadlist.append(''.join(lead))
-                listidx += 1
             masterlist.append(''.join(lead))
 
         clinicalgrids=[]
         for grid in range(0,num_grids):
-            hd = np.empty((0,3))
-            coord = np.empty((1,3))
+            hd = np.empty((0, 3))
+            coord = np.empty((1, 3))
             for string in range(0, len(short_label)):
                 if grid_shortnames[grid] == masterlist[string]:
                     coord[0,:] = origelecs[string]
@@ -738,41 +730,41 @@ class freeCoG:
             clinicalgrid = hd[clingrid, :]
             clinicalgrids.append(clinicalgrid)
 
-        newelecs=np.zeros(origelecs.shape)
+        newelecs=np.empty((0,3))
         new_short_label=[]
         new_long_label=[]
         new_grid_depth=[]
-        new_anatomy=[]
-        grididx = 0
+
         for string in range(0, len(short_label)):
-            if masterlist[string] not in ('NaN', 'nan', 'ECG', 'EKG', 'NAN'):
+            if masterlist[string] not in ('NaN', 'nan', 'ECG', 'EKG', 'NAN', 'EOG', 'ROC', 'LOC', 'EEG', 'EMG', 'scalpEEG'):
                 if masterlist[string] not in grid_shortnames:
-                    newelecs[string,:] = origelecs[string, :]
+                    coord = np.empty((1, 3))
+                    coord[0, :] = origelecs[string]
+                    newelecs = np.append(newelecs, coord, axis=0)
                     new_short_label.append(short_label[string])
                     new_long_label.append(long_label[string])
                     new_grid_depth.append(grid_or_depth[string])
-                    new_anatomy.append(anatomy[string])
-                else:
+
+                else:  # electrode is part of a grid
                     for grid in range(0, num_grids):
-                        if masterlist[string] !=0 and masterlist[string] != masterlist[string-1]:
-                            grididx=0
-                        if masterlist[string] == grid_shortnames[grid]:
+                        if masterlist[string] == grid_shortnames[grid] and clinicalgrids[grid].shape[0] > 0:
                             clinicalgrid = clinicalgrids[grid]
-                            if grididx < clinicalgrid.shape[0]-1:
-                                newelecs[string] = clinicalgrid[grididx]
-                                new_short_label.append(short_label[string])
-                                new_long_label.append(long_label[string])
-                                new_grid_depth.append(grid_or_depth[string])
-                                new_anatomy.append(anatomy[string])
-                                grididx += 1
+                            coord = np.empty((1, 3))
+                            coord[0, :] = clinicalgrid[0, :]
+                            newelecs = np.append(newelecs, coord, axis=0)
+                            clinicalgrids[grid] = np.delete(clinicalgrid, 0, axis=0)
+
+                            new_short_label.append(short_label[string])
+                            new_long_label.append(long_label[string])
+                            new_grid_depth.append(grid_or_depth[string])
+
 
         newelecs = newelecs[newelecs != [0,0,0]]
         newelecmatrix = np.reshape(newelecs, (newelecs.shape[0]/3, 3))
-        neweleclabels=np.empty((newelecmatrix.shape[0],4),dtype=np.object)
+        neweleclabels = np.empty((newelecmatrix.shape[0], 3), dtype=np.object)
         neweleclabels[:,0] = new_short_label
         neweleclabels[:,1] = new_long_label
         neweleclabels[:,2] = new_grid_depth
-        neweleclabels[:,3] = new_anatomy
 
         scipy.io.savemat(os.path.join(self.elecs_dir, 'clinical_' + elecfile_prefix + '.mat'),
                          {'elecmatrix': newelecmatrix,'eleclabels': neweleclabels})
@@ -1107,7 +1099,7 @@ class freeCoG:
             indices = [i for i, x in enumerate(long_label) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)]
             indices.extend([i for i, x in enumerate(short_label) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)])
             indices.extend([i for i, x in enumerate(grid_or_depth) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)])
-            indices.extend(np.where(np.isnan(elecmatrix)==True)[0]) 
+            indices.extend(np.where(np.isnan(elecmatrix)==True)[0])
             indices = list(set(indices))
             indices_to_use = list(set(range(len(long_label))) - set(indices))
 
