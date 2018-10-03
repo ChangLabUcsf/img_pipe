@@ -37,7 +37,7 @@ import nipy.algorithms
 import nipy.algorithms.resample
 import nipy.algorithms.registration.histogram_registration
 
-from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
+#from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
 
 # For animations, from pycortex
 linear = lambda x, y, m: (1.-m)*x + m*y
@@ -480,6 +480,72 @@ class freeCoG:
 
         orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
+
+    def extrap_grid(self, point_list=[(1,1),(1,5),(8,1)], nrows=16, ncols=16, grid_basename='hd_grid'):
+        ''' This is to both interpolate and extrapolate grid coordinates when the corners are not visible
+        on a photograph or navigation software. The coordinates of the first corner must be available as well
+        another point in the first row, and another point in the first column at least.'''
+
+        nchans = nrows*ncols
+
+        points_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_points.mat')
+        points = scipy.io.loadmat(points_file)['elecmatrix']
+        elecmatrix = np.zeros((nchans, 3))
+        grid = np.arange(nchans).reshape((nrows, ncols), order='F')
+
+
+        points_nums = [0, point_list[1][1]-1, ncols*point_list[2][0]-1]
+
+        # Add the electrode coordinates for the measured points
+        for i in np.arange(3):
+            elecmatrix[points_nums[i],:] = points[i,:]
+
+        stepcol = np.zeros((3,1))
+        # Interpolate over one dimension (vertical columns from corner 1 to second point
+        # loop over x, y, and z coordinates
+        for i in np.arange(3):
+            linspacecol= np.linspace(elecmatrix[points_nums[0], i], elecmatrix[points_nums[1], i], point_list[1][1], retstep=True)
+            elecmatrix[points_nums[0]:points_nums[1]+1,i] = linspacecol[0]
+            stepcol[i] = linspacecol[1]
+
+        for x in range(point_list[1][1],nrows):
+            for i in np.arange(3):
+                elecmatrix[x,i]=elecmatrix[x-1, i] + stepcol[i]
+
+
+
+        steprow = np.zeros((3,1))
+        #Now interpolate/extrapolate the first row of the grid
+        for i in np.arange(3):
+            linspacerow = np.linspace(elecmatrix[0,i], elecmatrix[points_nums[2], i], point_list[2][0], retstep=True)
+            elecmatrix[grid[0,points_nums[0]:point_list[2][0]], i] = linspacerow[0]
+            steprow[i] = linspacerow[1]
+
+        for x in range(point_list[2][0]-1, ncols):
+            for i in np.arange(3):
+                elecmatrix[grid[0, x], i] = elecmatrix[grid[0, x-1], i] + steprow[i]
+
+        # Now fill in the rows using the new data from the leftmost and top
+        for row in range(1, nrows):
+            for col in range(1, ncols):
+                for i in np.arange(3):
+                    elecmatrix[grid[row, col], i] = elecmatrix[grid[row - 1, col], i] + stepcol[i]
+
+        grid_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename + '_orig.mat')
+        scipy.io.savemat(grid_file, {'elecmatrix': elecmatrix})
+
+        #now prepare the corner file
+
+        cornermatrix = np.zeros((4, 3))
+        cornermatrix[0, :] = elecmatrix[0, :]
+        cornermatrix[1, :] = elecmatrix[grid[nrows-1, 0], :]
+        cornermatrix[2, :] = elecmatrix[grid[0, ncols-1], :]
+        cornermatrix[3, :] = elecmatrix[grid[nrows-1, ncols-1], :]
+
+        corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
+        scipy.io.savemat(corner_file, {'elecmatrix': cornermatrix})
+
+
 
     def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
                                  surf_type='dural', \
