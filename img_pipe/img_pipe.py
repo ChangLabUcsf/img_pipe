@@ -482,9 +482,19 @@ class freeCoG:
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
     def extrap_grid(self, point_list=[(1,1),(1,5),(8,1)], nrows=16, ncols=16, grid_basename='hd_grid'):
-        ''' This is to both interpolate and extrapolate grid coordinates when the corners are not visible
+        ''' This is to both interpolate and extrapolate grid coordinates when all 4 corners are not visible
         on a photograph or navigation software. The coordinates of the first corner must be available as well
-        another point in the first row, and another point in the first column at least.'''
+        another point in the first row, and another point in the first column at least.
+
+        First point should be corner, second point should be on first column and third should be on first row.
+
+        Saves the the hd_grid_orig.mat and hd_grid_corners.mat files so that the grid can be projected.
+
+        point_list contains the grid indices of the electrodes in the input points.
+
+        hd_grid_points.mat contains the coordinates of the 3 input points.
+
+        '''
 
         nchans = nrows*ncols
 
@@ -492,29 +502,25 @@ class freeCoG:
         points = scipy.io.loadmat(points_file)['elecmatrix']
         elecmatrix = np.zeros((nchans, 3))
         grid = np.arange(nchans).reshape((nrows, ncols), order='F')
-
-
         points_nums = [0, point_list[1][1]-1, ncols*point_list[2][0]-1]
 
         # Add the electrode coordinates for the measured points
         for i in np.arange(3):
-            elecmatrix[points_nums[i],:] = points[i,:]
+            elecmatrix[points_nums[i], :] = points[i, :]
 
         stepcol = np.zeros((3,1))
         # Interpolate over one dimension (vertical columns from corner 1 to second point
         # loop over x, y, and z coordinates
         for i in np.arange(3):
             linspacecol= np.linspace(elecmatrix[points_nums[0], i], elecmatrix[points_nums[1], i], point_list[1][1], retstep=True)
-            elecmatrix[points_nums[0]:points_nums[1]+1,i] = linspacecol[0]
+            elecmatrix[points_nums[0]:points_nums[1]+1, i] = linspacecol[0]
             stepcol[i] = linspacecol[1]
 
-        for x in range(point_list[1][1],nrows):
+        for x in range(point_list[1][1], nrows):
             for i in np.arange(3):
-                elecmatrix[x,i]=elecmatrix[x-1, i] + stepcol[i]
+                elecmatrix[x, i]=elecmatrix[x-1, i] + stepcol[i]
 
-
-
-        steprow = np.zeros((3,1))
+        steprow = np.zeros((3, 1))
         #Now interpolate/extrapolate the first row of the grid
         for i in np.arange(3):
             linspacerow = np.linspace(elecmatrix[0,i], elecmatrix[points_nums[2], i], point_list[2][0], retstep=True)
