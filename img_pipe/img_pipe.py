@@ -37,7 +37,7 @@ import nipy.algorithms
 import nipy.algorithms.resample
 import nipy.algorithms.registration.histogram_registration
 
-#from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
+from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
 
 # For animations, from pycortex
 linear = lambda x, y, m: (1.-m)*x + m*y
