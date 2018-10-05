@@ -1,11 +1,11 @@
 # FreeCoG Imaging Pipeline 
 # Developed by:
-# Liberty Hamilton, Morgan Lee, David Chang, Anthony Fong, Zachary Greenberg
+# Liberty Hamilton, Morgan Lee, David Chang, Anthony Fong, Zachary Greenberg, Ben Speidel
 # 
 # Laboratory of Edward Chang
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: June 30, 2017
+# Date Last Edited: October 4, 2018
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
