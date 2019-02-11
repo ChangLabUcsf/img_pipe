@@ -37,6 +37,9 @@ import nipy.algorithms
 import nipy.algorithms.resample
 import nipy.algorithms.registration.histogram_registration
 
+# For reading and unpacking binary files
+import struct
+
 from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
 
 # For animations, from pycortex
@@ -2218,7 +2221,7 @@ class freeCoG:
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
 
-        arr = mlab.screenshot(antialiased=True)
+        #arr = mlab.screenshot(antialiased=True)
         if screenshot:
             plt.figure(figsize=(20,20))
             arr, xoff, yoff = remove_whitespace(arr)
@@ -2575,6 +2578,76 @@ class freeCoG:
         out_file_struct = os.path.join(self.mesh_dir, '%s_%s.mat' % (hem, roi_name))
         scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
+    def convert_bsmesh2mlab(self, mesh_name = 'pial.cortex'):
+        #bring in tris and verts
+        #move origin to the center
+        #perform another transformation using the identity matrix but with the last column containing the information from the command mri_info --cras
+        #think of a new naming convention for these
+
+        #         Header format
+        # [000-011]	char headerType[12]; // should be DFS_BE v2.0\0 on big-endian machines, DFS_LEv1.0\0 on little-endian
+        # [012-015] int32 hdrsize;			// Size of complete header (i.e., offset of first data element)
+        # [016-010] int32 mdoffset;			// Start of metadata.
+        # [020-023] int32 pdoffset;			// Start of patient data header.
+        # [024-027] int32 nTriangles;		// Number of triangles
+        # [028-031] int32 nVertices;		// Number of vertices
+        # [032-035] int32 nStrips;			// Number of triangle strips (deprecated)
+        # [036-039] int32 stripSize;		// size of strip data  (deprecated)
+        # [040-043] int32 normals;			// 4	Int32	<normals>	Start of vertex normal data (0 if not in file)
+        # [044-047] int32 uvoffset;			// Start of surface parameterization data (0 if not in file)
+        # [048-051] int32 vcoffset;			// vertex color
+        # [052-055] int32 labelOffset;	// vertex labels
+        # [056-059] int32 vertexAttributes; // vertex attributes (float32 array of length NV)
+        # [060-183] uint8 pad2[4 + 15*8]; // formerly 4x4 matrix, affine transformation to world coordinates, now used to add new fields
+
+
+
+        with open(os.path.join(self.acpc_dir, 'T1.%s.dfs' % (mesh_name)), 'rb') as f:
+            f.seek(12)
+            hdrsize = struct.unpack('i', f.read(4))[0]
+            f.seek(24)
+            nTriangles = struct.unpack('i', f.read(4))[0]
+            f.seek(28)
+            nVertices = struct.unpack('i', f.read(4))[0]
+
+            f.seek(hdrsize)
+
+            tri = np.zeros((nTriangles, 3), dtype='int32')
+            dfsvert  = np.zeros((nVertices, 3), dtype='float32')
+
+            for triangle in range(0, nTriangles):
+                tri[triangle, 0] = struct.unpack('i', f.read(4))[0]
+                tri[triangle, 1] = struct.unpack('i', f.read(4))[0]
+                tri[triangle, 2] = struct.unpack('i', f.read(4))[0]
+
+            for vertex in range(0, nVertices):
+                dfsvert[vertex, 0] = struct.unpack('f', f.read(4))[0]
+                dfsvert[vertex, 1] = struct.unpack('f', f.read(4))[0]
+                dfsvert[vertex, 2] = struct.unpack('f', f.read(4))[0]
+
+        T1file=os.path.join(self.acpc_dir, 'T1.nii')
+
+        T1ncols = os.popen('mri_info %s --ncols' % (T1file)).read()
+
+        T1nrows = os.popen('mri_info %s --nrows' % (T1file)).read()
+
+        T1nslices = os.popen('mri_info %s --nslices' % (T1file)).read()
+
+        recentervert = dfsvert - np.array([T1ncols,T1nrows,T1nslices],dtype='int')/2
+
+        T1cras = os.popen('mri_info %s --cras' % (T1file)).read()
+
+        crassplit = np.array(T1cras.split(),dtype='float')
+
+        vert = recentervert + crassplit
+
+        out_file = os.path.join(self.mesh_dir, 'bs_%s.mat' % (mesh_name))
+        out_file_struct = os.path.join(self.mesh_dir, 'bs_%s_%s.mat' % (self.subj, mesh_name))
+
+        scipy.io.savemat(out_file, {'tri': tri, 'vert': vert})
+
+        cortex = {'tri': tri + 1, 'vert': vert}
+        scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
     def plot_all_surface_rois(self, bgcolor=(0, 0, 0), size=(1200, 900), color_dict=None, screenshot=False, showfig=True,
                               **kwargs):
@@ -2663,7 +2736,7 @@ class freeCoG:
             Filename used when saving electrode position file. If None,
             filename is automatically generated based on view orientation.
         
-        Returns
+        Returnsbr
         -------
         brain_image : array-like
             2D brain image
