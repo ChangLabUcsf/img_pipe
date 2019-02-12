@@ -2578,11 +2578,12 @@ class freeCoG:
         out_file_struct = os.path.join(self.mesh_dir, '%s_%s.mat' % (hem, roi_name))
         scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
-    def convert_bsmesh2mlab(self, mesh_name = 'pial.cortex'):
-        #bring in tris and verts
-        #move origin to the center
-        #perform another transformation using the identity matrix but with the last column containing the information from the command mri_info --cras
-        #think of a new naming convention for these
+    def convert_bsmesh2mlab(self, mesh_name='pial.cortex'):
+        '''This function reads in .dfs surfaces that have been created with brainsuite from the T1.nii volume in the acpc directory.
+
+         mesh_name : str The name of the mesh to convert. string between T1. and .dfs
+
+         pial.cortex is used by default. It contains both hemispheres'''
 
         #         Header format
         # [000-011]	char headerType[12]; // should be DFS_BE v2.0\0 on big-endian machines, DFS_LEv1.0\0 on little-endian
@@ -2599,8 +2600,6 @@ class freeCoG:
         # [052-055] int32 labelOffset;	// vertex labels
         # [056-059] int32 vertexAttributes; // vertex attributes (float32 array of length NV)
         # [060-183] uint8 pad2[4 + 15*8]; // formerly 4x4 matrix, affine transformation to world coordinates, now used to add new fields
-
-
 
         with open(os.path.join(self.acpc_dir, 'T1.%s.dfs' % (mesh_name)), 'rb') as f:
             f.seek(12)
@@ -2627,21 +2626,21 @@ class freeCoG:
 
         T1file=os.path.join(self.acpc_dir, 'T1.nii')
 
-        T1ncols = os.popen('mri_info %s --ncols' % (T1file)).read()
+        T1ncols = os.popen('mri_info %s --ncols' % T1file).read()
 
-        T1nrows = os.popen('mri_info %s --nrows' % (T1file)).read()
+        T1nrows = os.popen('mri_info %s --nrows' % T1file).read()
 
-        T1nslices = os.popen('mri_info %s --nslices' % (T1file)).read()
+        T1nslices = os.popen('mri_info %s --nslices' % T1file).read()
 
-        recentervert = dfsvert - np.array([T1ncols,T1nrows,T1nslices],dtype='int')/2
+        recentervert = dfsvert - np.array([T1ncols, T1nrows, T1nslices], dtype='int')/2
 
-        T1cras = os.popen('mri_info %s --cras' % (T1file)).read()
+        T1cras = os.popen('mri_info %s --cras' % T1file).read()
 
-        crassplit = np.array(T1cras.split(),dtype='float')
+        crassplit = np.array(T1cras.split(), dtype='float')
 
         vert = recentervert + crassplit
 
-        out_file = os.path.join(self.mesh_dir, 'bs_%s.mat' % (mesh_name))
+        out_file = os.path.join(self.mesh_dir, 'bs_%s_trivert.mat' % (mesh_name))
         out_file_struct = os.path.join(self.mesh_dir, 'bs_%s_%s.mat' % (self.subj, mesh_name))
 
         scipy.io.savemat(out_file, {'tri': tri, 'vert': vert})
