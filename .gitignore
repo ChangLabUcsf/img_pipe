@@ -102,3 +102,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+tests/.DS_Store
+img_pipe/.DS_Store
+img_pipe/plotting/.DS_Store
+img_pipe/SupplementalScripts/.DS_Store
+.DS_Store
+img_pipe/scratch
