@@ -2632,6 +2632,8 @@ class freeCoG:
 
         T1nslices = os.popen('mri_info %s --nslices' % T1file).read()
 
+        #Need to incorporate voxel sizes into this!!!!!!!!
+
         recentervert = dfsvert - np.array([T1ncols, T1nrows, T1nslices], dtype='int')/2
 
         T1cras = os.popen('mri_info %s --cras' % T1file).read()
@@ -2639,6 +2641,8 @@ class freeCoG:
         crassplit = np.array(T1cras.split(), dtype='float')
 
         vert = recentervert + crassplit
+
+        #may need to incorporate a different strategy  here. this is essentially  using the identity matrix with the crassplit vector added to the last column. a slightly different matrix may be needed to adjust for the rotations obtained during acpc alignment. Will need to read in the actual  matrix and apply  it if this is the case
 
         out_file = os.path.join(self.mesh_dir, 'bs_%s_trivert.mat' % (mesh_name))
         out_file_struct = os.path.join(self.mesh_dir, 'bs_%s_%s.mat' % (self.subj, mesh_name))
