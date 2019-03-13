@@ -2626,21 +2626,34 @@ class freeCoG:
 
         T1file=os.path.join(self.acpc_dir, 'T1.nii')
 
-        T1ncols = os.popen('mri_info %s --ncols' % T1file).read()
+        T1voxdim = os.popen('mri_info %s --res' % T1file).read()
+        T1vox2ras = os.popen('mri_info %s --vox2ras' % T1file).read()
+        T1cras = os.popen('mri_info %s --cras' % T1file).read()
 
-        T1nrows = os.popen('mri_info %s --nrows' % T1file).read()
 
-        T1nslices = os.popen('mri_info %s --nslices' % T1file).read()
+        # T1ncols = os.popen('mri_info %s --ncols' % T1file).read()
+        #
+        # T1nrows = os.popen('mri_info %s --nrows' % T1file).read()
+        #
+        # T1nslices = os.popen('mri_info %s --nslices' % T1file).read()
 
         #Need to incorporate voxel sizes into this!!!!!!!!
 
-        recentervert = dfsvert - np.array([T1ncols, T1nrows, T1nslices], dtype='int')/2
-
-        T1cras = os.popen('mri_info %s --cras' % T1file).read()
-
         crassplit = np.array(T1cras.split(), dtype='float')
 
-        vert = recentervert + crassplit
+        vox2raslines = T1vox2ras.splitlines()
+        vox2ras = np.empty((4, 4),dtype='float')
+        for line in range(0, len(vox2raslines)):
+            vox2ras[line, :] = vox2raslines[line].split()
+
+        vox2ras[0:2, 3] = vox2ras[0:2, 3] - crassplit[0:2]#I think  the problem is in here somewhere. Take a look at what these vectors actually  are
+
+        voxdim = np.array(T1voxdim.split(), dtype='float')
+        vox = dfsvert / voxdim[0:3]
+
+        pointarray = np.append(vox,np.ones((vox.shape[0],1)),axis=1)
+
+        vert = apply_transform_to_points(pointarray, vox2ras)
 
         #may need to incorporate a different strategy  here. this is essentially  using the identity matrix with the crassplit vector added to the last column. a slightly different matrix may be needed to adjust for the rotations obtained during acpc alignment. Will need to read in the actual  matrix and apply  it if this is the case
 
