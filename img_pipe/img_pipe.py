@@ -2601,6 +2601,7 @@ class freeCoG:
         # [056-059] int32 vertexAttributes; // vertex attributes (float32 array of length NV)
         # [060-183] uint8 pad2[4 + 15*8]; // formerly 4x4 matrix, affine transformation to world coordinates, now used to add new fields
 
+        #Load the tri and vert data from the Brainsuite dfs file
         with open(os.path.join(self.acpc_dir, 'T1.%s.dfs' % (mesh_name)), 'rb') as f:
             f.seek(12)
             hdrsize = struct.unpack('i', f.read(4))[0]
@@ -2624,33 +2625,32 @@ class freeCoG:
                 dfsvert[vertex, 1] = struct.unpack('f', f.read(4))[0]
                 dfsvert[vertex, 2] = struct.unpack('f', f.read(4))[0]
 
+        #Load in the coordinate and transformation information from the T1 file to apply to the vertices
         T1file=os.path.join(self.acpc_dir, 'T1.nii')
-
         T1voxdim = os.popen('mri_info %s --res' % T1file).read()
         T1vox2ras = os.popen('mri_info %s --vox2ras' % T1file).read()
         T1cras = os.popen('mri_info %s --cras' % T1file).read()
 
+        #Convert the coordinate system and transformation to usable numpy format
         crassplit = np.array(T1cras.split(), dtype='float')
-
         vox2raslines = T1vox2ras.splitlines()
         vox2ras = np.empty((4, 4),dtype='float')
         for line in range(0, len(vox2raslines)):
             vox2ras[line, :] = vox2raslines[line].split()
 
+        #Combine origin shift with transformation matrix
         vox2ras[0:3, 3] = vox2ras[0:3, 3] - crassplit[0:3]
-
         voxdim = np.array(T1voxdim.split(), dtype='float')
+
+        #Divide by voxel size to convert to voxels and apply transformation matrix
         vox = dfsvert / voxdim[0:3]
-
         pointarray = np.append(vox,np.ones((vox.shape[0],1)),axis=1)
+        vert = apply_transform_to_points(pointarray, vox2ras)[:, 0:3]
 
-        vert = apply_transform_to_points(pointarray, vox2ras)
-
+        #Save surfaces to cortex and triver .mat files for output for matlab and python use
         out_file = os.path.join(self.mesh_dir, 'bs_%s_trivert.mat' % (mesh_name))
         out_file_struct = os.path.join(self.mesh_dir, 'bs_%s_%s.mat' % (self.subj, mesh_name))
-
         scipy.io.savemat(out_file, {'tri': tri, 'vert': vert})
-
         cortex = {'tri': tri + 1, 'vert': vert}
         scipy.io.savemat(out_file_struct, {'cortex': cortex})
 
