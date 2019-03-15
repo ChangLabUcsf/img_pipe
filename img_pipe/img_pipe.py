@@ -1,11 +1,11 @@
 # FreeCoG Imaging Pipeline 
 # Developed by:
-# Liberty Hamilton, Morgan Lee, David Chang, Anthony Fong, Zachary Greenberg
+# Liberty Hamilton, Morgan Lee, David Chang, Anthony Fong, Zachary Greenberg, Ben Speidel
 # 
 # Laboratory of Edward Chang
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: June 30, 2017
+# Date Last Edited: October 4, 2018
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
@@ -36,6 +36,9 @@ from nipy.core.api import AffineTransform
 import nipy.algorithms
 import nipy.algorithms.resample
 import nipy.algorithms.registration.histogram_registration
+
+# For reading and unpacking binary files
+import struct
 
 from .plotting.mlab_3D_to_2D import get_world_to_view_matrix, get_view_to_display_matrix, apply_transform_to_points
 
@@ -481,6 +484,78 @@ class freeCoG:
         orig_file = os.path.join(self.elecs_dir, 'individual_elecs', '%s_orig.mat'%(grid_basename))
         scipy.io.savemat(orig_file, {'elecmatrix': elecmatrix} )
 
+    def extrap_grid(self, point_list=[(1,1),(1,5),(8,1)], nrows=16, ncols=16, grid_basename='hd_grid'):
+        ''' This is to both interpolate and extrapolate grid coordinates when all 4 corners are not visible
+        on a photograph or navigation software. The coordinates of the first corner must be available as well
+        another point in the first row, and another point in the first column at least.
+
+        First point should be corner, second point should be on first column and third should be on first row.
+
+        Saves the the hd_grid_orig.mat and hd_grid_corners.mat files so that the grid can be projected.
+
+        point_list contains the grid indices of the electrodes in the input points.
+
+        hd_grid_points.mat contains the coordinates of the 3 input points.
+
+        '''
+
+        nchans = nrows*ncols
+
+        points_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_points.mat')
+        points = scipy.io.loadmat(points_file)['elecmatrix']
+        elecmatrix = np.zeros((nchans, 3))
+        grid = np.arange(nchans).reshape((nrows, ncols), order='F')
+        points_nums = [0, point_list[1][1]-1, ncols*point_list[2][0]-1]
+
+        # Add the electrode coordinates for the measured points
+        for i in np.arange(3):
+            elecmatrix[points_nums[i], :] = points[i, :]
+
+        stepcol = np.zeros((3,1))
+        # Interpolate over one dimension (vertical columns from corner 1 to second point
+        # loop over x, y, and z coordinates
+        for i in np.arange(3):
+            linspacecol= np.linspace(elecmatrix[points_nums[0], i], elecmatrix[points_nums[1], i], point_list[1][1], retstep=True)
+            elecmatrix[points_nums[0]:points_nums[1]+1, i] = linspacecol[0]
+            stepcol[i] = linspacecol[1]
+
+        for x in range(point_list[1][1], nrows):
+            for i in np.arange(3):
+                elecmatrix[x, i]=elecmatrix[x-1, i] + stepcol[i]
+
+        steprow = np.zeros((3, 1))
+        #Now interpolate/extrapolate the first row of the grid
+        for i in np.arange(3):
+            linspacerow = np.linspace(elecmatrix[0,i], elecmatrix[points_nums[2], i], point_list[2][0], retstep=True)
+            elecmatrix[grid[0,points_nums[0]:point_list[2][0]], i] = linspacerow[0]
+            steprow[i] = linspacerow[1]
+
+        for x in range(point_list[2][0]-1, ncols):
+            for i in np.arange(3):
+                elecmatrix[grid[0, x], i] = elecmatrix[grid[0, x-1], i] + steprow[i]
+
+        # Now fill in the rows using the new data from the leftmost and top
+        for row in range(1, nrows):
+            for col in range(1, ncols):
+                for i in np.arange(3):
+                    elecmatrix[grid[row, col], i] = elecmatrix[grid[row - 1, col], i] + stepcol[i]
+
+        grid_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename + '_orig.mat')
+        scipy.io.savemat(grid_file, {'elecmatrix': elecmatrix})
+
+        #now prepare the corner file
+
+        cornermatrix = np.zeros((4, 3))
+        cornermatrix[0, :] = elecmatrix[0, :]
+        cornermatrix[1, :] = elecmatrix[grid[nrows-1, 0], :]
+        cornermatrix[2, :] = elecmatrix[grid[0, ncols-1], :]
+        cornermatrix[3, :] = elecmatrix[grid[nrows-1, ncols-1], :]
+
+        corner_file = os.path.join(self.elecs_dir, 'individual_elecs', grid_basename+'_corners.mat')
+        scipy.io.savemat(corner_file, {'elecmatrix': cornermatrix})
+
+
+
     def project_electrodes(self, elecfile_prefix='hd_grid', use_mean_normal=True, \
                                  surf_type='dural', \
                                  num_iter=30, dilate=0.0, grid=True,
@@ -651,6 +726,92 @@ class freeCoG:
         scipy.io.savemat(os.path.join(self.elecs_dir, 'individual_elecs', 'clinical_'+elecfile_prefix+'.mat'), {'elecmatrix': clinicalgrid})
 
         return clinicalgrid
+
+    def get_clinical_elecs_all(self,elecfile_prefix='TDT_elecs_all',num_grids=1,grid_shortnames=['G']):
+        '''Loads in elecs all file created with high density grid
+        and outputs elecs all file containing downsampled grid and no NaNs
+        '''
+
+
+        print('This only is to be used when the only difference is the density of grids and/or presence of NaNs')
+        origelecs = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['elecmatrix']
+        origlabels = scipy.io.loadmat(os.path.join(self.elecs_dir, elecfile_prefix+'.mat'))['anatomy']
+
+        short_label = []
+        long_label = []
+        grid_or_depth = []
+        hd_label = []
+        masterlist = []
+
+        for r in origlabels:
+                short_label.append(r[0][0]) # This is the shortened electrode montage label
+                long_label.append(r[1][0])  # This is the long form electrode montage label
+                grid_or_depth.append(r[2][0])  # This is the label for grid, depth, or strip
+
+        for string in range(0, len(short_label)):
+            lead = []
+            for s in short_label[string]:
+                if not s.isdigit():
+                    lead.append(s)
+            masterlist.append(''.join(lead))
+
+        clinicalgrids=[]
+        for grid in range(0,num_grids):
+            hd = np.empty((0, 3))
+            coord = np.empty((1, 3))
+            for string in range(0, len(short_label)):
+                if grid_shortnames[grid] == masterlist[string]:
+                    coord[0,:] = origelecs[string]
+                    hd = np.append(hd, coord, axis=0)
+                    hd_label.append(''.join(lead))
+
+            # load in clinical grid indices
+            clingrid = scipy.io.loadmat(os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'clingrid_inds.mat'))['inds'].ravel()
+            # If we have a grid that is smaller than 256 channels, remove the irrelevant clinical grid indices
+            clingrid = clingrid[clingrid < hd.shape[0]]
+            # get clinical grid coordinates using the relevant indices
+            clinicalgrid = hd[clingrid, :]
+            clinicalgrids.append(clinicalgrid)
+
+        newelecs=np.empty((0,3))
+        new_short_label=[]
+        new_long_label=[]
+        new_grid_depth=[]
+
+        for string in range(0, len(short_label)):
+            if masterlist[string] not in ('NaN', 'nan', 'ECG', 'EKG', 'NAN', 'EOG', 'ROC', 'LOC', 'EEG', 'EMG', 'scalpEEG'):
+                if masterlist[string] not in grid_shortnames:
+                    coord = np.empty((1, 3))
+                    coord[0, :] = origelecs[string]
+                    newelecs = np.append(newelecs, coord, axis=0)
+                    new_short_label.append(short_label[string])
+                    new_long_label.append(long_label[string])
+                    new_grid_depth.append(grid_or_depth[string])
+
+                else:  # electrode is part of a grid
+                    for grid in range(0, num_grids):
+                        if masterlist[string] == grid_shortnames[grid] and clinicalgrids[grid].shape[0] > 0:
+                            clinicalgrid = clinicalgrids[grid]
+                            coord = np.empty((1, 3))
+                            coord[0, :] = clinicalgrid[0, :]
+                            newelecs = np.append(newelecs, coord, axis=0)
+                            clinicalgrids[grid] = np.delete(clinicalgrid, 0, axis=0)
+
+                            new_short_label.append(short_label[string])
+                            new_long_label.append(long_label[string])
+                            new_grid_depth.append(grid_or_depth[string])
+
+
+        newelecs = newelecs[newelecs != [0,0,0]]
+        newelecmatrix = np.reshape(newelecs, (newelecs.shape[0]/3, 3))
+        neweleclabels = np.empty((newelecmatrix.shape[0], 3), dtype=np.object)
+        neweleclabels[:,0] = new_short_label
+        neweleclabels[:,1] = new_long_label
+        neweleclabels[:,2] = new_grid_depth
+
+        scipy.io.savemat(os.path.join(self.elecs_dir, 'clinical_' + elecfile_prefix + '.mat'),
+                         {'elecmatrix': newelecmatrix,'eleclabels': neweleclabels})
+
 
     def get_subcort(self):
         '''Obtains .mat files for vertex and triangle
@@ -981,7 +1142,7 @@ class freeCoG:
             indices = [i for i, x in enumerate(long_label) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)]
             indices.extend([i for i, x in enumerate(short_label) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)])
             indices.extend([i for i, x in enumerate(grid_or_depth) if ('EOG' in x or 'ECG' in x or 'ROC' in x or 'LOC' in x or 'EEG' in x or 'EKG' in x or 'NaN' in x or 'EMG' in x or x==np.nan or 'scalpEEG' in x)])
-            indices.extend(np.where(np.isnan(elecmatrix)==True)[0]) 
+            indices.extend(np.where(np.isnan(elecmatrix)==True)[0])
             indices = list(set(indices))
             indices_to_use = list(set(range(len(long_label))) - set(indices))
 
@@ -2060,7 +2221,7 @@ class freeCoG:
 
         mlab.title('%s recon anatomy'%(self.subj),size=0.3)
 
-        arr = mlab.screenshot(antialiased=True)
+        #arr = mlab.screenshot(antialiased=True)
         if screenshot:
             plt.figure(figsize=(20,20))
             arr, xoff, yoff = remove_whitespace(arr)
@@ -2361,6 +2522,138 @@ class freeCoG:
 
         f.close()
 
+    def obj_to_mat(self, hem=None, roi_name='pial'):
+        '''This function reads in a .obj file and converts it to .mat format
+        to be read into img_pipe or matlab.
+
+        Parameters
+        ----------
+        hem : str, optional
+            The hemisphere of the region of interest (ROI)
+        roi_name : str, optional
+            The name of the ROI mesh.
+        '''
+
+        if hem == None:
+            hem = self.hem
+        vertices=[]
+        facelines=[]
+        with open(os.path.join(self.mesh_dir, '%s_%s.obj' % (hem, roi_name)), 'r') as f:
+            for line in f:
+                if line.startswith("v "):
+                    varray=line.replace('\n','')
+                    varray1=varray.split(' ')
+                    vertices.append(varray1[1:4])
+                    
+                if line.startswith("f "):
+                    faceline = line.replace('\n','')
+                    faceline1 = faceline.replace('/',' ')
+                    farray = faceline1.split(' ')
+                    farray = list(filter(None, farray))
+                    facelines.append(farray[1:len(farray)])
+
+        facelines = list(filter(None, facelines))
+
+        vert = np.asarray(vertices, dtype=np.float)
+        face = np.asarray(facelines, dtype=np.int)
+        tri = np.zeros((face.shape[0], 3), dtype=np.int)
+
+        if face.shape[1] == 3:
+            tri = face - 1
+
+        elif face.shape[1] == 6:
+            tri[:, 0] = face[:, 0] - 1
+            tri[:, 1] = face[:, 2] - 1
+            tri[:, 2] = face[:, 4] - 1
+
+        elif face.shape[1] == 9:
+            tri[:, 0] = face[:, 0] - 1
+            tri[:, 1] = face[:, 3] - 1
+            tri[:, 2] = face[:, 6] - 1
+
+        out_file_trivert = os.path.join(self.mesh_dir, '%s_%s_trivert.mat'%(hem, roi_name))
+        scipy.io.savemat(out_file_trivert, {'tri': tri, 'vert': vert})
+
+        cortex = {'tri': tri+1, 'vert': vert}
+        out_file_struct = os.path.join(self.mesh_dir, '%s_%s.mat' % (hem, roi_name))
+        scipy.io.savemat(out_file_struct, {'cortex': cortex})
+
+    def convert_bsmesh2mlab(self, mesh_name='pial.cortex'):
+        '''This function reads in .dfs surfaces that have been created with brainsuite from the T1.nii volume in the acpc directory.
+
+         mesh_name : str The name of the mesh to convert. string between T1. and .dfs
+
+         pial.cortex is used by default. It contains both hemispheres'''
+
+        #         Header format
+        # [000-011]	char headerType[12]; // should be DFS_BE v2.0\0 on big-endian machines, DFS_LEv1.0\0 on little-endian
+        # [012-015] int32 hdrsize;			// Size of complete header (i.e., offset of first data element)
+        # [016-010] int32 mdoffset;			// Start of metadata.
+        # [020-023] int32 pdoffset;			// Start of patient data header.
+        # [024-027] int32 nTriangles;		// Number of triangles
+        # [028-031] int32 nVertices;		// Number of vertices
+        # [032-035] int32 nStrips;			// Number of triangle strips (deprecated)
+        # [036-039] int32 stripSize;		// size of strip data  (deprecated)
+        # [040-043] int32 normals;			// 4	Int32	<normals>	Start of vertex normal data (0 if not in file)
+        # [044-047] int32 uvoffset;			// Start of surface parameterization data (0 if not in file)
+        # [048-051] int32 vcoffset;			// vertex color
+        # [052-055] int32 labelOffset;	// vertex labels
+        # [056-059] int32 vertexAttributes; // vertex attributes (float32 array of length NV)
+        # [060-183] uint8 pad2[4 + 15*8]; // formerly 4x4 matrix, affine transformation to world coordinates, now used to add new fields
+
+        #Load the tri and vert data from the Brainsuite dfs file
+        with open(os.path.join(self.acpc_dir, 'T1.%s.dfs' % (mesh_name)), 'rb') as f:
+            f.seek(12)
+            hdrsize = struct.unpack('i', f.read(4))[0]
+            f.seek(24)
+            nTriangles = struct.unpack('i', f.read(4))[0]
+            f.seek(28)
+            nVertices = struct.unpack('i', f.read(4))[0]
+
+            f.seek(hdrsize)
+
+            tri = np.zeros((nTriangles, 3), dtype='int32')
+            dfsvert = np.zeros((nVertices, 3), dtype='float32')
+
+            for triangle in range(0, nTriangles):
+                tri[triangle, 0] = struct.unpack('i', f.read(4))[0]
+                tri[triangle, 1] = struct.unpack('i', f.read(4))[0]
+                tri[triangle, 2] = struct.unpack('i', f.read(4))[0]
+
+            for vertex in range(0, nVertices):
+                dfsvert[vertex, 0] = struct.unpack('f', f.read(4))[0]
+                dfsvert[vertex, 1] = struct.unpack('f', f.read(4))[0]
+                dfsvert[vertex, 2] = struct.unpack('f', f.read(4))[0]
+
+        #Load in the coordinate and transformation information from the T1 file to apply to the vertices
+        T1file=os.path.join(self.acpc_dir, 'T1.nii')
+        T1voxdim = os.popen('mri_info %s --res' % T1file).read()
+        T1vox2ras = os.popen('mri_info %s --vox2ras' % T1file).read()
+        T1cras = os.popen('mri_info %s --cras' % T1file).read()
+
+        #Convert the coordinate system and transformation to usable numpy format
+        crassplit = np.array(T1cras.split(), dtype='float')
+        vox2raslines = T1vox2ras.splitlines()
+        vox2ras = np.empty((4, 4),dtype='float')
+        for line in range(0, len(vox2raslines)):
+            vox2ras[line, :] = vox2raslines[line].split()
+
+        #Combine origin shift with transformation matrix
+        vox2ras[0:3, 3] = vox2ras[0:3, 3] - crassplit[0:3]
+        voxdim = np.array(T1voxdim.split(), dtype='float')
+
+        #Divide by voxel size to convert to voxels and apply transformation matrix
+        vox = dfsvert / voxdim[0:3]
+        pointarray = np.append(vox,np.ones((vox.shape[0],1)),axis=1)
+        vert = apply_transform_to_points(pointarray, vox2ras)[:, 0:3]
+
+        #Save surfaces to cortex and triver .mat files for output for matlab and python use
+        out_file = os.path.join(self.mesh_dir, 'bs_%s_trivert.mat' % (mesh_name))
+        out_file_struct = os.path.join(self.mesh_dir, 'bs_%s_%s.mat' % (self.subj, mesh_name))
+        scipy.io.savemat(out_file, {'tri': tri, 'vert': vert})
+        cortex = {'tri': tri + 1, 'vert': vert}
+        scipy.io.savemat(out_file_struct, {'cortex': cortex})
+
     def plot_all_surface_rois(self, bgcolor=(0, 0, 0), size=(1200, 900), color_dict=None, screenshot=False, showfig=True,
                               **kwargs):
         """
@@ -2448,7 +2741,7 @@ class freeCoG:
             Filename used when saving electrode position file. If None,
             filename is automatically generated based on view orientation.
         
-        Returns
+        Returnsbr
         -------
         brain_image : array-like
             2D brain image
