@@ -124,7 +124,7 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
     mesh.actor.property.specular_power = specular_power
     mesh.actor.property.diffuse = diffuse
     mesh.actor.property.interpolation = interpolation
-    mesh.scene.light_manager.light_mode = 'vtk'
+    #mesh.scene.light_manager.light_mode = 'vtk'
     if opacity < 1.0:
         mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
 
@@ -186,7 +186,7 @@ def el_add(elecs, color = (1., 0., 0.), msize = 2, numbers = None, label_offset=
     points.actor.property.specular_power = specular_power
     points.actor.property.diffuse = diffuse
     points.actor.property.interpolation = interpolation
-    points.scene.light_manager.light_mode = 'vtk'
+    #points.scene.light_manager.light_mode = 'vtk'
 
     if numbers is not None:
         for ni, n in enumerate(numbers):
