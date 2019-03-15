@@ -10,7 +10,7 @@ class MyInstall(install):
 
 setup(name = "img_pipe",
 	  description = "Image processing pipeline for localization and identification of electrodes for electrocorticography",
-	  version = "2017.9.26.1",
+	  version = "2019.3.15.1",
 	  url = "https://github.com/ChangLabUcsf/img_pipe",
 	  author = "Liberty Hamilton",
 	  author_email = "libertyhamilton@gmail.com",

@@ -5,12 +5,11 @@
 # Laboratory of Edward Chang
 # Department of Neurological Surgery
 # University of California, San Francisco
-# Date Last Edited: October 4, 2018
+# Date Last Edited: March 15, 2019
 #
 # This file contains the Chang Lab imaging pipeline (freeCoG)
 # as one importable python class for running a patients
 # brain surface reconstruction and electrode localization/labeling
-#test
 
 import os
 import glob
