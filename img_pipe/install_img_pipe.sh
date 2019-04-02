@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+#get homebrew to download dcmtk and dcm2niix
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+echo -ne $password | brew install dcm2niix
+
 #check if freesurfer exists and build it if not
 export FREESURFER_HOME="${FREESURFER_HOME:-/Applications/freesurfer/}"
 if [ ! -f $FREESURFER_HOME/build-stamp.txt ]; then
@@ -21,13 +26,13 @@ bash miniconda3.sh
 echo -ne "yes" | /Users/${USER}/miniconda3/bin/conda update conda
 
 #create conda environment for img_pipe and activate environment
-conda create -n img_pipe python=2.7
-source activate img_pipe
+/Users/${USER}/miniconda3/bin/conda create -n img_pipe python=2.7
+/Users/${USER}/miniconda3/bin/conda activate img_pipe
 
 #install prerequisite modules in img_pipe environment
-pip install numpy
-pip install vtk
-conda install pyqt==4.11.4
+/Users/${USER}/miniconda3/envs/img_pipe/bin/pip install numpy
+/Users/${USER}/miniconda3/envs/img_pipe/bin/pip install vtk
+/Users/${USER}/miniconda3/condabin/conda install pyqt==4.11.4 --name img_pipe
 
 #install img_pipe using pip install
-pip install img_pipe
+/Users/${USER}/miniconda3/envs/img_pipe/bin/pip install img_pipe
