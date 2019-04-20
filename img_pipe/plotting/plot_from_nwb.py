@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import mayavi
 import scipy.io
 from .ctmr_brain_plot import ctmr_gauss_plot, el_add
+from img_pipe.SupplementalFiles import FS_colorLUT as FS_colorLUT
 import numpy as np
 import os
 
