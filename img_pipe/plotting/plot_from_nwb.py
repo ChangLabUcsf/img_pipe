@@ -73,7 +73,7 @@ def plot_from_nwb(subj_file,
         return None
     
     # Check for Brain Atlas
-    if elec_space!='original':
+    if elec_space=='warped':
         # Check for file path
         fpath_atlas = os.path.join(fs_dir, 'cvs_avg35_inMNI152.nwb')
         exists = os.path.isfile(fpath_atlas)
@@ -93,8 +93,7 @@ def plot_from_nwb(subj_file,
     # Get mesh and plot the pial surfaces
     if (hem=='lh') or (hem=='rh'):
         if elec_space=='original':
-            #pial_mesh = nwb.subject.cortical_surfaces.surfaces[subject_id+'_'+hem+'_pial']
-            pial_mesh = nwb.subject.cortical_surfaces.surfaces[hem]
+            pial_mesh = nwb.subject.cortical_surfaces.surfaces[hem+'_pial']
         elif elec_space=='warped':
             pial_mesh = nwb_atlas.subject.cortical_surfaces.surfaces[hem]
         else:
@@ -106,12 +105,10 @@ def plot_from_nwb(subj_file,
                                      color=(0.8, 0.8, 0.8))
         
     elif hem=='stereo':
-        if elec_space=='original':
-            #pial_mesh_l = nwb.subject.cortical_surfaces[subject_id+'_lh_pial']
-            pial_mesh_l = nwb.subject.cortical_surfaces['lh']
-            #pial_mesh_r = nwb.subject.cortical_surfaces[subject_id+'_rh_pial']
-            pial_mesh_r = nwb.subject.cortical_surfaces['rh']
-        elif elec_space=='warped':
+        if elec_space=='original': #subject's brain mesh
+            pial_mesh_l = nwb.subject.cortical_surfaces['lh_pial']
+            pial_mesh_r = nwb.subject.cortical_surfaces['rh_pial']
+        elif elec_space=='warped': #atlas' brain mesh
             pial_mesh_l = nwb_atlas.subject.cortical_surfaces.surfaces['lh']
             pial_mesh_r = nwb_atlas.subject.cortical_surfaces.surfaces['rh']
         else:
@@ -134,8 +131,7 @@ def plot_from_nwb(subj_file,
     
     # Paint chosen ROI in distinguished colors
     for ind, rg in enumerate(roi):
-        #full_name = subject_id+'_'+rg['name']+'_pial'
-        full_name = rg['name']
+        full_name = rg['name']+'_pial'
         if full_name in anatomic_regions:
             rg_color = rg['color']
             rg_mesh = nwb.subject.cortical_surfaces.surfaces[full_name]
