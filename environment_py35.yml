@@ -1,4 +1,4 @@
-name: img_pipe_py3
+name: img_pipe_py3t
 channels:
 - menpo
 - defaults
@@ -47,7 +47,8 @@ dependencies:
 - pip:
   - configparser==3.5.0
   - cycler==0.10.0
-  - img-pipe==2017.8.19.3
+  #- img-pipe==2017.8.19.3
+  - .
   - ipython-genutils==0.2.0
   - matplotlib==1.5.3
   - mne==0.14.1
@@ -62,5 +63,6 @@ dependencies:
   - pyvtk==0.5.18
   - sympy==1.1.1
   - tqdm==4.15.0
-prefix: ~/anaconda/envs/img_pipe_py3
+  - git+https://github.com/bendichter/nwbext_ecog.git
+prefix: ~/anaconda/envs/img_pipe_py3t
 
