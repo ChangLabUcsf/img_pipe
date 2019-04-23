@@ -95,7 +95,7 @@ def plot_from_nwb(subj_file,
         if elec_space=='original':
             pial_mesh = nwb.subject.cortical_surfaces.surfaces[hem+'_pial']
         elif elec_space=='warped':
-            pial_mesh = nwb_atlas.subject.cortical_surfaces.surfaces[hem]
+            pial_mesh = nwb_atlas.subject.cortical_surfaces.surfaces[hem+'_pial']
         else:
             print('ERROR: Invalid elec_space name.')
             return None
