@@ -59,5 +59,6 @@ dependencies:
   - traits==4.6.0
   - traitsui==5.1.0
   - wcwidth==0.1.7
+  - nwbext_ecog==0.6.0
 prefix: ~/anaconda/envs/img_pipe_py2
 
