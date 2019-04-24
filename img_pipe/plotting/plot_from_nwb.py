@@ -199,5 +199,6 @@ def plot_from_nwb(subj_file,
                     el_add(np.atleast_2d(pos), color=tuple(el_color))
                 except:
                     el_add(np.atleast_2d(pos))
-       
+    
+    mlab.show()
     return mesh, mlab
