@@ -62,5 +62,6 @@ dependencies:
   - pyvtk==0.5.18
   - sympy==1.1.1
   - tqdm==4.15.0
+  - git+https://github.com/bendichter/nwbext_ecog.git
 prefix: ~/anaconda/envs/img_pipe_py3
 
