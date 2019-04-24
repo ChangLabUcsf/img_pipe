@@ -23,7 +23,7 @@ def plot_from_nwb(subj_file,
                   electrodes=False,
                   elec_roi=[],
                   elec_space='original',
-		  interactive=False):
+                  fpath_atlas=''):
     '''
     This function will plot the mesh structures and electrode positions 
     contained in a NWB file.
@@ -47,6 +47,8 @@ def plot_from_nwb(subj_file,
         list of ROI of electrodes to plot. Default=[]
     elec_space : str, optional
         'original' or 'warped'. Default='original'
+    fpath_atlas : string, necessary if elec_space=='warped'
+        path to atlas model file
     
 
     Returns
@@ -75,7 +77,6 @@ def plot_from_nwb(subj_file,
     # Check for Brain Atlas
     if elec_space=='warped':
         # Check for file path
-        fpath_atlas = os.path.join(fs_dir, 'cvs_avg35_inMNI152.nwb')
         exists = os.path.isfile(fpath_atlas)
         if exists:
             io_atlas = pynwb.NWBHDF5IO(fpath_atlas,'r')
@@ -199,8 +200,4 @@ def plot_from_nwb(subj_file,
                 except:
                     el_add(np.atleast_2d(pos))
        
-    if interactive:
-        mlab.show()
-    #else:
-    #    mlab.close()
     return mesh, mlab
