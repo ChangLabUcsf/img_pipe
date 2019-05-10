@@ -1,4 +1,4 @@
-name: img_pipe_py2test
+name: img_pipe_py2
 channels:
 - defaults
 dependencies:
@@ -60,4 +60,4 @@ dependencies:
   - traitsui==5.1.0
   - wcwidth==0.1.7
   - nwbext_ecog==0.6.0
-prefix: ~/anaconda/envs/img_pipe_py2test
+prefix: ~/anaconda/envs/img_pipe_py2
