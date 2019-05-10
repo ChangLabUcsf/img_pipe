@@ -29,6 +29,7 @@ dependencies:
   - cycler==0.10.0
   - decorator==4.1.2
   - enum34==1.1.6
+  - nwbext_ecog==0.6.0
   - img-pipe==2017.8.19.3
   - ipython==5.4.1
   - ipython-genutils==0.2.0
@@ -59,5 +60,4 @@ dependencies:
   - traits==4.6.0
   - traitsui==5.1.0
   - wcwidth==0.1.7
-  - nwbext_ecog==0.6.0
 prefix: ~/anaconda/envs/img_pipe_py2

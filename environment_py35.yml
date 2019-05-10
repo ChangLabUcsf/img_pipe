@@ -47,6 +47,7 @@ dependencies:
 - pip:
   - configparser==3.5.0
   - cycler==0.10.0
+  - nwbext_ecog==0.6.0
   - img-pipe==2017.8.19.3
   - ipython-genutils==0.2.0
   - matplotlib==1.5.3
@@ -62,6 +63,4 @@ dependencies:
   - pyvtk==0.5.18
   - sympy==1.1.1
   - tqdm==4.15.0
-  - nwbext_ecog==0.6.0
 prefix: ~/anaconda/envs/img_pipe_py3
-
