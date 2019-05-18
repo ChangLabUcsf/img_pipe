@@ -13,10 +13,8 @@ import os
 import pynwb
 import nwbext_ecog
 
-fs_dir = os.environ['SUBJECTS_DIR']
 
 def plot_from_nwb(subj_file,  
-                  fs_dir=fs_dir, 
                   hem='stereo',
                   opacity=1.0,
                   roi = [],
@@ -31,10 +29,7 @@ def plot_from_nwb(subj_file,
     Parameters
     ----------
     subj_file : str
-        subject file's name
-    fs_dir : str, optional
-        subject file's directory. Default is Freesurfer's $SUBJECTS_DIR
-        environment variable.
+        subject file path
     hem : str, optional
         hemisphere: 'lh', 'rh' or 'stereo'. Default='stereo'
     opacity : float, optional
@@ -57,21 +52,18 @@ def plot_from_nwb(subj_file,
     mlab : mayavi mlab scene
     None : if an error occurred
     '''
-    
-    fpath = os.path.join(fs_dir, subj_file)
-    
+        
     # Check for file path
-    exists = os.path.isfile(fpath)
+    exists = os.path.isfile(subj_file)
     if exists:
-        io = pynwb.NWBHDF5IO(fpath,'r')
+        io = pynwb.NWBHDF5IO(subj_file,'r')
         nwb = io.read()
     else:
         print('ERROR: File or path does not exist!')
-        print('Given path to file: ', fpath)
+        print('Given path to file: ', subj_file)
         print('The standard path is given by your local Freesurfer installation',
               '$SUBJECTS_DIR variable. If this is a wrong path, put the correct',
               'path as an argument, e.g.:')
-        print(' plot_recon_anatomy_nwb(subj_file, hem, fs_dir=path_to_file) ')
         return None
     
     # Check for Brain Atlas

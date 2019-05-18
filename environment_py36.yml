@@ -1,0 +1,67 @@
+name: img_pipe_py3
+channels:
+- menpo
+- defaults
+dependencies:
+- configobj
+- cython
+- decorator
+- freetype
+- hdf5
+- ipython
+- ipython_genutils
+- libpng
+- mkl
+- numpy
+- openssl
+- path.py
+- pexpect
+- pickleshare
+- pip
+- prompt_toolkit
+- ptyprocess
+- pygments
+- pyqt
+- python=3.6
+- qt
+- readline
+- setuptools
+- simplegeneric
+- scipy
+- sip
+- six
+- sqlite
+- tk
+- traitlets
+- wcwidth
+- wheel
+- xz
+- zlib
+- apptools
+- envisage
+- pyface
+- traits
+- traitsui
+- vtk
+- pip:
+  - mayavi
+  - configparser
+  - cycler
+  - img-pipe
+  - ipython-genutils
+  - matplotlib
+  - mne
+  - mpmath
+  - nibabel
+  - nipy
+  - prompt-toolkit
+  - pymcubes
+  - pyparsing
+  - python-dateutil
+  - pytz
+  - pyvtk
+  - sympy
+  - tqdm
+  - nwbext_ecog
+prefix: ~/anaconda/envs/img_pipe_py3
+
