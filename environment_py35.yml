@@ -63,4 +63,3 @@ dependencies:
   - sympy==1.1.1
   - tqdm==4.15.0
 prefix: ~/anaconda/envs/img_pipe_py3
-

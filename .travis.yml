@@ -6,9 +6,9 @@ matrix:
        env: 
           - ENV_FILE=environment_py27.yml
           - ENV_NAME=img_pipe_py2
-     - python: "3.5"
+     - python: "3.6"
        env: 
-          - ENV_FILE=environment_py35.yml
+          - ENV_FILE=environment_py36.yml
           - ENV_NAME=img_pipe_py3
 before_script:
   - "export DISPLAY=:99.0"
