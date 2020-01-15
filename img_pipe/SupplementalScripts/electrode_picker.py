@@ -750,7 +750,8 @@ class electrode_picker:
         '''
         Remove the electrode at the current crosshair point. 
         '''
-        cs = self.current_slice
+        cs = np.round(self.current_slice).astype(np.int)
+        radius = 2
         if self.bin_mat != '':
             self.bin_mat = ''
             
