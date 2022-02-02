@@ -1172,8 +1172,7 @@ class freeCoG:
             label_name = label.split('.')[1]
             print('Loading label %s'%label_name)
             fid = open(label,'r')
-            d = np.genfromtxt(fid, delimiter=' ', \
-                              skip_header=2)
+            d = np.genfromtxt(fid, delimiter=' ', skip_header=2)
             vertnum, x, y, z, junk=d[~np.isnan(d)].reshape((-1,5)).T
             for v in vertnum:
                 vert_label[np.int(v)] = label_name.strip()
@@ -1502,6 +1501,14 @@ class freeCoG:
             elecmatrix = scipy.io.loadmat(os.path.join(self.elecs_dir, basename + '.mat'))['elecmatrix']
             anatomy = scipy.io.loadmat(os.path.join(self.elecs_dir, basename + '.mat'))['anatomy']
             labelpath = os.path.join(self.subj_dir, self.subj, 'label')
+            
+            if anatomy is not None:
+                surface_indices = np.array(
+                list(set(np.where(anatomy[:, 2] != 'depth')[0]) & set(np.where(np.all(~np.isnan(elecmatrix), axis=1))[0])),
+                dtype='int64')
+                anatomy = anatomy[surface_indices]
+                elecmatrix = elecmatrix[surface_indices,:]
+            
             elecs_warped = self.compute_surface_warp(elecmatrix, anatomy, labelpath, basename, template)
 
             scipy.io.savemat(elecfile, {'elecmatrix': np.array(elecs_warped), 'anatomy': anatomy})
@@ -1755,7 +1762,7 @@ class freeCoG:
         cmap = matplotlib.colors.ListedColormap(np.load(fs_lut)[:cvs_dat.max()+1,:])
 
         lookupTable = os.path.join(self.img_pipe_dir, 'SupplementalFiles', 'FreeSurferLookupTable')
-        lookup_dict = pickle.load(open(lookupTable,'r'))
+        lookup_dict = pickle.load(open(lookupTable,'rb'))
         fig = plt.figure(figsize=((30,17)))
         nonzero_indices = np.where(cvs_dat>0)
         offset = 35 #this is how much you want to trim the mri by, there is a lot of empty space
@@ -2404,12 +2411,12 @@ class freeCoG:
         subj_mesh.actor.property.opacity = opacity
         template_mesh.actor.property.opacity = opacity 
 
-        arr = mlab.screenshot(antialiased=True)
         if screenshot:
             plt.figure(figsize=(20,10))
             plt.imshow(arr, aspect='equal')
             plt.axis('off')
             plt.show()
+            arr = mlab.screenshot(antialiased=True)
         if showfig:
             mlab.show()
         return subj_mesh, template_mesh, mlab
