@@ -26,25 +26,15 @@ Example results are shown below in the native subject space (left) and in the cv
 
 To download this package, you will need:
 * a MacOS or Linux machine (if you are using Windows, download a Linux Virtual Machine to use this package)
-* __anaconda__ for Python version 2.7 or 3 (https://www.continuum.io/downloads)<br>
+* [__anaconda__](https://www.continuum.io/downloads) or [__miniconda__](https://conda.io/miniconda.html) for Python 3
 * __Freesurfer__ (https://surfer.nmr.mgh.harvard.edu/fswiki/DownloadAndInstall) version 5.3.0 or higher
 
-After you download and install those dependencies, run the following commands in your terminal if using Python 2.7:
-
-``` 
-$ git clone https://github.com/changlabucsf/img_pipe
-$ conda env create -f img_pipe/environment_py27.yml
-$ source activate img_pipe_py2
-$ ipython
-$ import img_pipe
- ```
-
-The following instructions should be used if you wish to work in Python 3:
+After you download and install those dependencies, run the following commands in your terminal:
 
 ```
 $ git clone https://github.com/changlabucsf/img_pipe
-$ conda env create -f img_pipe/environment_py35.yml
-$ source activate img_pipe_py3
+$ conda env create -f img_pipe/environment_py312.yml
+$ source activate img_pipe
 $ ipython
 $ from img_pipe import img_pipe
 ```
@@ -67,7 +57,7 @@ and place in `$SUBJECTS_DIR/your_subj/CT`.
 
 You should now be able to import img_pipe from python. 
 ```python
->>> import img_pipe # Or in python 3, from img_pipe import img_pipe
+>>> from img_pipe import img_pipe
 >>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
 >>> patient.prep_recon()
 >>> patient.get_recon()
@@ -75,7 +65,7 @@ You should now be able to import img_pipe from python.
 
 If you have completed all of the steps, you can plot the brain with anatomically-labeled electrodes as follows:
 ```python
->>> import img_pipe
+>>> from img_pipe import img_pipe
 >>> patient = img_pipe.freeCoG(subj='subject_name', hem='lh')
 >>> patient.plot_recon_anatomy()
 ```
@@ -94,7 +84,7 @@ In addition to localization, labeling, and warping of electrodes, `img_pipe` inc
 
 All of these images should be created after initializing the patient (as below).
 ```python
->>> import img_pipe
+>>> from img_pipe import img_pipe
 >>> patient = img_pipe.freeCoG(subj='subj_ID', hem='lh')
 ```
 

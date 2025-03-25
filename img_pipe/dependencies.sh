@@ -1,5 +1,5 @@
 #!/bin/bash
 
 conda install -y vtk
-conda install -y pyqt==4.11.4
+conda install -y pyqt==5.15
 

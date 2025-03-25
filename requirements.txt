@@ -1,9 +1,11 @@
+antspyx>=0.5.4
 numpy>=1.11.1
-scipy>=0.18.1
+scipy>=0.14.1
 cython
 pyvtk
-mayavi>=4.5.0
+mayavi>=4.8.2
 mne>=0.13.1
 nibabel>=2.1.0
-nipy>=0.4.0
-PyMCubes>=0.0.6
+nipy>=0.6.1
+PyMCubes>=0.1.6
+PyQt6

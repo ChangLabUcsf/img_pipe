@@ -126,7 +126,8 @@ def ctmr_gauss_plot(tri, vert, color=(0.8, 0.8, 0.8), elecs=None, weights=None,
     mesh.actor.property.interpolation = interpolation
     #mesh.scene.light_manager.light_mode = 'vtk'
     if opacity < 1.0:
-        mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
+        #mesh.scene.renderer.set(use_depth_peeling=True) #, maximum_number_of_peels=100, occlusion_ratio=0.0
+        mesh.scene.renderer.use_depth_peeling = True
 
     # Make the mesh look smoother
     for child in mlab.get_engine().scenes[0].children:
